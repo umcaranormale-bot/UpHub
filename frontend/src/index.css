@@ -96,8 +96,20 @@
   /* --color-status-reprovada-borda: ; */
 }
 
-body {
-  background-color: var(--color-page);
-  color: var(--color-titulo);
-  font-family: var(--font-texto);
+@layer base {
+  body {
+    background-color: var(--color-page);
+    color: var(--color-titulo);
+    font-family: var(--font-texto);
+    font-size: var(--text-corpo);
+    line-height: 1.55;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+  }
+
+  code, kbd, samp, pre {
+    font-family: var(--font-mono);
+  }
 }
