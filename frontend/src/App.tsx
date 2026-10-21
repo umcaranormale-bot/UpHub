@@ -1,39 +1,34 @@
-import { useEffect, useState } from 'react'
+import { Navigate, Route, Routes } from 'react-router-dom'
 
-type Ping = {
-  servico: string
-  momento: string
-}
+import Login from './pages/Login'
 
+/**
+ * Índice das telas do site.
+ *
+ * Para acrescentar uma tela nova, são duas linhas:
+ *
+ *   1) o import, aqui em cima, junto com o do Login:
+ *        import Cadastro from './pages/Cadastro'
+ *
+ *   2) a rota, aqui embaixo, dentro do <Routes>:
+ *        <Route path="/cadastro" element={<Cadastro />} />
+ *
+ * O arquivo da tela fica em src/pages, com o mesmo nome do componente.
+ */
 function App() {
-  const [ping, setPing] = useState<Ping | null>(null)
-  const [erro, setErro] = useState<string | null>(null)
+    return (
+        <Routes>
+            {/* Quem abrir a raiz do site cai no login. */}
+            <Route path="/" element={<Navigate to="/entrar" replace />} />
 
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/ping`)
-        .then((resposta) => {
-          if (!resposta.ok) {
-            throw new Error(`o servidor respondeu ${resposta.status}`)
-          }
-          return resposta.json()
-        })
-        .then(setPing)
-        .catch((e: Error) => setErro(e.message))
-  }, [])
+            <Route path="/entrar" element={<Login />} />
 
-  return (
-      <main className="mx-auto max-w-xl p-8">
-        <h1 className="text-2xl font-bold">Up Hub</h1>
+            {/* Acrescentem as rotas de vocês aqui. */}
 
-        {erro && <p className="mt-4 text-red-600">Falhou: {erro}</p>}
-        {!erro && !ping && <p className="mt-4">Consultando o backend...</p>}
-        {ping && (
-            <p className="mt-4">
-              Conectado a <strong>{ping.servico}</strong>, que respondeu às {ping.momento}
-            </p>
-        )}
-      </main>
-  )
+            {/* Endereço que não existe: manda de volta para o login. */}
+            <Route path="*" element={<Navigate to="/entrar" replace />} />
+        </Routes>
+    )
 }
 
 export default App
