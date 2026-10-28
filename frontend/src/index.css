@@ -1,0 +1,115 @@
+@import "@fontsource/poppins/600.css";
+@import "@fontsource/poppins/700.css";
+@import "@fontsource/plus-jakarta-sans/400.css";
+@import "@fontsource/plus-jakarta-sans/500.css";
+@import "@fontsource/plus-jakarta-sans/600.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "tailwindcss";
+
+@theme {
+  /* Cores — aliases semânticos */
+  --color-titulo: #0E1440;
+  --color-secundario: #5B6188;
+  --color-acento: #5353F1;
+  --color-page: #F5F6FA;
+  --color-card: #FFFFFF;
+  --color-acento-suave: #F0F0FE;
+  --color-sutil: #DFE1EB;
+
+  /* Marca */
+  --color-pervinca: #5353F1;
+  --color-profundo: #0E1440;
+
+  /* Trilhas — reservadas, nunca decorativas */
+  --color-trilha-fomento: #5353F1;
+  --color-trilha-investimento: #0A7C8C;
+  --color-trilha-formacao: #17ACD4;
+
+  /* Famílias */
+  --font-display: "Poppins", sans-serif;
+  --font-texto: "Plus Jakarta Sans", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* Escala tipográfica */
+  --text-display: 48px;
+  --text-display--line-height: 1.1;
+  --text-display--letter-spacing: -0.02em;
+  --text-display--font-weight: 700;
+
+  --text-h1: 36px;
+  --text-h1--line-height: 1.15;
+  --text-h1--letter-spacing: -0.02em;
+  --text-h1--font-weight: 700;
+
+  --text-h3: 20px;
+  --text-h3--line-height: 1.3;
+  --text-h3--font-weight: 600;
+
+  --text-lead: 18px;
+  --text-lead--line-height: 1.55;
+
+  --text-corpo: 14px;
+  --text-corpo--line-height: 1.55;
+
+  --text-rotulo: 13px;
+  --text-rotulo--line-height: 1.4;
+  --text-rotulo--font-weight: 500;
+
+  --text-legenda: 12px;
+  --text-legenda--line-height: 1.4;
+
+  --text-id: 13px;
+
+  /* Respiro em uso */
+  --spacing-card: 20px;
+  --spacing-bloco: 12px;
+  --spacing-secao: 48px;
+
+  /* Raios */
+  --radius-card: 8px;
+  --radius-modal: 12px;
+  --radius-badge: 6px;
+
+  /* Status de inscrição — AGUARDANDO DEFINIÇÃO
+   O Bloco 3 especifica trio fixo de cores por status, mas não traz os hex.
+   Descomente conforme forem definidos. Sempre ponto + texto: cor sozinha
+   nunca comunica estado (WCAG 1.4.1). */
+
+  /* --color-status-rascunho-texto: ; */
+  /* --color-status-rascunho-fundo: ; */
+  /* --color-status-rascunho-borda: ; */
+
+  /* --color-status-enviada-texto: ; */
+  /* --color-status-enviada-fundo: ; */
+  /* --color-status-enviada-borda: ; */
+
+  /* --color-status-avaliacao-texto: ; */
+  /* --color-status-avaliacao-fundo: ; */
+  /* --color-status-avaliacao-borda: ; */
+
+  /* --color-status-aprovada-texto: ; */
+  /* --color-status-aprovada-fundo: ; */
+  /* --color-status-aprovada-borda: ; */
+
+  /* --color-status-reprovada-texto: ; */
+  /* --color-status-reprovada-fundo: ; */
+  /* --color-status-reprovada-borda: ; */
+}
+
+@layer base {
+  body {
+    background-color: var(--color-page);
+    color: var(--color-titulo);
+    font-family: var(--font-texto);
+    font-size: var(--text-corpo);
+    line-height: 1.55;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+  }
+
+  code, kbd, samp, pre {
+    font-family: var(--font-mono);
+  }
+}
