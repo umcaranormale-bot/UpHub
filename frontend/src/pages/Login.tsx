@@ -1,4 +1,5 @@
 import { CustomButton } from '../components/Botao';
+import { Navbar } from '../components/Navbar';
 /**
  * Entrar — rota /entrar
  *
@@ -16,6 +17,8 @@ import { CustomButton } from '../components/Botao';
  */
 function Login() {
     return (
+        <div>
+            <Navbar />
         <main className="min-h-screen bg-page p-secao flex flex-col items-center justify-center gap-6">
             <h1 className="text-h1 text-titulo">Entrar</h1>
 
@@ -35,6 +38,7 @@ function Login() {
                 </CustomButton>
             </div>
         </main>
+    )</div>
     )
 }
 
