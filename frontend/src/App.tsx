@@ -1,6 +1,8 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 
 import Login from './pages/Login'
+import LandingPage from './pages/Landing-Page'
+import MainLayout from './layouts/MainLayout'
 
 /**
  * Índice das telas do site.
@@ -18,15 +20,16 @@ import Login from './pages/Login'
 function App() {
     return (
         <Routes>
-            {/* Quem abrir a raiz do site cai no login. */}
-            <Route path="/" element={<Navigate to="/entrar" replace />} />
+            <Route element={<MainLayout />}>
+                {/* Quem abrir a raiz do site cai na landing-page. */}
+                <Route path="/" element={<LandingPage />} />
+                {/* Acrescentem as rotas de vocês aqui. */}
+            </Route>
+                <Route path="/entrar" element={<Login />} />
 
-            <Route path="/entrar" element={<Login />} />
 
-            {/* Acrescentem as rotas de vocês aqui. */}
-
-            {/* Endereço que não existe: manda de volta para o login. */}
-            <Route path="*" element={<Navigate to="/entrar" replace />} />
+            {/* Endereço que não existe: manda de volta para a landing-page. */}
+            <Route path="*" element={<LandingPage />} />
         </Routes>
     )
 }
