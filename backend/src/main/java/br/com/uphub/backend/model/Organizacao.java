@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
+import org.hibernate.annotations.Generated;
 
 @Entity
 @Table(name = "organizacao")
@@ -16,35 +17,42 @@ public class Organizacao {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "tipo", nullable = false, length = 30)
     private String tipo;
+
+    @Column(name = "nome", nullable = false, length = 200)
     private String nome;
 
-    @Column(name = "razao_social")
+    @Column(name = "razao_social", length = 200)
     private String razaoSocial;
 
+    @Column(name = "cnpj", length = 14)
     private String cnpj;
+
+    @Column(name = "porte", length = 30)
     private String porte;
+
+    @Column(name = "setor", length = 80)
     private String setor;
+
+    @Column(name = "estagio", length = 40)
     private String estagio;
 
     @Column(name = "ano_fundacao")
     private Short anoFundacao;
 
-    @Column(name = "sede_cidade")
+    @Column(name = "sede_cidade", length = 80)
     private String sedeCidade;
 
-    @Column(name = "sede_uf")
+    @Column(name = "sede_uf", length = 2)
     private String sedeUf;
 
-    @Column(name = "criada_em", insertable = false, updatable = false)
+    @Generated
+    @Column(name = "criada_em", nullable = false, updatable = false)
     private OffsetDateTime criadaEm;
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getTipo() {
@@ -129,9 +137,5 @@ public class Organizacao {
 
     public OffsetDateTime getCriadaEm() {
         return criadaEm;
-    }
-
-    public void setCriadaEm(OffsetDateTime criadaEm) {
-        this.criadaEm = criadaEm;
     }
 }
