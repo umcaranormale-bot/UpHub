@@ -13,5 +13,7 @@ CREATE TABLE organizacao (
                              criada_em timestamptz NOT NULL DEFAULT now(),
                              CONSTRAINT pk_organizacao PRIMARY KEY (id),
                              CONSTRAINT uq_organizacao_cnpj UNIQUE (cnpj),
-                             CONSTRAINT ck_organizacao_cnpj CHECK (cnpj IS NULL OR cnpj ~ '^[0-9]{14}$')
-    );
+                             CONSTRAINT ck_organizacao_cnpj CHECK (cnpj IS NULL OR cnpj ~ '^[0-9]{14}$'),
+    CONSTRAINT ck_organizacao_tipo CHECK (tipo IN
+        ('empresa','squad','pessoa_fisica','orgao_fomento','investidor','empresa_parceira'))
+);
