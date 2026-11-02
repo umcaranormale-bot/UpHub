@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class TrilhaService {
@@ -27,7 +28,7 @@ public class TrilhaService {
 
     @Transactional(readOnly = true)
     public TrilhaResponse buscarPorCodigo(String codigo) {
-        return trilhaRepository.findById(codigo.toUpperCase())
+        return trilhaRepository.findById(codigo.toUpperCase(Locale.ROOT))
                 .map(TrilhaResponse::de)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Trilha não encontrada"));
