@@ -1,10 +1,11 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
-// Tipagem para as propriedades do botão
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'aprovar' | 'reprovar' | 'neutro';
   size?: 'grande' | 'medio' | 'pequeno';
   children: React.ReactNode;
+  to?: string;
 }
 
 export function CustomButton({
@@ -12,26 +13,41 @@ export function CustomButton({
   size = 'medio',
   children,
   className = '',
+  to,
   ...props
 }: ButtonProps) {
-  
-  // Definição das larguras solicitadas (altura fixa de 45px para todos)
+
   const sizeClasses = {
-    grande: 'w-[414px] h-[45px]',
+    grande: 'w-full h-[45px]',
     medio: 'w-[152px] h-[45px]',
     pequeno: 'w-[90px] h-[45px]',
   };
 
-  // Cores baseadas nos exemplos visuais da imagem
   const variantClasses = {
-    aprovar: 'bg-[#5b56ed] text-white hover:bg-[#4b47db] border-transparent',
+    aprovar: 'bg-acento text-white border border-acento hover:bg-card hover:text-acento',
     reprovar: 'bg-white text-[#d9534f] border border-[#d9534f] hover:bg-[#fff5f5]',
-    'neutro': 'bg-white text-[#1f2937] border border-[#e5e7eb] hover:bg-[#f9fafb]',
+    neutro: 'bg-white text-profundo border border-profundo hover:bg-profundo hover:text-white',
   };
+
+  const buttonClasses = `
+    font-semibold rounded-xl flex items-center justify-center
+    transition-colors cursor-pointer
+    ${sizeClasses[size]}
+    ${variantClasses[variant]}
+    ${className}
+  `;
+
+  if (to) {
+    return (
+      <Link to={to} className={buttonClasses}>
+        {children}
+      </Link>
+    );
+  }
 
   return (
     <button
-      className={`font-medium rounded-xl flex items-center justify-center transition-colors cursor-pointer ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
+      className={buttonClasses}
       {...props}
     >
       {children}

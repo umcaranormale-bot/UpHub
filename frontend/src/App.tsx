@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom'
 import Login from './pages/Login'
 import LandingPage from './pages/Landing-Page'
 import MainLayout from './layouts/MainLayout'
+import RegisterPage from './pages/RegisterPage'
 
 /**
  * Índice das telas do site.
@@ -24,6 +25,7 @@ function App() {
                 {/* Quem abrir a raiz do site cai na landing-page. */}
                 <Route path="/" element={<LandingPage />} />
                 {/* Acrescentem as rotas de vocês aqui. */}
+                <Route path="/cadastro" element={<RegisterPage/>}/>
             </Route>
                 <Route path="/entrar" element={<Login />} />
 

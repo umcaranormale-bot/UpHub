@@ -1,6 +1,6 @@
 
 import { useState, type FormEvent } from "react";
-import { CustomButton } from "./Botao";
+import { CustomButton } from "./CustomButton";
 
 export default function LoginCard() {
     const [email, setEmail] = useState("");

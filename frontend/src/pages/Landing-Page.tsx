@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { CustomButton } from "../components/CustomButton";
 
 const trails = [
   {
@@ -44,19 +45,13 @@ function LandingPage() {
           </p>
 
           <div className="flex flex-wrap gap-4">
-            <Link
-              to="/"
-              className="rounded-lg border border-acento bg-acento px-5 py-3 font-semibold text-white transition hover:bg-card hover:text-acento"
-            >
+            <CustomButton to="/cadastro" variant="aprovar">
               Criar conta
-            </Link>
+            </CustomButton>
 
-            <Link
-              to="/entrar"
-              className="rounded-lg border border-profundo px-5 py-3 font-semibold text-profundo transition hover:bg-profundo hover:text-white"
-            >
+            <CustomButton to="/entrar" variant="neutro">
               Já tenho conta
-            </Link>
+            </CustomButton>
           </div>
 
           {/* Indicadores */}
