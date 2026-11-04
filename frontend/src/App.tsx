@@ -1,10 +1,11 @@
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, Navigate } from 'react-router-dom'
 
 import Login from './pages/Login'
 import LandingPage from './pages/Landing-Page'
 import MainLayout from './layouts/MainLayout'
 import RegisterPage from './pages/RegisterPage'
 import RecoveryPasswordPage from './pages/RecoverPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 
 /**
  * Índice das telas do site.
@@ -27,13 +28,15 @@ function App() {
                 <Route path="/" element={<LandingPage />} />
                 {/* Acrescentem as rotas de vocês aqui. */}
                 <Route path="/cadastro" element={<RegisterPage/>}/>
+
+                {/* Endereço que não existe: manda de volta para a landing-page. */}
+                <Route path="*" element={<Navigate to="/" replace/>} />
             </Route>
                 <Route path="/entrar" element={<Login />} />
                 <Route path="/recuperar-senha" element={<RecoveryPasswordPage/>}/>
 
-
-            {/* Endereço que não existe: manda de volta para a landing-page. */}
-            <Route path="*" element={<LandingPage />} />
+                {/* A tela de redefinir senha é acessada a partir do link que o usuário recebe por e-mail.*/}
+                <Route path="/redefinir-senha" element={<ResetPasswordPage/>}/>
         </Routes>
     )
 }

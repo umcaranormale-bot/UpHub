@@ -7,9 +7,6 @@ export default function RecoverPasswordCard() {
     const [email, setEmail] = useState("");
     const [submitted, setSubmitted] = useState(false);
 
-    const inputClasses =
-        "w-full rounded-card border border-sutil bg-card px-4 py-3 text-corpo text-titulo outline-none transition focus:border-acento focus:ring-1 focus:ring-acento";
-
     function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
@@ -36,11 +33,11 @@ export default function RecoverPasswordCard() {
                     </div>
 
                     {/* Formulário */}
-                    <form onSubmit={handleSubmit} className="space-y-5">
+                    <form onSubmit={handleSubmit} className="space-y-3">
                         <div className="space-y-2">
                             <label
                                 htmlFor="email"
-                                className="font-medium text-secundario"
+                                className="mb-1 block text-sm font-medium text-secundario"
                             >
                                 E-mail
                             </label>
@@ -51,7 +48,7 @@ export default function RecoverPasswordCard() {
                                 value={email}
                                 onChange={(event) => setEmail(event.target.value)}
                                 placeholder="seu@email.com"
-                                className={inputClasses}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
                                 required
                             />
                         </div>
