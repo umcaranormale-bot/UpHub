@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
-
+import Home from './pages/Home'
 import Login from './pages/Login'
 
 /**
@@ -22,6 +22,7 @@ function App() {
             <Route path="/" element={<Navigate to="/entrar" replace />} />
 
             <Route path="/entrar" element={<Login />} />
+            <Route path="/home" element={<Home/>} />
 
             {/* Acrescentem as rotas de vocês aqui. */}
 
