@@ -51,7 +51,7 @@ export default function AccountTypeSelector({
                   }`}
                 >
                   {selected && (
-                    <span className="size-1.5 rounded-full bg-white" />
+                    <span className="size-1.5 rounded-full bg-acento" />
                   )}
                 </span>
 
@@ -66,7 +66,7 @@ export default function AccountTypeSelector({
                 )}
               </div>
 
-              <p className="pl-5 text-legenda text-secundario">
+              <p className="pl-5 text-rotulo text-secundario">
                 {option.description}
               </p>
             </button>

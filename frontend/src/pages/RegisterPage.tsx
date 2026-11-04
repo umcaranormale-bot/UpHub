@@ -63,7 +63,8 @@ function RegisterPage() {
             senha: formData.senha,
             tipoConta: accountType,
         };
-
+        
+        {/*Só para visualização no frontend*/}
         console.log(cadastro);
     }
 
@@ -112,11 +113,11 @@ function RegisterPage() {
                         {/* Barra lateral */}
                         <aside className="space-y-3">
                             <div className="rounded-card border border-pervinca/20 bg-acento-suave p-4">
-                                <h3 className="mb-2 text-rotulo font-semibold text-acento">
+                                <h3 className="mb-2 text-corpo font-semibold text-acento">
                                     Mentor, avaliador e gestão não se cadastram
                                 </h3>
 
-                                <p className="mb-3 text-legenda text-secundario">
+                                <p className="mb-3 text-rotulo text-secundario">
                                     Mentor e avaliador entram pelo convite de quem
                                     publicou a oportunidade. A gestão do Porto Digital
                                     é conta interna. Os três acessam só pela tela de entrar.
@@ -130,11 +131,11 @@ function RegisterPage() {
                             </div>
 
                             <div className="rounded-card border border-orange-200 bg-orange-50 p-4">
-                                <h3 className="mb-2 text-rotulo font-semibold text-orange-900">
+                                <h3 className="mb-2 text-corpo font-semibold text-orange-900">
                                     Provedor passa por aprovação
                                 </h3>
 
-                                <p className="text-legenda text-orange-900/80">
+                                <p className="text-rotulo text-orange-900/80">
                                     Você cria a conta e cadastra a organização na hora,
                                     mas a permissão de publicar só é liberada depois
                                     que a gestão do Porto Digital conferir os dados.

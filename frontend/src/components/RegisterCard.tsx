@@ -32,7 +32,7 @@ export default function RegisterCard({
 
       <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
         <div className="space-y-1">
-          <label htmlFor="nome" className="text-rotulo text-secundario">
+          <label htmlFor="nome" className="text-corpo text-secundario">
             Nome completo
           </label>
           <input
@@ -47,7 +47,7 @@ export default function RegisterCard({
         </div>
 
         <div className="space-y-1">
-          <label htmlFor="email" className="text-rotulo text-secundario">
+          <label htmlFor="email" className="text-corpo text-secundario">
             E-mail
           </label>
           <input
@@ -60,13 +60,13 @@ export default function RegisterCard({
             className={inputClasses}
             required
           />
-          <p className="text-legenda text-secundario">
+          <p className="text-rotulo text-secundario">
             Depois de criar a conta, confirme o e-mail em Minha conta.
           </p>
         </div>
 
         <div className="space-y-1">
-          <label htmlFor="senha" className="text-rotulo text-secundario">
+          <label htmlFor="senha" className="text-corpo text-secundario">
             Senha
           </label>
           <input
@@ -80,7 +80,7 @@ export default function RegisterCard({
             minLength={8}
             required
           />
-          <p className="text-legenda text-secundario">
+          <p className="text-rotulo text-secundario">
             Mínimo de 8 caracteres, com letra e número.
           </p>
         </div>
@@ -88,7 +88,7 @@ export default function RegisterCard({
         <div className="space-y-1">
           <label
             htmlFor="confirmarSenha"
-            className="text-rotulo text-secundario"
+            className="text-corpo text-secundario"
           >
             Confirmar senha
           </label>
