@@ -4,6 +4,7 @@ import Login from './pages/Login'
 import LandingPage from './pages/Landing-Page'
 import MainLayout from './layouts/MainLayout'
 import RegisterPage from './pages/RegisterPage'
+import RecoveryPasswordPage from './pages/RecoverPasswordPage'
 
 /**
  * Índice das telas do site.
@@ -28,6 +29,7 @@ function App() {
                 <Route path="/cadastro" element={<RegisterPage/>}/>
             </Route>
                 <Route path="/entrar" element={<Login />} />
+                <Route path="/recuperar-senha" element={<RecoveryPasswordPage/>}/>
 
 
             {/* Endereço que não existe: manda de volta para a landing-page. */}
