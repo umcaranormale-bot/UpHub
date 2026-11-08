@@ -8,6 +8,7 @@ import br.com.uphub.backend.model.Pessoa;
 import br.com.uphub.backend.repository.DocumentoRepository;
 import br.com.uphub.backend.repository.OrganizacaoRepository;
 import br.com.uphub.backend.repository.PessoaRepository;
+import br.com.uphub.backend.repository.VinculoRepository;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,13 +21,16 @@ public class DocumentoService {
     private final DocumentoRepository documentoRepository;
     private final OrganizacaoRepository organizacaoRepository;
     private final PessoaRepository pessoaRepository;
+    private final VinculoRepository vinculoRepository;
 
     public DocumentoService(DocumentoRepository documentoRepository,
                             OrganizacaoRepository organizacaoRepository,
-                            PessoaRepository pessoaRepository) {
+                            PessoaRepository pessoaRepository,
+                            VinculoRepository vinculoRepository) {
         this.documentoRepository = documentoRepository;
         this.organizacaoRepository = organizacaoRepository;
         this.pessoaRepository = pessoaRepository;
+        this.vinculoRepository = vinculoRepository;
     }
 
     @Transactional
@@ -50,6 +54,10 @@ public class DocumentoService {
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Organização não encontrada"));
         Pessoa enviadoPor = pessoaRepository.findById(dados.enviadoPor())
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Pessoa não encontrada"));
+
+        if (!vinculoRepository.existsByPessoa_IdAndOrganizacao_Id(enviadoPor.getId(), organizacao.getId())) {
+            throw erro(HttpStatus.FORBIDDEN, "Esta pessoa não tem vínculo com esta organização");
+        }
 
         Documento documento = new Documento(
                 organizacao,
