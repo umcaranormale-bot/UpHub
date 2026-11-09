@@ -9,6 +9,7 @@ CREATE TABLE versao_oportunidade (
                                      entregaveis text,
                                      carga_semanal_horas smallint,
                                      duracao_semanas smallint,
+                                     quantidade_vagas integer,
                                      criada_por bigint NOT NULL,
                                      criada_em timestamptz NOT NULL DEFAULT now(),
                                      publicada_em timestamptz,
@@ -23,6 +24,7 @@ CREATE TABLE versao_oportunidade (
                                      CONSTRAINT ck_versao_carga CHECK (carga_semanal_horas IS NULL OR carga_semanal_horas
                                          > 0),
                                      CONSTRAINT ck_versao_duracao CHECK (duracao_semanas IS NULL OR duracao_semanas > 0),
+                                     CONSTRAINT ck_versao_vagas CHECK (quantidade_vagas IS NULL OR quantidade_vagas > 0),
                                      CONSTRAINT fk_versao_oportunidade_oportunidade_id FOREIGN KEY (oportunidade_id)
                                          REFERENCES oportunidade (id) ON DELETE RESTRICT ON UPDATE RESTRICT,
                                      CONSTRAINT fk_versao_oportunidade_criada_por FOREIGN KEY (criada_por)
