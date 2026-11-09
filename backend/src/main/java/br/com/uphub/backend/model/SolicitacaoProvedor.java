@@ -38,7 +38,6 @@ public class SolicitacaoProvedor {
     @Column(name = "pedida_em", nullable = false, updatable = false)
     private OffsetDateTime pedidaEm;
 
-    @Generated
     @Column(name = "situacao", nullable = false, length = 15)
     private String situacao;
 
@@ -52,7 +51,6 @@ public class SolicitacaoProvedor {
     @Column(name = "motivo", columnDefinition = "text")
     private String motivo;
 
-    @Generated
     @Column(name = "recusa_por_documento", nullable = false)
     private boolean recusaPorDocumento;
 
@@ -66,11 +64,16 @@ public class SolicitacaoProvedor {
     }
 
     public SolicitacaoProvedor(Organizacao organizacao, Pessoa solicitante,
-                               String emailInstitucional, Long documentoId) {
+                               String emailInstitucional, Long documentoId,
+                               Long solicitacaoAnteriorId, String respostaRecusa) {
         this.organizacao = organizacao;
         this.solicitante = solicitante;
         this.emailInstitucional = emailInstitucional;
         this.documentoId = documentoId;
+        this.solicitacaoAnteriorId = solicitacaoAnteriorId;
+        this.respostaRecusa = respostaRecusa;
+        this.situacao = "AGUARDANDO";
+        this.recusaPorDocumento = false;
     }
 
     public Long getId() {

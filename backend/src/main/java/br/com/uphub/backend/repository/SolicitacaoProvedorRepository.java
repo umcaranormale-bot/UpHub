@@ -10,6 +10,8 @@ public interface SolicitacaoProvedorRepository extends JpaRepository<Solicitacao
 
     boolean existsByOrganizacao_IdAndSituacao(Long organizacaoId, String situacao);
 
+    Optional<SolicitacaoProvedor> findFirstByOrganizacao_IdOrderByPedidaEmDesc(Long organizacaoId);
+
     @Query("select s from SolicitacaoProvedor s join fetch s.organizacao join fetch s.solicitante "
             + "where s.organizacao.id = :organizacaoId order by s.pedidaEm desc")
     List<SolicitacaoProvedor> listarPorOrganizacao(Long organizacaoId);
