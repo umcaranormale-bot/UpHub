@@ -9,21 +9,21 @@ CREATE TABLE convite (
                          situacao varchar(15) NOT NULL DEFAULT 'AGUARDANDO',
                          aceito_em timestamptz,
                          pessoa_id bigint,
-                         token varchar(64) NOT NULL,
+                         token_hash varchar(64) NOT NULL,
                          CONSTRAINT pk_convite PRIMARY KEY (id),
-                         CONSTRAINT uq_convite_token UNIQUE (token),
+                         CONSTRAINT uq_convite_token_hash UNIQUE (token_hash),
                          CONSTRAINT ck_convite_expiracao CHECK (expira_em > enviado_em),
                          CONSTRAINT ck_convite_aceite CHECK (situacao <> 'ACEITO' OR (aceito_em IS NOT NULL
                              AND pessoa_id IS NOT NULL)),
                          CONSTRAINT ck_convite_papel CHECK (papel IN ('AVALIADOR','MENTOR')),
                          CONSTRAINT ck_convite_situacao CHECK (situacao IN
                                                                ('AGUARDANDO','ACEITO','RECUSADO','EXPIRADO')),
-                         CONSTRAINT fk_convite_organizacao_id FOREIGN KEY (organizacao_id)
-                             REFERENCES organizacao (id) ON DELETE RESTRICT ON UPDATE RESTRICT,
-                         CONSTRAINT fk_convite_enviado_por FOREIGN KEY (enviado_por)
-                             REFERENCES pessoa (id) ON DELETE RESTRICT ON UPDATE RESTRICT,
-                         CONSTRAINT fk_convite_pessoa_id FOREIGN KEY (pessoa_id)
-                             REFERENCES pessoa (id) ON DELETE RESTRICT ON UPDATE RESTRICT
+                         CONSTRAINT fk_convite_organizacao_id FOREIGN KEY (organizacao_id) REFERENCES
+                             organizacao (id) ON DELETE RESTRICT ON UPDATE RESTRICT,
+                         CONSTRAINT fk_convite_enviado_por FOREIGN KEY (enviado_por) REFERENCES pessoa (id)
+                             ON DELETE RESTRICT ON UPDATE RESTRICT,
+                         CONSTRAINT fk_convite_pessoa_id FOREIGN KEY (pessoa_id) REFERENCES pessoa (id) ON
+                             DELETE RESTRICT ON UPDATE RESTRICT
 );
 CREATE UNIQUE INDEX ux_convite_aberto ON convite (organizacao_id, papel, lower(email))
     WHERE situacao = 'AGUARDANDO';
