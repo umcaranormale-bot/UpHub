@@ -18,7 +18,10 @@ public record SolicitacaoProvedorResponse(
         String motivo,
         boolean recusaPorDocumento,
         Long solicitacaoAnteriorId,
-        String respostaRecusa
+        String respostaRecusa,
+        Long revogadaPorId,
+        OffsetDateTime revogadaEm,
+        String motivoRevogacao
 ) {
 
     public static SolicitacaoProvedorResponse de(SolicitacaoProvedor s) {
@@ -37,7 +40,10 @@ public record SolicitacaoProvedorResponse(
                 s.getMotivo(),
                 s.isRecusaPorDocumento(),
                 s.getSolicitacaoAnteriorId(),
-                s.getRespostaRecusa()
+                s.getRespostaRecusa(),
+                s.getRevogadaPor() == null ? null : s.getRevogadaPor().getId(),
+                s.getRevogadaEm(),
+                s.getMotivoRevogacao()
         );
     }
 }

@@ -60,6 +60,16 @@ public class SolicitacaoProvedor {
     @Column(name = "resposta_recusa", columnDefinition = "text")
     private String respostaRecusa;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "revogada_por")
+    private Pessoa revogadaPor;
+
+    @Column(name = "revogada_em")
+    private OffsetDateTime revogadaEm;
+
+    @Column(name = "motivo_revogacao", columnDefinition = "text")
+    private String motivoRevogacao;
+
     protected SolicitacaoProvedor() {
     }
 
@@ -126,5 +136,17 @@ public class SolicitacaoProvedor {
 
     public String getRespostaRecusa() {
         return respostaRecusa;
+    }
+
+    public Pessoa getRevogadaPor() {
+        return revogadaPor;
+    }
+
+    public OffsetDateTime getRevogadaEm() {
+        return revogadaEm;
+    }
+
+    public String getMotivoRevogacao() {
+        return motivoRevogacao;
     }
 }

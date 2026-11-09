@@ -2,9 +2,11 @@ package br.com.uphub.backend.service;
 
 import br.com.uphub.backend.dto.SolicitacaoProvedorCadastroRequest;
 import br.com.uphub.backend.dto.SolicitacaoProvedorResponse;
+import br.com.uphub.backend.model.Documento;
 import br.com.uphub.backend.model.Organizacao;
 import br.com.uphub.backend.model.Pessoa;
 import br.com.uphub.backend.model.SolicitacaoProvedor;
+import br.com.uphub.backend.repository.DocumentoRepository;
 import br.com.uphub.backend.repository.OrganizacaoRepository;
 import br.com.uphub.backend.repository.PessoaRepository;
 import br.com.uphub.backend.repository.SolicitacaoProvedorRepository;
@@ -22,15 +24,18 @@ public class SolicitacaoProvedorService {
     private final OrganizacaoRepository organizacaoRepository;
     private final PessoaRepository pessoaRepository;
     private final VinculoRepository vinculoRepository;
+    private final DocumentoRepository documentoRepository;
 
     public SolicitacaoProvedorService(SolicitacaoProvedorRepository solicitacaoRepository,
                                       OrganizacaoRepository organizacaoRepository,
                                       PessoaRepository pessoaRepository,
-                                      VinculoRepository vinculoRepository) {
+                                      VinculoRepository vinculoRepository,
+                                      DocumentoRepository documentoRepository) {
         this.solicitacaoRepository = solicitacaoRepository;
         this.organizacaoRepository = organizacaoRepository;
         this.pessoaRepository = pessoaRepository;
         this.vinculoRepository = vinculoRepository;
+        this.documentoRepository = documentoRepository;
     }
 
     @Transactional
@@ -59,6 +64,14 @@ public class SolicitacaoProvedorService {
             throw erro(HttpStatus.FORBIDDEN, "Esta pessoa não tem vínculo com esta organização");
         }
 
+        if (dados.documentoId() != null) {
+            Documento documento = documentoRepository.findById(dados.documentoId())
+                    .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Documento não encontrado"));
+            if (!documento.getOrganizacao().getId().equals(organizacao.getId())) {
+                throw erro(HttpStatus.BAD_REQUEST, "O documento não pertence a esta organização");
+            }
+        }
+
         if (solicitacaoRepository.existsByOrganizacao_IdAndSituacao(organizacao.getId(), "AGUARDANDO")) {
             throw erro(HttpStatus.CONFLICT,
                     "Esta organização já tem uma solicitação aguardando decisão");
@@ -76,7 +89,7 @@ public class SolicitacaoProvedorService {
         if (anterior != null) {
             if (!anterior.getId().equals(dados.solicitacaoAnteriorId())) {
                 throw erro(HttpStatus.BAD_REQUEST,
-                        "Informe em solicitacaoAnteriorId o pedido recusado (id " + anterior.getId() + ")");
+                        "Informe em solicitacaoAnteriorId o pedido recusado ou revogado (id " + anterior.getId() + ")");
             }
             if (dados.respostaRecusa() == null || dados.respostaRecusa().isBlank()) {
                 throw erro(HttpStatus.BAD_REQUEST, "O campo respostaRecusa é obrigatório no novo pedido");
@@ -89,7 +102,7 @@ public class SolicitacaoProvedorService {
             anteriorId = anterior.getId();
             respostaRecusa = dados.respostaRecusa().trim();
         } else if (dados.solicitacaoAnteriorId() != null) {
-            throw erro(HttpStatus.BAD_REQUEST, "Esta organização não tem pedido recusado para responder");
+            throw erro(HttpStatus.BAD_REQUEST, "Esta organização não tem pedido recusado ou revogado para responder");
         }
 
         SolicitacaoProvedor solicitacao = new SolicitacaoProvedor(
