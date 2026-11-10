@@ -6,7 +6,7 @@ import br.com.uphub.backend.model.Organizacao;
 import br.com.uphub.backend.repository.OrganizacaoRepository;
 import java.time.Year;
 import java.util.List;
-import java.util.Set;
+import java.util.Locale;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,8 +15,8 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class OrganizacaoService {
 
-    private static final Set<String> TIPOS = Set.of(
-            "empresa", "squad", "pessoa_fisica", "orgao_fomento", "investidor", "empresa_parceira");
+    private static final List<String> TIPOS = List.of(
+            "EMPRESA", "SQUAD", "PESSOA_FISICA", "ORGAO_FOMENTO", "INVESTIDOR", "EMPRESA_PARCEIRA");
 
     private final OrganizacaoRepository organizacaoRepository;
 
@@ -26,7 +26,7 @@ public class OrganizacaoService {
 
     @Transactional
     public OrganizacaoResponse cadastrar(OrganizacaoCadastroRequest dados) {
-        String tipo = obrigatorio(dados.tipo(), "tipo", 30).toLowerCase();
+        String tipo = obrigatorio(dados.tipo(), "tipo", 30).toUpperCase(Locale.ROOT);
         if (!TIPOS.contains(tipo)) {
             throw erro(HttpStatus.BAD_REQUEST, "Tipo inválido. Use: " + String.join(", ", TIPOS));
         }
