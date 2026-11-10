@@ -6,6 +6,7 @@ import MainLayout from './layouts/MainLayout'
 import RegisterPage from './pages/RegisterPage'
 import RecoveryPasswordPage from './pages/RecoverPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
+import CandidateHome from './pages/CandidateHome'
 
 /**
  * Índice das telas do site.
@@ -28,6 +29,8 @@ function App() {
                 <Route path="/" element={<LandingPage />} />
                 {/* Acrescentem as rotas de vocês aqui. */}
                 <Route path="/cadastro" element={<RegisterPage/>}/>
+                <Route path="/homecandidato" element={<CandidateHome/>}/>
+                <Route path="/candidato" element={<CandidateHome />} />
 
                 {/* Endereço que não existe: manda de volta para a landing-page. */}
                 <Route path="*" element={<Navigate to="/" replace/>} />
