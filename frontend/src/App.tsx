@@ -3,6 +3,7 @@ import { Route, Routes, Navigate } from 'react-router-dom'
 import Login from './pages/Login'
 import LandingPage from './pages/Landing-Page'
 import MainLayout from './layouts/MainLayout'
+import HomeLayout from './layouts/HomeLayout'
 import RegisterPage from './pages/RegisterPage'
 import RecoveryPasswordPage from './pages/RecoverPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
@@ -27,16 +28,19 @@ function App() {
                 {/* Quem abrir a raiz do site cai na landing-page. */}
                 <Route path="/" element={<LandingPage />} />
                 {/* Acrescentem as rotas de vocês aqui. */}
-                <Route path="/cadastro" element={<RegisterPage/>}/>
+                <Route path="/cadastro" element={<RegisterPage />} />
 
                 {/* Endereço que não existe: manda de volta para a landing-page. */}
-                <Route path="*" element={<Navigate to="/" replace/>} />
+                <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
-                <Route path="/entrar" element={<Login />} />
-                <Route path="/recuperar-senha" element={<RecoveryPasswordPage/>}/>
+            {/* As telas que ficam dentro do HomeLayout são as que aparecem depois do login. */}
+            <Route element={<HomeLayout />}>
+            </Route>
+            <Route path="/entrar" element={<Login />} />
+            <Route path="/recuperar-senha" element={<RecoveryPasswordPage />} />
 
-                {/* A tela de redefinir senha é acessada a partir do link que o usuário recebe por e-mail.*/}
-                <Route path="/redefinir-senha" element={<ResetPasswordPage/>}/>
+            {/* A tela de redefinir senha é acessada a partir do link que o usuário recebe por e-mail.*/}
+            <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
         </Routes>
     )
 }
