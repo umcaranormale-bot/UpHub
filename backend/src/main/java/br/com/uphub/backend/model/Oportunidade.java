@@ -61,22 +61,17 @@ public class Oportunidade {
     public Long getId() { return id; }
 
     public Long getOrganizacaoId() { return organizacaoId; }
-    public void setOrganizacaoId(Long organizacaoId) { this.organizacaoId = organizacaoId; }
 
     public String getTrilhaCodigo() { return trilhaCodigo; }
-    public void setTrilhaCodigo(String trilhaCodigo) { this.trilhaCodigo = trilhaCodigo; }
 
     public String getTitulo() { return titulo; }
-    public void setTitulo(String titulo) { this.titulo = titulo; }
 
     public String getResumo() { return resumo; }
-    public void setResumo(String resumo) { this.resumo = resumo; }
 
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
 
     public Long getCriadaPor() { return criadaPor; }
-    public void setCriadaPor(Long criadaPor) { this.criadaPor = criadaPor; }
 
     public OffsetDateTime getCriadaEm() { return criadaEm; }
 

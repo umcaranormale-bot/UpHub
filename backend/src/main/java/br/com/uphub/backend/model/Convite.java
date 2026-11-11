@@ -65,21 +65,17 @@ public class Convite {
     public Long getId() { return id; }
 
     public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
 
     public String getPapel() { return papel; }
-    public void setPapel(String papel) { this.papel = papel; }
 
     public Long getOrganizacaoId() { return organizacaoId; }
-    public void setOrganizacaoId(Long organizacaoId) { this.organizacaoId = organizacaoId; }
 
     public Long getEnviadoPor() { return enviadoPor; }
-    public void setEnviadoPor(Long enviadoPor) { this.enviadoPor = enviadoPor; }
 
     public OffsetDateTime getEnviadoEm() { return enviadoEm; }
 
     public OffsetDateTime getExpiraEm() { return expiraEm; }
-    public void setExpiraEm(OffsetDateTime expiraEm) { this.expiraEm = expiraEm; }
+
 
     public String getSituacao() { return situacao; }
     public void setSituacao(String situacao) { this.situacao = situacao; }
