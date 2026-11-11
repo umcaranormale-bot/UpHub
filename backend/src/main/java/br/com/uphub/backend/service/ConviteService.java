@@ -1,13 +1,20 @@
 package br.com.uphub.backend.service;
 
 import br.com.uphub.backend.dto.ConviteCadastroRequest;
+import br.com.uphub.backend.dto.ConviteCriadoResponse;
 import br.com.uphub.backend.dto.ConviteResponse;
 import br.com.uphub.backend.model.Convite;
 import br.com.uphub.backend.repository.ConviteRepository;
 import br.com.uphub.backend.repository.OrganizacaoRepository;
 import br.com.uphub.backend.repository.PessoaRepository;
+import br.com.uphub.backend.repository.VinculoRepository;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.OffsetDateTime;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -24,23 +31,26 @@ public class ConviteService {
     private final ConviteRepository conviteRepository;
     private final OrganizacaoRepository organizacaoRepository;
     private final PessoaRepository pessoaRepository;
+    private final VinculoRepository vinculoRepository;
 
     public ConviteService(ConviteRepository conviteRepository,
                           OrganizacaoRepository organizacaoRepository,
-                          PessoaRepository pessoaRepository) {
+                          PessoaRepository pessoaRepository,
+                          VinculoRepository vinculoRepository) {
         this.conviteRepository = conviteRepository;
         this.organizacaoRepository = organizacaoRepository;
         this.pessoaRepository = pessoaRepository;
+        this.vinculoRepository = vinculoRepository;
     }
 
     @Transactional
-    public ConviteResponse cadastrar(ConviteCadastroRequest dados) {
-        String email = obrigatorio(dados.email(), "email", 254).toLowerCase();
+    public ConviteCriadoResponse cadastrar(ConviteCadastroRequest dados) {
+        String email = obrigatorio(dados.email(), "email", 254).toLowerCase(Locale.ROOT);
         if (!email.contains("@")) {
             throw erro(HttpStatus.BAD_REQUEST, "O e-mail é inválido");
         }
 
-        String papel = obrigatorio(dados.papel(), "papel", 20).toUpperCase();
+        String papel = obrigatorio(dados.papel(), "papel", 20).toUpperCase(Locale.ROOT);
         if (!PAPEIS.contains(papel)) {
             throw erro(HttpStatus.BAD_REQUEST, "Papel inválido. Use: AVALIADOR ou MENTOR");
         }
@@ -60,28 +70,49 @@ public class ConviteService {
         if (!pessoaRepository.existsById(enviadoPor)) {
             throw erro(HttpStatus.NOT_FOUND, "Pessoa que está enviando não encontrada");
         }
-
-        if (conviteRepository.existsByOrganizacaoIdAndPapelAndEmailIgnoreCaseAndSituacao(
-                organizacaoId, papel, email, "AGUARDANDO")) {
-            throw erro(HttpStatus.CONFLICT, "Já existe um convite aguardando para este e-mail e papel");
+        if (!vinculoRepository.existsByPessoa_IdAndOrganizacao_Id(enviadoPor, organizacaoId)) {
+            throw erro(HttpStatus.FORBIDDEN, "Esta pessoa não tem vínculo com esta organização");
         }
 
-        Convite convite = new Convite();
-        convite.setEmail(email);
-        convite.setPapel(papel);
-        convite.setOrganizacaoId(organizacaoId);
-        convite.setEnviadoPor(enviadoPor);
-        convite.setExpiraEm(OffsetDateTime.now().plusDays(DIAS_PARA_EXPIRAR));
-        convite.setToken(UUID.randomUUID().toString().replace("-", ""));
+        Convite aberto = conviteRepository
+                .findFirstByOrganizacaoIdAndPapelAndEmailIgnoreCaseAndSituacao(organizacaoId, papel, email, "AGUARDANDO")
+                .orElse(null);
+        if (aberto != null) {
+            if (aberto.getExpiraEm().isAfter(OffsetDateTime.now())) {
+                throw erro(HttpStatus.CONFLICT, "Já existe um convite aguardando para este e-mail e papel");
+            }
+            aberto.setSituacao("EXPIRADO");
+            conviteRepository.saveAndFlush(aberto);
+        }
 
-        return ConviteResponse.de(conviteRepository.save(convite));
+        String codigo = UUID.randomUUID().toString().replace("-", "");
+        Convite convite = new Convite(email, papel, organizacaoId, enviadoPor,
+                OffsetDateTime.now().plusDays(DIAS_PARA_EXPIRAR), hash(codigo));
+
+        return new ConviteCriadoResponse(ConviteResponse.de(conviteRepository.save(convite)), codigo);
     }
 
     @Transactional(readOnly = true)
     public List<ConviteResponse> listarPorOrganizacao(Long organizacaoId) {
+        if (organizacaoId == null) {
+            throw erro(HttpStatus.BAD_REQUEST, "O parâmetro organizacaoId é obrigatório");
+        }
+        if (!organizacaoRepository.existsById(organizacaoId)) {
+            throw erro(HttpStatus.NOT_FOUND, "Organização não encontrada");
+        }
         return conviteRepository.findByOrganizacaoId(organizacaoId).stream()
                 .map(ConviteResponse::de)
                 .toList();
+    }
+
+    private String hash(String codigo) {
+        try {
+            byte[] bytes = MessageDigest.getInstance("SHA-256")
+                    .digest(codigo.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(bytes);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 indisponível", e);
+        }
     }
 
     private String obrigatorio(String valor, String campo, int maximo) {

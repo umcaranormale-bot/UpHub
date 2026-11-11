@@ -2,6 +2,7 @@ package br.com.uphub.backend.controller;
 
 import br.com.uphub.backend.dto.ConviteCadastroRequest;
 import br.com.uphub.backend.dto.ConviteResponse;
+import br.com.uphub.backend.dto.ConviteCriadoResponse;
 import br.com.uphub.backend.service.ConviteService;
 import java.net.URI;
 import java.util.List;
@@ -24,15 +25,16 @@ public class ConviteController {
     }
 
     @PostMapping
-    public ResponseEntity<ConviteResponse> cadastrar(@RequestBody ConviteCadastroRequest dados) {
-        ConviteResponse criado = conviteService.cadastrar(dados);
+    public ResponseEntity<ConviteCriadoResponse> cadastrar(@RequestBody ConviteCadastroRequest dados) {
+        ConviteCriadoResponse criado = conviteService.cadastrar(dados);
         return ResponseEntity
-                .created(URI.create("/api/convites/" + criado.id()))
+                .created(URI.create("/api/convites/" + criado.convite().id()))
                 .body(criado);
     }
 
     @GetMapping
-    public List<ConviteResponse> listar(@RequestParam("organizacaoId") Long organizacaoId) {
+    public List<ConviteResponse> listar(
+            @RequestParam(name = "organizacaoId", required = false) Long organizacaoId) {
         return conviteService.listarPorOrganizacao(organizacaoId);
     }
 }

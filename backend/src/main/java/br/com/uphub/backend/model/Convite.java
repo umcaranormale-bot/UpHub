@@ -37,7 +37,7 @@ public class Convite {
     private OffsetDateTime expiraEm;
 
     @Column(name = "situacao", nullable = false, length = 15)
-    private String situacao = "AGUARDANDO";
+    private String situacao;
 
     @Column(name = "aceito_em")
     private OffsetDateTime aceitoEm;
@@ -45,8 +45,22 @@ public class Convite {
     @Column(name = "pessoa_id")
     private Long pessoaId;
 
-    @Column(name = "token", nullable = false, length = 64)
-    private String token;
+    @Column(name = "token_hash", nullable = false, length = 64)
+    private String tokenHash;
+
+    protected Convite() {
+    }
+
+    public Convite(String email, String papel, Long organizacaoId, Long enviadoPor,
+                   OffsetDateTime expiraEm, String tokenHash) {
+        this.email = email;
+        this.papel = papel;
+        this.organizacaoId = organizacaoId;
+        this.enviadoPor = enviadoPor;
+        this.expiraEm = expiraEm;
+        this.tokenHash = tokenHash;
+        this.situacao = "AGUARDANDO";
+    }
 
     public Long getId() { return id; }
 
@@ -76,6 +90,5 @@ public class Convite {
     public Long getPessoaId() { return pessoaId; }
     public void setPessoaId(Long pessoaId) { this.pessoaId = pessoaId; }
 
-    public String getToken() { return token; }
-    public void setToken(String token) { this.token = token; }
+    public String getTokenHash() { return tokenHash; }
 }
