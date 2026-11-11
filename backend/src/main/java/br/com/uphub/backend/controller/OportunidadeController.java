@@ -33,7 +33,8 @@ public class OportunidadeController {
     }
 
     @GetMapping
-    public List<OportunidadeResponse> listar(@RequestParam("organizacaoId") Long organizacaoId) {
+    public List<OportunidadeResponse> listar(
+            @RequestParam(name = "organizacaoId", required = false) Long organizacaoId) {
         return oportunidadeService.listarPorOrganizacao(organizacaoId);
     }
 

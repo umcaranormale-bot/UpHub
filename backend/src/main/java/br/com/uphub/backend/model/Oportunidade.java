@@ -30,7 +30,7 @@ public class Oportunidade {
     private String resumo;
 
     @Column(name = "estado", nullable = false, length = 15)
-    private String estado = "RASCUNHO";
+    private String estado;
 
     @Column(name = "criada_por", nullable = false)
     private Long criadaPor;
@@ -44,6 +44,19 @@ public class Oportunidade {
 
     @Column(name = "encerrada_em")
     private OffsetDateTime encerradaEm;
+
+    protected Oportunidade() {
+    }
+
+    public Oportunidade(Long organizacaoId, String trilhaCodigo, String titulo,
+                        String resumo, Long criadaPor) {
+        this.organizacaoId = organizacaoId;
+        this.trilhaCodigo = trilhaCodigo;
+        this.titulo = titulo;
+        this.resumo = resumo;
+        this.criadaPor = criadaPor;
+        this.estado = "RASCUNHO";
+    }
 
     public Long getId() { return id; }
 
