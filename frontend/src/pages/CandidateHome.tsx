@@ -6,7 +6,7 @@ import OpportunityList from "../components/OpportunityList";
 
 export default function CandidateHome() {
   return (
-    <main className="min-h-screen bg-[#f4f5f9] px-4 py-6 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-page">
       <div className="mx-auto max-w-7xl">
         <CandidateHeader />
 

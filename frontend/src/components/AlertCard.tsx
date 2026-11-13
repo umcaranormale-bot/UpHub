@@ -1,33 +1,34 @@
+import { CustomButton } from "./CustomButton";
+
 interface AlertCardProps {
     title: string;
+    status: string;
     description: string;
     button: string;
 }
 
 export default function AlertCard({
     title,
+    status,
     description,
     button,
 }: AlertCardProps) {
     return (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-md border border-orange-200 bg-orange-50 p-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 rounded-md border border-orange-200 bg-orange-50 p-5">
             <div>
-                <p className="text-[10px] font-semibold text-orange-800">
-                    Prazo / Ajuste pedido
+                <p className="text-legenda font-semibold text-alerta">
+                    {status} ⋅ {description}
                 </p>
 
-                <h3 className="text-xs font-bold text-orange-950">
+                <h3 className="w-120 text-base font-bold text-alerta">
                     {title}
                 </h3>
 
-                <p className="text-[10px] text-orange-900">
-                    {description}
-                </p>
             </div>
 
-            <button className="shrink-0 rounded-md border border-orange-200 bg-white px-3 py-2 text-[10px] font-medium text-orange-800 hover:bg-orange-100">
+            <CustomButton variant="laranja" size="auto">
                 {button}
-            </button>
+            </CustomButton>
         </div>
     );
 }  

@@ -30,7 +30,7 @@ const opportunities: Opportunity[] = [
 export default function OpportunityList() {
     return (
         <div>
-            <h2 className="mb-3 text-xs font-bold text-[#111b46]">
+            <h2 className="mb-3 text-base font-bold text-[#111b46]">
                 Para você · ordenado por compatibilidade
             </h2>
 
