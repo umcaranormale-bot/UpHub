@@ -12,7 +12,7 @@ const itensMenu = [
 
 function Sidemenu() {
     return (
-        <aside className="w-[220px] shrink-0 border-r border-sutil bg-card p-3">
+        <aside className="sticky top-16 h-[calc(100vh-4rem)] w-55 shrink-0 border-r border-sutil bg-card p-3">
             <nav aria-label="Menu principal">
                 <ul className="flex flex-col gap-1">
                     {itensMenu.map((item) => (

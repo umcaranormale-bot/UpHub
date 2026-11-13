@@ -30,16 +30,16 @@ function App() {
                 <Route path="/" element={<LandingPage />} />
                 {/* Acrescentem as rotas de vocês aqui. */}
                 <Route path="/cadastro" element={<RegisterPage />} />
-                <Route path="/cadastro" element={<RegisterPage/>}/>
-                <Route path="/homecandidato" element={<CandidateHome/>}/>
-                <Route path="/candidato" element={<CandidateHome />} />
 
                 {/* Endereço que não existe: manda de volta para a landing-page. */}
                 <Route path="*" element={<Navigate to="/" replace />} />
+
+                {/* As telas que ficam dentro do HomeLayout são as que aparecem depois do login. */}
+                <Route element={<HomeLayout />}>
+                    <Route path="/candidato" element={<CandidateHome />} />
+                </Route>
             </Route>
-            {/* As telas que ficam dentro do HomeLayout são as que aparecem depois do login. */}
-            <Route element={<HomeLayout />}>
-            </Route>
+
             <Route path="/entrar" element={<Login />} />
             <Route path="/recuperar-senha" element={<RecoveryPasswordPage />} />
 
