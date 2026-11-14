@@ -4,10 +4,10 @@ import AuthLayout from "../layouts/AuthLayout";
 
 function ResetPasswordPage() {
     //Token apenas para teste, depois será pego da URL.
-    const token = "token-teste-123";
+    //const token = "token-teste-123";
     
-    //const [searchParams] = useSearchParams();
-    //const token = searchParams.get("token");
+    const [searchParams] = useSearchParams();
+    const token = searchParams.get("token");
 
     if (!token) {
         return (
