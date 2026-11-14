@@ -8,6 +8,7 @@ import RegisterPage from './pages/RegisterPage'
 import RecoveryPasswordPage from './pages/RecoverPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import CandidateHome from './pages/CandidateHome'
+import InvitePage from './pages/InvitePage'
 
 /**
  * Índice das telas do site.
@@ -41,6 +42,7 @@ function App() {
             </Route>
 
             <Route path="/entrar" element={<Login />} />
+            <Route path="/convite" element={<InvitePage />} />
             <Route path="/recuperar-senha" element={<RecoveryPasswordPage />} />
 
             {/* A tela de redefinir senha é acessada a partir do link que o usuário recebe por e-mail.*/}
