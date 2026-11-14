@@ -4,7 +4,7 @@ import CandidateHeader from "../components/CandidateHeader";
 import MatchNotes from "../components/MatchNotes";
 import OpportunityList from "../components/OpportunityList";
 
-export default function CandidateHome() {
+function CandidateHome() {
   return (
     <main className="min-h-screen bg-page">
       <div className="mx-auto max-w-7xl">
@@ -25,3 +25,4 @@ export default function CandidateHome() {
     </main>
   );
 }
+export default CandidateHome;

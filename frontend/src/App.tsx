@@ -9,6 +9,7 @@ import RecoveryPasswordPage from './pages/RecoverPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import CandidateHome from './pages/CandidateHome'
 import InvitePage from './pages/InvitePage'
+import ProviderHome from './pages/ProviderHome'
 
 /**
  * Índice das telas do site.
@@ -37,7 +38,8 @@ function App() {
 
                 {/* As telas que ficam dentro do HomeLayout são as que aparecem depois do login. */}
                 <Route element={<HomeLayout />}>
-                    <Route path="/candidato" element={<CandidateHome />} />
+                    <Route path="/inicio" element={<CandidateHome />} />
+                    <Route path="/provedor" element={<ProviderHome />} />
                 </Route>
             </Route>
 
