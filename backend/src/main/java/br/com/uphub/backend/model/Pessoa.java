@@ -67,4 +67,14 @@ public class Pessoa {
     public void setNome(String nome) { this.nome = nome; }
     public void setTelefone(String telefone) { this.telefone = telefone; }
     public void setFotoRef(String fotoRef) { this.fotoRef = fotoRef; }
+
+    public void confirmarEmail() {
+        if (this.emailConfirmadoEm == null) {
+            this.emailConfirmadoEm = OffsetDateTime.now();
+        }
+    }
+
+    public boolean emailConfirmado() {
+        return emailConfirmadoEm != null;
+    }
 }

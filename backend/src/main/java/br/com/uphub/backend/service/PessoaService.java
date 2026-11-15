@@ -1,5 +1,7 @@
 package br.com.uphub.backend.service;
 
+import java.util.Locale;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,19 +18,25 @@ public class PessoaService {
 
     private final PessoaRepository pessoaRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ConfirmacaoEmailService confirmacaoEmailService;
 
-    public PessoaService(PessoaRepository pessoaRepository, PasswordEncoder passwordEncoder) {
+    public PessoaService(PessoaRepository pessoaRepository, PasswordEncoder passwordEncoder,
+                         ConfirmacaoEmailService confirmacaoEmailService) {
         this.pessoaRepository = pessoaRepository;
         this.passwordEncoder = passwordEncoder;
+        this.confirmacaoEmailService = confirmacaoEmailService;
     }
 
     @Transactional
     public PessoaResponse cadastrar(PessoaCadastroRequest dados) {
         String nome = obrigatorio(dados.nome(), "nome", 160);
-        String email = obrigatorio(dados.email(), "email", 254).toLowerCase();
+        String email = obrigatorio(dados.email(), "email", 254).toLowerCase(Locale.ROOT);
         String senha = obrigatorio(dados.senha(), "senha", 72);
         String telefone = opcional(dados.telefone(), "telefone", 20);
 
+        if (!email.contains("@")) {
+            throw erro(HttpStatus.BAD_REQUEST, "O e-mail é inválido");
+        }
         if (senha.length() < 8) {
             throw erro(HttpStatus.BAD_REQUEST, "A senha precisa ter pelo menos 8 caracteres");
         }
@@ -36,9 +44,9 @@ public class PessoaService {
             throw erro(HttpStatus.CONFLICT, "Este e-mail já está cadastrado");
         }
 
-
-        Pessoa pessoa = new Pessoa(nome, email, telefone, passwordEncoder.encode(senha));
-        return PessoaResponse.de(pessoaRepository.save(pessoa));
+        Pessoa pessoa = pessoaRepository.save(new Pessoa(nome, email, telefone, passwordEncoder.encode(senha)));
+        confirmacaoEmailService.gerarEEnviar(pessoa);
+        return PessoaResponse.de(pessoa);
     }
 
     @Transactional(readOnly = true)
