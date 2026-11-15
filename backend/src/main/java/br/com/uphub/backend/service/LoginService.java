@@ -63,6 +63,10 @@ public class LoginService {
             throw erro(HttpStatus.FORBIDDEN, "Confirme seu e-mail antes de entrar");
         }
 
+        return abrirSessao(pessoa);
+    }
+
+    public LoginResponse abrirSessao(Pessoa pessoa) {
         TokenAcesso.TokenGerado token = tokenAcesso.gerar(pessoa.getId());
         return new LoginResponse(token.token(), token.expiraEm(),
                 PessoaResponse.de(pessoa), vinculosAtivos(pessoa.getId()));
