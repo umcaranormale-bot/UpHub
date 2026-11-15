@@ -16,17 +16,18 @@ CREATE TABLE candidatura (
                              CONSTRAINT pk_candidatura PRIMARY KEY (id),
                              CONSTRAINT uq_candidatura_id_oportunidade UNIQUE (id, oportunidade_id),
                              CONSTRAINT uq_candidatura_org_oportunidade UNIQUE (oportunidade_id, organizacao_id),
-                             CONSTRAINT ck_candidatura_estado CHECK (estado IN ('RASCUNHO','ENVIADA','ELEGIVEL',
-                                                                                'NAO_ELEGIVEL','EM_ANALISE','AJUSTE','PERDA_DE_PRAZO','APROVADA','REPROVADA',
-                                                                                'HOMOLOGADA','LISTA_DE_ESPERA','EM_ACOMPANHAMENTO')),
+                             CONSTRAINT ck_candidatura_estado CHECK (estado IN ('RASCUNHO', 'ENVIADA',
+                                                                                'ELEGIVEL', 'NAO_ELEGIVEL', 'EM_ANALISE', 'AJUSTE', 'PERDA_DE_PRAZO',
+                                                                                'APROVADA', 'REPROVADA', 'HOMOLOGADA', 'LISTA_DE_ESPERA', 'EM_ACOMPANHAMENTO',
+                                                                                'DESISTENTE', 'NAO_CONVOCADA', 'DESCLASSIFICADA', 'DESCARTADA')),
                              CONSTRAINT ck_candidatura_valor CHECK (valor_solicitado IS NULL OR valor_solicitado
                                  >= 0),
                              CONSTRAINT ck_candidatura_lista CHECK ((estado = 'LISTA_DE_ESPERA') = (posicao_lista
                                  IS NOT NULL)),
                              CONSTRAINT ck_candidatura_posicao CHECK (posicao_lista IS NULL OR posicao_lista >
                                                                                                0),
-                             CONSTRAINT ck_candidatura_envio CHECK (estado = 'RASCUNHO' OR (enviada_em IS NOT
-                                 NULL AND versao_id IS NOT NULL)),
+                             CONSTRAINT ck_candidatura_envio CHECK (estado IN ('RASCUNHO','DESCARTADA') OR
+                                                                    (enviada_em IS NOT NULL AND versao_id IS NOT NULL)),
                              CONSTRAINT fk_candidatura_oportunidade_id FOREIGN KEY (oportunidade_id) REFERENCES
                                  oportunidade (id) ON DELETE RESTRICT ON UPDATE RESTRICT,
                              CONSTRAINT fk_candidatura_organizacao_id FOREIGN KEY (organizacao_id) REFERENCES
