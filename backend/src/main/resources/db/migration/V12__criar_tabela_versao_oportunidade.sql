@@ -5,6 +5,7 @@ CREATE TABLE versao_oportunidade (
                                      prazo_envio date,
                                      nota_minima numeric(5,2),
                                      validade_nota_dias smallint NOT NULL DEFAULT 90,
+                                     prazo_ajuste_dias smallint NOT NULL DEFAULT 7,
                                      escopo text,
                                      entregaveis text,
                                      carga_semanal_horas smallint,
@@ -25,8 +26,11 @@ CREATE TABLE versao_oportunidade (
                                          > 0),
                                      CONSTRAINT ck_versao_duracao CHECK (duracao_semanas IS NULL OR duracao_semanas > 0),
                                      CONSTRAINT ck_versao_vagas CHECK (quantidade_vagas IS NULL OR quantidade_vagas > 0),
+                                     CONSTRAINT ck_versao_prazo_ajuste CHECK (prazo_ajuste_dias BETWEEN 3 AND 15),
                                      CONSTRAINT fk_versao_oportunidade_oportunidade_id FOREIGN KEY (oportunidade_id)
                                          REFERENCES oportunidade (id) ON DELETE RESTRICT ON UPDATE RESTRICT,
-                                     CONSTRAINT fk_versao_oportunidade_criada_por FOREIGN KEY (criada_por)
-                                         REFERENCES pessoa (id) ON DELETE RESTRICT ON UPDATE RESTRICT
+                                     CONSTRAINT fk_versao_oportunidade_criada_por FOREIGN KEY (criada_por) REFERENCES
+                                         pessoa (id) ON DELETE RESTRICT ON UPDATE RESTRICT
 );
+CREATE UNIQUE INDEX ux_versao_publicada ON versao_oportunidade (oportunidade_id) WHERE
+    publicada_em IS NOT NULL;
