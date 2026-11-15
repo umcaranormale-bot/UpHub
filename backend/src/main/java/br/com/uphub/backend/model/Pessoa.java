@@ -77,4 +77,8 @@ public class Pessoa {
     public boolean emailConfirmado() {
         return emailConfirmadoEm != null;
     }
+
+    public void trocarSenha(String novoSenhaHash) {
+        this.senhaHash = novoSenhaHash;
+    }
 }
