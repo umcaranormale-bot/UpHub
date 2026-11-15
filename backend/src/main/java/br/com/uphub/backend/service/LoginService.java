@@ -42,20 +42,21 @@ public class LoginService {
         if (dados.email() == null || dados.email().isBlank()) {
             throw erro(HttpStatus.BAD_REQUEST, "O campo email é obrigatório");
         }
-        if (dados.senha() == null || dados.senha().isEmpty()) {
+        if (dados.senha() == null || dados.senha().isBlank()) {
             throw erro(HttpStatus.BAD_REQUEST, "O campo senha é obrigatório");
         }
         String email = dados.email().trim().toLowerCase(Locale.ROOT);
+        String senha = dados.senha().trim();
 
         Pessoa pessoa = pessoaRepository.findByEmailIgnoreCase(email)
                 .filter(p -> p.getExcluidaEm() == null)
                 .orElse(null);
 
         if (pessoa == null) {
-            passwordEncoder.matches(dados.senha(), hashFalso);
+            passwordEncoder.matches(senha, hashFalso);
             throw erro(HttpStatus.UNAUTHORIZED, CREDENCIAIS_ERRADAS);
         }
-        if (!passwordEncoder.matches(dados.senha(), pessoa.getSenhaHash())) {
+        if (!passwordEncoder.matches(senha, pessoa.getSenhaHash())) {
             throw erro(HttpStatus.UNAUTHORIZED, CREDENCIAIS_ERRADAS);
         }
         if (!pessoa.emailConfirmado()) {
