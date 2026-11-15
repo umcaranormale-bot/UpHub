@@ -41,7 +41,8 @@ public class RedefinicaoSenhaService {
         this.codigoSeguro = codigoSeguro;
         this.envioEmail = envioEmail;
         this.passwordEncoder = passwordEncoder;
-        this.frontUrl = frontUrl.endsWith("/") ? frontUrl.substring(0, frontUrl.length() - 1) : frontUrl;
+        String url = frontUrl.trim();
+        this.frontUrl = url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
     }
 
     @Transactional
