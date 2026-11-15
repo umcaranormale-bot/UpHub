@@ -8,6 +8,7 @@ import RegisterPage from './pages/RegisterPage'
 import RecoveryPasswordPage from './pages/RecoverPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import CandidateHome from './pages/CandidateHome'
+import PrivacidadePage from './pages/PrivacidadePage'
 
 /**
  * Índice das telas do site.
@@ -30,6 +31,7 @@ function App() {
                 <Route path="/" element={<LandingPage />} />
                 {/* Acrescentem as rotas de vocês aqui. */}
                 <Route path="/cadastro" element={<RegisterPage />} />
+                <Route path="/privacidade" element={<PrivacidadePage />} /> { }
 
                 {/* Endereço que não existe: manda de volta para a landing-page. */}
                 <Route path="*" element={<Navigate to="/" replace />} />
