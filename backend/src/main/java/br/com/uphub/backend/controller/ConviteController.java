@@ -1,8 +1,11 @@
 package br.com.uphub.backend.controller;
 
+import br.com.uphub.backend.dto.AceiteConviteRequest;
 import br.com.uphub.backend.dto.ConviteCadastroRequest;
 import br.com.uphub.backend.dto.ConviteResponse;
-import br.com.uphub.backend.dto.ConviteCriadoResponse;
+import br.com.uphub.backend.dto.ConviteValidacaoResponse;
+import br.com.uphub.backend.dto.LoginResponse;
+import br.com.uphub.backend.dto.RecusaConviteRequest;
 import br.com.uphub.backend.service.ConviteService;
 import java.net.URI;
 import java.util.List;
@@ -25,10 +28,10 @@ public class ConviteController {
     }
 
     @PostMapping
-    public ResponseEntity<ConviteCriadoResponse> cadastrar(@RequestBody ConviteCadastroRequest dados) {
-        ConviteCriadoResponse criado = conviteService.cadastrar(dados);
+    public ResponseEntity<ConviteResponse> cadastrar(@RequestBody ConviteCadastroRequest dados) {
+        ConviteResponse criado = conviteService.cadastrar(dados);
         return ResponseEntity
-                .created(URI.create("/api/convites/" + criado.convite().id()))
+                .created(URI.create("/api/convites/" + criado.id()))
                 .body(criado);
     }
 
@@ -36,5 +39,22 @@ public class ConviteController {
     public List<ConviteResponse> listar(
             @RequestParam(name = "organizacaoId", required = false) Long organizacaoId) {
         return conviteService.listarPorOrganizacao(organizacaoId);
+    }
+
+    @GetMapping("/validar")
+    public ConviteValidacaoResponse validar(
+            @RequestParam(name = "codigo", required = false) String codigo) {
+        return conviteService.validar(codigo);
+    }
+
+    @PostMapping("/aceitar")
+    public LoginResponse aceitar(@RequestBody AceiteConviteRequest dados) {
+        return conviteService.aceitar(dados);
+    }
+
+    @PostMapping("/recusar")
+    public ResponseEntity<Void> recusar(@RequestBody RecusaConviteRequest dados) {
+        conviteService.recusar(dados);
+        return ResponseEntity.noContent().build();
     }
 }
