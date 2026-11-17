@@ -7,8 +7,6 @@ import { mensagemDeErro } from "../api/erros";
 import { cadastrarPessoa } from "../api/pessoas";
 import { useNavigate } from "react-router-dom";
 
-const navigate = useNavigate();
-
 const accountTypes = [
     {
         value: "candidato",
@@ -38,6 +36,8 @@ const accountTypes = [
 ];
 
 function RegisterPage() {
+    const navigate = useNavigate();
+    
     const [formData, setFormData] = useState({
         nome: "",
         email: "",
