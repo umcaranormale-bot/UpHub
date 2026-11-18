@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { NavLink } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 
 import Logo from './Logo'
 
@@ -26,6 +26,12 @@ interface CascaDoAppProps {
     /** Nome completo, usado como título acessível do avatar. */
     nome: string
     itens: ItemDeMenu[]
+    /** Rota do "‹ Voltar" do topo. As telas de dentro do protótipo trazem esse atalho. */
+    voltarPara?: string
+    /** Telas de tarefa (a 40, por exemplo) trocam o menu lateral por um título só. */
+    semMenu?: boolean
+    /** Título ao lado do "‹ Voltar", usado quando a tela não tem menu. */
+    tituloDoTopo?: string
     children: ReactNode
 }
 
@@ -35,12 +41,28 @@ export function CascaDoApp({
     iniciais,
     nome,
     itens,
+    voltarPara,
+    semMenu = false,
+    tituloDoTopo,
     children,
 }: CascaDoAppProps) {
     return (
         <div className="min-h-screen bg-page">
             <header className="flex items-center gap-4 border-b border-sutil bg-card px-10 py-4 shadow-card">
                 <Logo variante="pervinca" altura={28} />
+
+                {voltarPara && (
+                    <Link
+                        to={voltarPara}
+                        className="rounded-card border border-sutil px-4 py-2 text-apoio text-titulo transition-colors duration-[var(--dur-rapida)] ease-padrao hover:bg-page focus-visible:shadow-foco focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
+                    >
+                        ‹ Voltar
+                    </Link>
+                )}
+
+                {tituloDoTopo && (
+                    <span className="font-display text-bloco text-titulo">{tituloDoTopo}</span>
+                )}
 
                 <span className="flex items-center gap-3 rounded-card bg-acento-suave px-4 py-2">
                     <span className="text-apoio text-titulo">{organizacao}</span>
@@ -58,6 +80,7 @@ export function CascaDoApp({
             </header>
 
             <div className="flex">
+                {!semMenu && (
                 <aside className="w-[260px] shrink-0 border-r border-sutil bg-card px-4 py-6">
                     <nav aria-label={`Menu de ${papel}`}>
                         <ul className="flex flex-col gap-1">
@@ -84,6 +107,7 @@ export function CascaDoApp({
                         </ul>
                     </nav>
                 </aside>
+                )}
 
                 <main id="conteudo" className="flex-1 px-10 py-8">
                     {children}
