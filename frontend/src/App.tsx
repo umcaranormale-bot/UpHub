@@ -1,6 +1,16 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Route, Routes, Navigate } from 'react-router-dom'
 
 import Login from './pages/Login'
+import LandingPage from './pages/Landing-Page'
+import MainLayout from './layouts/MainLayout'
+import HomeLayout from './layouts/HomeLayout'
+import RegisterPage from './pages/RegisterPage'
+import RecoveryPasswordPage from './pages/RecoverPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
+import CandidateHome from './pages/CandidateHome'
+import PrivacidadePage from './pages/PrivacidadePage'
+import InvitePage from './pages/InvitePage'
+import ProviderHome from './pages/ProviderHome'
 
 /**
  * Índice das telas do site.
@@ -18,15 +28,29 @@ import Login from './pages/Login'
 function App() {
     return (
         <Routes>
-            {/* Quem abrir a raiz do site cai no login. */}
-            <Route path="/" element={<Navigate to="/entrar" replace />} />
+            <Route element={<MainLayout />}>
+                {/* Quem abrir a raiz do site cai na landing-page. */}
+                <Route path="/" element={<LandingPage />} />
+                {/* Acrescentem as rotas de vocês aqui. */}
+                <Route path="/cadastro" element={<RegisterPage />} />
+                <Route path="/privacidade" element={<PrivacidadePage />} /> { }
+
+                {/* Endereço que não existe: manda de volta para a landing-page. */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+
+                {/* As telas que ficam dentro do HomeLayout são as que aparecem depois do login. */}
+                <Route element={<HomeLayout />}>
+                    <Route path="/inicio" element={<CandidateHome />} />
+                    <Route path="/provedor" element={<ProviderHome />} />
+                </Route>
+            </Route>
 
             <Route path="/entrar" element={<Login />} />
+            <Route path="/convite" element={<InvitePage />} />
+            <Route path="/recuperar-senha" element={<RecoveryPasswordPage />} />
 
-            {/* Acrescentem as rotas de vocês aqui. */}
-
-            {/* Endereço que não existe: manda de volta para o login. */}
-            <Route path="*" element={<Navigate to="/entrar" replace />} />
+            {/* A tela de redefinir senha é acessada a partir do link que o usuário recebe por e-mail.*/}
+            <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
         </Routes>
     )
 }
