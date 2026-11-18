@@ -9,7 +9,9 @@ public enum Permissao {
     CONVIDAR_AVALIADOR_OU_MENTOR("convidar avaliadores e mentores", "PROVEDOR"),
     PEDIR_PERMISSAO_DE_PROVEDOR("pedir a permissão de provedor", "PROVEDOR"),
     ENVIAR_DOCUMENTO("enviar documentos", "PROVEDOR", "CANDIDATO"),
-    MONTAR_SQUAD("montar a squad", "CANDIDATO");
+    MONTAR_SQUAD("montar a squad", "CANDIDATO"),
+    CANDIDATAR("se candidatar", "CANDIDATO"),
+    CONDUZIR_SELECAO("conduzir a seleção", "PROVEDOR");
 
     private final String descricao;
     private final Set<String> papeis;
