@@ -138,7 +138,7 @@ function OportunidadesSquad() {
             iniciais="SC"
             nome="Sua Chen Letícia"
             itens={MENU_SQUAD}
-            voltarPara="/inicio/squad"
+            voltarPara="/squad"
         >
             <div className="flex items-start gap-6">
                 <div className="min-w-0 flex-1">

@@ -90,7 +90,7 @@ function CandidaturasSquad() {
             iniciais="SC"
             nome="Sua Chen Letícia"
             itens={MENU_SQUAD}
-            voltarPara="/inicio/squad"
+            voltarPara="/squad"
         >
             <h1 className="font-display text-tela text-titulo">Minhas candidaturas</h1>
             <p className="mt-2 text-apoio text-secundario">

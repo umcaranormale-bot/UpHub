@@ -63,26 +63,26 @@ function App() {
 
             {/* Telas com casca propria por papel: trazem o proprio topo e menu,
                 por isso ficam fora do HomeLayout. */}
-            <Route path="/inicio/squad" element={<InicioSquad />} />
-            <Route path="/avaliacao" element={<FilaAvaliacao />} />
+            <Route path="/squad" element={<InicioSquad />} />
+            <Route path="/avaliador" element={<FilaAvaliacao />} />
             <Route path="/mentor" element={<InicioMentor />} />
-            <Route path="/painel" element={<PainelEcossistema />} />
+            <Route path="/gestao" element={<PainelEcossistema />} />
 
             {/* Destinos dos menus laterais de cada papel. */}
-            <Route path="/oportunidades" element={<OportunidadesSquad />} />
-            <Route path="/candidaturas" element={<CandidaturasSquad />} />
-            <Route path="/organizacao" element={<PerfilDaSquad />} />
-            <Route path="/convites" element={<ConvitesMentor />} />
-            <Route path="/acompanhados" element={<AcompanhadoMentor />} />
-            <Route path="/horas" element={<RegistrarSessao />} />
-            <Route path="/provedores" element={<AprovacaoProvedores />} />
-            <Route path="/alocacao" element={<AlocacaoMentores />} />
+            <Route path="/squad/oportunidades" element={<OportunidadesSquad />} />
+            <Route path="/squad/candidaturas" element={<CandidaturasSquad />} />
+            <Route path="/squad/perfil" element={<PerfilDaSquad />} />
+            <Route path="/mentor/convites" element={<ConvitesMentor />} />
+            <Route path="/mentor/acompanhados" element={<AcompanhadoMentor />} />
+            <Route path="/mentor/horas" element={<RegistrarSessao />} />
+            <Route path="/gestao/provedores" element={<AprovacaoProvedores />} />
+            <Route path="/gestao/alocacao" element={<AlocacaoMentores />} />
 
             {/* Conta tem uma tela por papel (57, 59, 60 e 61 no Figma). */}
-            <Route path="/conta/squad" element={<ContaSquad />} />
-            <Route path="/conta/mentor" element={<ContaMentor />} />
-            <Route path="/conta/avaliador" element={<ContaAvaliador />} />
-            <Route path="/conta/gestao" element={<ContaGestao />} />
+            <Route path="/squad/conta" element={<ContaSquad />} />
+            <Route path="/mentor/conta" element={<ContaMentor />} />
+            <Route path="/avaliador/conta" element={<ContaAvaliador />} />
+            <Route path="/gestao/conta" element={<ContaGestao />} />
 
             <Route path="/entrar" element={<Login />} />
             <Route path="/convite" element={<InvitePage />} />

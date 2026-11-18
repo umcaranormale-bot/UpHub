@@ -11,7 +11,7 @@ function ContaSquad() {
             iniciais="SC"
             nome="Sua Chen Letícia"
             itens={MENU_SQUAD}
-            voltarPara="/inicio/squad"
+            voltarPara="/squad"
         >
             <PaginaDeConta
                 pessoa={{

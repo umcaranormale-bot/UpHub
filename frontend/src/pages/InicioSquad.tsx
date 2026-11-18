@@ -189,7 +189,7 @@ function InicioSquad() {
                                 Minhas candidaturas
                             </h2>
                             <a
-                                href="/candidaturas"
+                                href="/squad/candidaturas"
                                 className="rounded-card px-1 text-apoio text-acento transition-colors duration-[var(--dur-rapida)] ease-padrao hover:text-titulo focus-visible:shadow-foco focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
                             >
                                 Ver todas
