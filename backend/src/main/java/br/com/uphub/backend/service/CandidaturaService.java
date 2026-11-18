@@ -1,6 +1,7 @@
 package br.com.uphub.backend.service;
 
 import br.com.uphub.backend.candidatura.EstagioFunil;
+import br.com.uphub.backend.candidatura.EtapaDoEnvio;
 import br.com.uphub.backend.candidatura.MaquinaDeEstados;
 import br.com.uphub.backend.candidatura.MaquinaDeEstados.Ator;
 import br.com.uphub.backend.dto.CandidaturaEnvioResponse;
@@ -12,15 +13,18 @@ import br.com.uphub.backend.dto.FunilRequest;
 import br.com.uphub.backend.dto.TransicaoResponse;
 import br.com.uphub.backend.elegibilidade.MotorElegibilidade;
 import br.com.uphub.backend.model.Candidatura;
+import br.com.uphub.backend.model.CandidaturaParticipanteId;
 import br.com.uphub.backend.model.Oportunidade;
 import br.com.uphub.backend.model.Organizacao;
 import br.com.uphub.backend.model.VersaoOportunidade;
+import br.com.uphub.backend.repository.CandidaturaParticipanteRepository;
 import br.com.uphub.backend.repository.CandidaturaRepository;
 import br.com.uphub.backend.repository.OportunidadeRepository;
 import br.com.uphub.backend.repository.OrganizacaoRepository;
 import br.com.uphub.backend.repository.VersaoOportunidadeRepository;
 import br.com.uphub.backend.seguranca.Acesso;
 import br.com.uphub.backend.seguranca.Permissao;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,24 +50,30 @@ public class CandidaturaService {
     private static final BigDecimal LIMITE_VALOR = new BigDecimal("999999999999.99"); // numeric(14,2)
 
     private final CandidaturaRepository candidaturaRepository;
+    private final CandidaturaParticipanteRepository participanteRepository;
     private final OportunidadeRepository oportunidadeRepository;
     private final VersaoOportunidadeRepository versaoRepository;
     private final OrganizacaoRepository organizacaoRepository;
     private final RequisitoElegibilidadeService requisitoService;
     private final Acesso acesso;
+    private final ObjectProvider<EtapaDoEnvio> etapasDoEnvio;
 
     public CandidaturaService(CandidaturaRepository candidaturaRepository,
+                              CandidaturaParticipanteRepository participanteRepository,
                               OportunidadeRepository oportunidadeRepository,
                               VersaoOportunidadeRepository versaoRepository,
                               OrganizacaoRepository organizacaoRepository,
                               RequisitoElegibilidadeService requisitoService,
-                              Acesso acesso) {
+                              Acesso acesso,
+                              ObjectProvider<EtapaDoEnvio> etapasDoEnvio) {
         this.candidaturaRepository = candidaturaRepository;
+        this.participanteRepository = participanteRepository;
         this.oportunidadeRepository = oportunidadeRepository;
         this.versaoRepository = versaoRepository;
         this.organizacaoRepository = organizacaoRepository;
         this.requisitoService = requisitoService;
         this.acesso = acesso;
+        this.etapasDoEnvio = etapasDoEnvio;
     }
 
     // ---------- candidato
@@ -120,6 +130,8 @@ public class CandidaturaService {
         if (candidatura.getTituloProposta() == null) {
             throw erro(HttpStatus.BAD_REQUEST, "Preencha o título da proposta antes de enviar");
         }
+        // cada parte da candidatura confere o que é dela (participantes, notas, anexos...)
+        etapasDoEnvio.orderedStream().forEach(etapa -> etapa.conferir(candidatura, versao));
 
         Organizacao organizacao = organizacaoRepository.findById(candidatura.getOrganizacaoId())
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Organização não encontrada"));
@@ -139,6 +151,7 @@ public class CandidaturaService {
             candidatura.moverNoFunil(EstagioFunil.INSCRITA.name());
         }
         candidaturaRepository.saveAndFlush(candidatura);
+        etapasDoEnvio.orderedStream().forEach(etapa -> etapa.depoisDoEnvio(candidatura, versao, resultado));
 
         ElegibilidadeResponse elegibilidade = new ElegibilidadeResponse(organizacao.getId(), versao.getId(),
                 resultado.situacao(), resultado.requisitos(), resultado.faltou());
@@ -238,6 +251,38 @@ public class CandidaturaService {
                 .toList();
     }
 
+    // ---------- para as partes da candidatura (participantes, notas, anexos, autodeclaração)
+
+    // quem pode ver a candidatura (organização candidata, gestão e, depois do envio, o provedor)
+    @Transactional(readOnly = true)
+    public Candidatura paraLeitura(Long id, Long pessoaId) {
+        return buscarVisivel(id, pessoaId);
+    }
+
+    // o candidato mexendo na candidatura enquanto ela é rascunho
+    @Transactional(readOnly = true)
+    public Candidatura rascunhoDoCandidato(Long id, Long pessoaId) {
+        Candidatura candidatura = buscarVisivel(id, pessoaId);
+        acesso.exigir(pessoaId, candidatura.getOrganizacaoId(), Permissao.CANDIDATAR);
+        if (!"RASCUNHO".equals(candidatura.getEstado())) {
+            throw erro(HttpStatus.CONFLICT, "Só dá para mudar isso enquanto a candidatura é rascunho");
+        }
+        return candidatura;
+    }
+
+    // a versão publicada da oportunidade da candidatura (é ela que vale no envio)
+    @Transactional(readOnly = true)
+    public VersaoOportunidade versaoPublicada(Candidatura candidatura) {
+        return versaoRepository.findFirstByOportunidadeIdAndPublicadaEmIsNotNull(candidatura.getOportunidadeId())
+                .orElseThrow(() -> erro(HttpStatus.CONFLICT, "Esta oportunidade não está recebendo candidaturas"));
+    }
+
+    // o provedor da oportunidade da candidatura
+    @Transactional(readOnly = true)
+    public Candidatura comoProvedor(Long id, Long pessoaId) {
+        return buscarComoProvedor(id, pessoaId);
+    }
+
     // ---------- apoio
 
     private void mover(Candidatura candidatura, String para, Ator ator) {
@@ -316,6 +361,10 @@ public class CandidaturaService {
         Candidatura candidatura = candidaturaRepository.findById(id)
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Candidatura não encontrada"));
         if (acesso.podeVer(pessoaId, candidatura.getOrganizacaoId())) {
+            return candidatura;
+        }
+        // quem participa da candidatura (integrante da squad sem vínculo com a organização) também vê
+        if (participanteRepository.existsById(new CandidaturaParticipanteId(candidatura.getId(), pessoaId))) {
             return candidatura;
         }
         Oportunidade oportunidade = buscarOportunidade(candidatura.getOportunidadeId());
