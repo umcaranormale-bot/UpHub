@@ -19,4 +19,8 @@ public interface SolicitacaoProvedorRepository extends JpaRepository<Solicitacao
     @Query("select s from SolicitacaoProvedor s join fetch s.organizacao join fetch s.solicitante "
             + "where s.id = :id")
     Optional<SolicitacaoProvedor> buscarPorId(Long id);
+
+    @Query("select s from SolicitacaoProvedor s join fetch s.organizacao join fetch s.solicitante "
+            + "where (:situacao is null or s.situacao = :situacao) order by s.pedidaEm")
+    List<SolicitacaoProvedor> listarTodas(String situacao);
 }
