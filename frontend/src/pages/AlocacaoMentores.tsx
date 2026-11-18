@@ -4,6 +4,9 @@ import { CustomButton } from '../components/CustomButton'
 import CascaDoApp from '../components/CascaDoApp'
 import SeloStatus, { type Status } from '../components/SeloStatus'
 import { MENU_GESTAO } from '../navegacao/menus'
+import Indicadores, { type Indicador } from '../components/Indicadores'
+import TabelaSelecionavel, { type ColunaDaTabela } from '../components/TabelaSelecionavel'
+import CartoesDeDetalhe from '../components/CartoesDeDetalhe'
 
 /**
  * 44 · Gestão do PD — alocar mentor · rota /alocacao
@@ -15,12 +18,6 @@ import { MENU_GESTAO } from '../navegacao/menus'
  * Dados simulados nesta etapa, conforme o Bloco 4: nenhuma chamada à API.
  */
 
-interface Indicador {
-    id: string
-    rotulo: string
-    valor: string
-    cor: string
-}
 
 const indicadores: Indicador[] = [
     { id: 'sem-mentor', rotulo: 'Squads sem mentor', valor: '2', cor: 'text-ocre' },
@@ -125,13 +122,33 @@ const linhas: Linha[] = [
     },
 ]
 
-const COLUNAS = [
-    'Squad',
-    'Oportunidade',
-    'Trilha',
-    'Aprovada em',
-    'Sem mentor há',
-    'Situação',
+const COLUNAS: ColunaDaTabela<Linha>[] = [
+    {
+        rotulo: 'Squad',
+        celula: (l) => (
+            <>
+                <p className="text-item text-titulo">{l.squad}</p>
+                <p className="mt-1 text-apoio text-secundario">{l.composicao}</p>
+            </>
+        ),
+    },
+    {
+        rotulo: 'Oportunidade',
+        celula: (l) => <span className="text-apoio text-titulo">{l.oportunidade}</span>,
+    },
+    { rotulo: 'Trilha', celula: (l) => <span className="text-apoio text-titulo">{l.trilha}</span> },
+    {
+        rotulo: 'Aprovada em',
+        celula: (l) => <span className="text-apoio text-titulo">{l.aprovadaEm}</span>,
+    },
+    {
+        rotulo: 'Sem mentor há',
+        celula: (l) => <span className="text-apoio text-titulo">{l.semMentorHa}</span>,
+    },
+    {
+        rotulo: 'Situação',
+        celula: (l) => <SeloStatus status={l.status} rotulo={l.rotulo} comPonto />,
+    },
 ]
 
 function AlocacaoMentores() {
@@ -154,80 +171,20 @@ function AlocacaoMentores() {
                 recebe o convite e aceita ou recusa até o prazo.
             </p>
 
-            <ul className="mt-6 grid grid-cols-4 gap-5">
-                {indicadores.map((indicador) => (
-                    <li
-                        key={indicador.id}
-                        className="rounded-bloco border border-sutil bg-card p-card shadow-card"
-                    >
-                        <p className="text-item text-secundario">{indicador.rotulo}</p>
-                        <p className={`mt-2 font-display text-tela ${indicador.cor}`}>
-                            {indicador.valor}
-                        </p>
-                    </li>
-                ))}
-            </ul>
+            <div className="mt-6">
+                <Indicadores itens={indicadores} rotulo="Indicadores do mês" />
+            </div>
 
-            <section
-                aria-label="Squads aguardando mentor"
-                className="mt-6 overflow-hidden rounded-bloco border border-sutil bg-card shadow-card"
-            >
-                <table className="w-full border-collapse text-left">
-                    <thead>
-                        <tr className="border-b border-sutil bg-page">
-                            {COLUNAS.map((coluna) => (
-                                <th
-                                    key={coluna}
-                                    scope="col"
-                                    className="px-card py-3 text-selo text-secundario uppercase"
-                                >
-                                    {coluna}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {linhas.map((item) => (
-                            <tr
-                                key={item.id}
-                                aria-selected={item.id === selecionada}
-                                onClick={() => setSelecionada(item.id)}
-                                className={`cursor-pointer border-b border-sutil transition-colors duration-[var(--dur-rapida)] ease-padrao last:border-b-0 ${
-                                    item.id === selecionada
-                                        ? 'bg-acento-suave'
-                                        : 'hover:bg-page'
-                                }`}
-                            >
-                                <td className="px-card py-4">
-                                    <p className="text-item text-titulo">{item.squad}</p>
-                                    <p className="mt-1 text-apoio text-secundario">
-                                        {item.composicao}
-                                    </p>
-                                </td>
-                                <td className="px-card py-4 text-apoio text-titulo">
-                                    {item.oportunidade}
-                                </td>
-                                <td className="px-card py-4 text-apoio text-titulo">
-                                    {item.trilha}
-                                </td>
-                                <td className="px-card py-4 text-apoio text-titulo">
-                                    {item.aprovadaEm}
-                                </td>
-                                <td className="px-card py-4 text-apoio text-titulo">
-                                    {item.semMentorHa}
-                                </td>
-                                <td className="px-card py-4">
-                                    <SeloStatus
-                                        status={item.status}
-                                        rotulo={item.rotulo}
-                                        comPonto
-                                    />
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </section>
+            <div className="mt-6">
+                <TabelaSelecionavel
+                    rotulo="Squads aguardando mentor"
+                    colunas={COLUNAS}
+                    linhas={linhas}
+                    chave={(l) => l.id}
+                    selecionada={selecionada}
+                    aoSelecionar={(id) => setSelecionada(Number(id))}
+                />
+            </div>
 
             <section
                 aria-label={`Alocação da ${linha.squad}`}
@@ -247,17 +204,15 @@ function AlocacaoMentores() {
                         situação "Sem mentor" para enviar um convite.
                     </p>
                 ) : (
-                    <ul className="mt-5 grid grid-cols-4 gap-5">
-                        {linha.detalhes.map((detalhe) => (
-                            <li key={detalhe.rotulo} className="rounded-card bg-page p-5">
-                                <p className="text-apoio text-secundario">{detalhe.rotulo}</p>
-                                <p className="mt-1 text-item text-titulo">{detalhe.valor}</p>
-                                <p className="mt-1 text-apoio text-secundario">
-                                    {detalhe.nota}
-                                </p>
-                            </li>
-                        ))}
-                    </ul>
+                    <div className="mt-5">
+                        <CartoesDeDetalhe
+                            itens={linha.detalhes.map((d) => ({
+                                rotulo: d.rotulo,
+                                valor: d.valor,
+                                nota: d.nota,
+                            }))}
+                        />
+                    </div>
                 )}
 
                 <div className="mt-6 flex items-center gap-4 border-t border-sutil pt-5">

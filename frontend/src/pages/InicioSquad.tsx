@@ -2,6 +2,9 @@ import { CustomButton } from '../components/CustomButton'
 import CascaDoApp from '../components/CascaDoApp'
 import SeloStatus, { type Status } from '../components/SeloStatus'
 import { MENU_SQUAD } from '../navegacao/menus'
+import SeloDeTrilha, { type Trilha } from '../components/SeloDeTrilha'
+import CartaoDeAviso from '../components/CartaoDeAviso'
+import { ANEL_FOCO, TRANSICAO_COR } from '../estilos/classes'
 
 /**
  * 52 · Candidato squad — início · rota /inicio/squad
@@ -38,7 +41,6 @@ const avisos: Aviso[] = [
     },
 ]
 
-type Trilha = 'fomento' | 'investimento' | 'formacao'
 
 interface Desafio {
     id: number
@@ -76,17 +78,7 @@ const desafios: Desafio[] = [
     },
 ]
 
-const rotuloDaTrilha: Record<Trilha, string> = {
-    fomento: 'Fomento',
-    investimento: 'Investimento',
-    formacao: 'Formação',
-}
 
-const corDaTrilha: Record<Trilha, string> = {
-    fomento: 'bg-trilha-fomento-suave text-trilha-fomento',
-    investimento: 'bg-trilha-investimento-suave text-trilha-investimento',
-    formacao: 'bg-trilha-formacao-suave text-trilha-formacao',
-}
 
 interface Candidatura {
     id: number
@@ -118,21 +110,13 @@ function InicioSquad() {
             <div className="mt-6 flex items-start gap-6">
                 <div className="flex min-w-0 flex-1 flex-col gap-4">
                     {avisos.map((aviso) => (
-                        <section
+                        <CartaoDeAviso
                             key={aviso.id}
-                            aria-label={aviso.contexto}
-                            className="flex items-center gap-5 rounded-card border border-aviso-borda bg-aviso-fundo p-5"
+                            contexto={aviso.contexto}
+                            acao={aviso.acao}
                         >
-                            <div className="min-w-0 flex-1">
-                                <p className="text-apoio text-ocre">{aviso.contexto}</p>
-                                <p className="mt-1 font-display text-bloco text-titulo">
-                                    {aviso.chamada}
-                                </p>
-                            </div>
-                            <CustomButton variant="neutro" size="auto">
-                                {aviso.acao}
-                            </CustomButton>
-                        </section>
+                            {aviso.chamada}
+                        </CartaoDeAviso>
                     ))}
 
                     <h2 className="mt-4 font-display text-bloco text-titulo">
@@ -144,11 +128,7 @@ function InicioSquad() {
                             <li key={desafio.id}>
                                 <article className="rounded-bloco border border-sutil bg-card p-card shadow-card transition-[box-shadow,border-color,transform] duration-[var(--dur-padrao)] ease-padrao hover:-translate-y-px hover:shadow-card-hover">
                                     <div className="flex items-center gap-3">
-                                        <span
-                                            className={`rounded-badge px-2 py-1 text-selo ${corDaTrilha[desafio.trilha]}`}
-                                        >
-                                            {rotuloDaTrilha[desafio.trilha]}
-                                        </span>
+                                        <SeloDeTrilha trilha={desafio.trilha} />
                                         <span className="text-apoio text-secundario">
                                             {desafio.ofertante}
                                         </span>
@@ -190,7 +170,7 @@ function InicioSquad() {
                             </h2>
                             <a
                                 href="/squad/candidaturas"
-                                className="rounded-card px-1 text-apoio text-acento transition-colors duration-[var(--dur-rapida)] ease-padrao hover:text-titulo focus-visible:shadow-foco focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
+                                className={`rounded-card px-1 text-apoio text-acento ${TRANSICAO_COR} hover:text-titulo ${ANEL_FOCO}`}
                             >
                                 Ver todas
                             </a>

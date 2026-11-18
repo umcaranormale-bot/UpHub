@@ -1,6 +1,7 @@
 import { CustomButton } from '../components/CustomButton'
 import CascaDoApp from '../components/CascaDoApp'
 import { MENU_GESTAO } from '../navegacao/menus'
+import Indicadores, { type Indicador } from '../components/Indicadores'
 
 /**
  * 09 · Gestão do PD — painel do ecossistema · rota /painel
@@ -14,12 +15,6 @@ import { MENU_GESTAO } from '../navegacao/menus'
  */
 
 
-interface Indicador {
-    id: string
-    rotulo: string
-    valor: string
-    apoio: string
-}
 
 const indicadores: Indicador[] = [
     { id: 'oportunidades', rotulo: 'Oportunidades ativas', valor: '12', apoio: '+3 no mês' },
@@ -153,20 +148,9 @@ function PainelEcossistema() {
                 </CustomButton>
             </section>
 
-            <ul className="mt-6 grid grid-cols-4 gap-5">
-                {indicadores.map((indicador) => (
-                    <li
-                        key={indicador.id}
-                        className="rounded-bloco border border-sutil bg-card p-card shadow-card"
-                    >
-                        <p className="text-item text-secundario">{indicador.rotulo}</p>
-                        <p className="mt-2 font-display text-tela text-acento">
-                            {indicador.valor}
-                        </p>
-                        <p className="mt-2 text-apoio text-secundario">{indicador.apoio}</p>
-                    </li>
-                ))}
-            </ul>
+            <div className="mt-6">
+                <Indicadores itens={indicadores} rotulo="Indicadores do mês" />
+            </div>
 
             <div className="mt-6 flex items-start gap-6">
                 <section

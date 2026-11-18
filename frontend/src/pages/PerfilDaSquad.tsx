@@ -1,5 +1,6 @@
 import CascaDoApp from '../components/CascaDoApp'
 import { MENU_SQUAD } from '../navegacao/menus'
+import CartaoDeAviso from '../components/CartaoDeAviso'
 
 /**
  * 56 · Candidato squad — perfil da squad · rota /organizacao
@@ -187,11 +188,11 @@ function PerfilDaSquad() {
                         </ul>
                     </section>
 
-                    <p className="rounded-card border border-aviso-borda bg-aviso-fundo p-5 text-apoio text-ocre">
+                    <CartaoDeAviso>
                         A quantidade de integrantes entra no requisito "de 4 a 6 pessoas" dos
                         desafios de Formação. A confirmação de cada um é pedida por
                         candidatura.
-                    </p>
+                    </CartaoDeAviso>
                 </aside>
             </div>
         </CascaDoApp>

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 
 import { CustomButton } from './CustomButton'
 import SeloStatus, { type Status } from './SeloStatus'
+import { ANEL_FOCO } from '../estilos/classes'
 
 interface BlocoDoPapelProps {
     titulo: string
@@ -216,7 +217,7 @@ export function PaginaDeConta({
                         </p>
                         <button
                             type="button"
-                            className="mt-4 h-[45px] w-full rounded-lg bg-status-reprovada-texto font-semibold text-white transition-opacity duration-[var(--dur-rapida)] ease-padrao hover:opacity-90 focus-visible:shadow-foco focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
+                            className={`mt-4 h-[45px] w-full rounded-lg bg-status-reprovada-texto font-semibold text-white transition-opacity duration-[var(--dur-rapida)] ease-padrao hover:opacity-90 ${ANEL_FOCO}`}
                         >
                             Sair da conta
                         </button>

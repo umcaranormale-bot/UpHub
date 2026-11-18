@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { CustomButton } from '../components/CustomButton'
 import CascaDoApp from '../components/CascaDoApp'
 import { MENU_MENTOR } from '../navegacao/menus'
+import { ANEL_FOCO, TRANSICAO_COR } from '../estilos/classes'
 
 /**
  * 40 · Mentor — registrar feedback e horas · rota /horas
@@ -16,11 +17,9 @@ import { MENU_MENTOR } from '../navegacao/menus'
  * Dados simulados nesta etapa, conforme o Bloco 4: nenhuma chamada à API.
  */
 
-const ANEL_FOCO =
-    'focus-visible:shadow-foco focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento'
 
 const CAMPO =
-    'w-full rounded-card border border-sutil bg-card px-4 py-3 text-apoio text-titulo outline-none transition-colors duration-[var(--dur-rapida)] ease-padrao focus:border-acento'
+    'w-full rounded-card border border-sutil bg-card px-4 py-3 text-apoio text-titulo outline-none ${TRANSICAO_COR} focus:border-acento'
 
 function RegistrarSessao() {
     const [feedback, setFeedback] = useState('')
@@ -144,7 +143,7 @@ function RegistrarSessao() {
                         </CustomButton>
                         <button
                             type="button"
-                            className={`ml-2 rounded-card px-2 py-2 text-apoio text-acento transition-colors duration-[var(--dur-rapida)] ease-padrao hover:text-titulo ${ANEL_FOCO}`}
+                            className={`ml-2 rounded-card px-2 py-2 text-apoio text-acento ${TRANSICAO_COR} hover:text-titulo ${ANEL_FOCO}`}
                         >
                             Abrir rascunho da IA ›
                         </button>

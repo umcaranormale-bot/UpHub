@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import Logo from './Logo'
 import MenuLateral, { type ItemDeMenu } from './MenuLateral'
+import { ANEL_FOCO, TRANSICAO_COR } from '../estilos/classes'
 
 export type { ItemDeMenu }
 
@@ -53,7 +54,7 @@ export function CascaDoApp({
                 {voltarPara && (
                     <Link
                         to={voltarPara}
-                        className="rounded-card border border-sutil px-4 py-2 text-apoio text-titulo transition-colors duration-[var(--dur-rapida)] ease-padrao hover:bg-page focus-visible:shadow-foco focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
+                        className={`rounded-card border border-sutil px-4 py-2 text-apoio text-titulo ${TRANSICAO_COR} hover:bg-page ${ANEL_FOCO}`}
                     >
                         ‹ Voltar
                     </Link>

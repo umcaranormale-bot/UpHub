@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { ANEL_FOCO, TRANSICAO_COR } from '../estilos/classes'
 
 /**
  * MenuLateral — o menu lateral do sistema, um só para o projeto inteiro.
@@ -30,13 +31,8 @@ interface MenuLateralProps {
     grudento?: boolean
 }
 
-const ITEM_BASE = [
-    'block rounded-card px-4 py-3 text-apoio',
-    'transition-colors duration-[var(--dur-rapida)] ease-padrao',
-].join(' ')
+const ITEM_BASE = `block rounded-card px-4 py-3 text-apoio ${TRANSICAO_COR}`
 
-const ANEL_FOCO =
-    'focus-visible:shadow-foco focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento'
 
 export function MenuLateral({ itens, rotulo, grudento = false }: MenuLateralProps) {
     return (
