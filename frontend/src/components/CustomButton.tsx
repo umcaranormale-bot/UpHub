@@ -36,6 +36,7 @@ export function CustomButton({
   const buttonClasses = `
     font-semibold rounded-lg flex items-center justify-center
     transition-colors cursor-pointer
+    disabled:opacity-50 disabled:cursor-not-allowed
     ${sizeClasses[size]}
     ${variantClasses[variant]}
     ${className}
