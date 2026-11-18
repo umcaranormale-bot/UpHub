@@ -3,6 +3,9 @@ import { useState } from "react";
 import RegisterCard from "../components/RegisterCard";
 import AccountTypeSelector from "../components/AccountTypeSelector";
 import { CustomButton } from "../components/CustomButton";
+import { mensagemDeErro } from "../api/erros";
+import { cadastrarPessoa } from "../api/pessoas";
+import { useNavigate } from "react-router-dom";
 
 const accountTypes = [
     {
@@ -33,6 +36,8 @@ const accountTypes = [
 ];
 
 function RegisterPage() {
+    const navigate = useNavigate();
+    
     const [formData, setFormData] = useState({
         nome: "",
         email: "",
@@ -43,7 +48,7 @@ function RegisterPage() {
     const [accountType, setAccountType] = useState("");
     const [error, setError] = useState("");
 
-    function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setError("");
 
@@ -57,15 +62,16 @@ function RegisterPage() {
             return;
         }
 
-        const cadastro = {
-            nome: formData.nome,
-            email: formData.email,
-            senha: formData.senha,
-            tipoConta: accountType,
-        };
-        
-        {/*Só para visualização no frontend*/}
-        console.log(cadastro);
+        try {
+            await cadastrarPessoa({
+                nome: formData.nome,
+                email: formData.email,
+                senha: formData.senha,
+            });
+            navigate('/confirmar-email', { state: { email: formData.email } });
+        } catch (e) {
+            setError(mensagemDeErro(e));
+        }
     }
 
     function handleCancel() {
@@ -123,9 +129,9 @@ function RegisterPage() {
                                     é conta interna. Os três acessam só pela tela de entrar.
                                 </p>
 
-                                
+
                                 {/*Definir rota para a tela de convite*/}
-                                <CustomButton variant="aprovar" size="grande" to="/">
+                                <CustomButton variant="aprovar" size="grande" to="/convite">
                                     Recebi um convite
                                 </CustomButton>
                             </div>

@@ -2,6 +2,7 @@ package br.com.uphub.backend.controller;
 
 import br.com.uphub.backend.dto.TrilhaResponse;
 import br.com.uphub.backend.service.TrilhaService;
+import br.com.uphub.backend.seguranca.Publico;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Publico
 @RestController
 @RequestMapping("/api/trilhas")
 public class TrilhaController {

@@ -4,7 +4,6 @@ import java.time.LocalDate;
 
 public record DocumentoCadastroRequest(
         Long organizacaoId,
-        Long enviadoPor,
         String tipo,
         String nomeArquivo,
         Long tamanhoBytes,
