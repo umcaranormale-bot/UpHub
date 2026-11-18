@@ -14,4 +14,8 @@ public interface CandidaturaRepository extends JpaRepository<Candidatura, Long> 
     List<Candidatura> findByOportunidadeIdAndEstadoNotInOrderByEnviadaEm(Long oportunidadeId, Collection<String> estados);
 
     List<Candidatura> findByOportunidadeIdAndEstadoOrderByEnviadaEm(Long oportunidadeId, String estado);
+
+    List<Candidatura> findByOportunidadeIdAndEstadoInOrderByEnviadaEm(Long oportunidadeId, Collection<String> estados);
+
+    List<Candidatura> findByOportunidadeIdAndEstadoOrderByPosicaoLista(Long oportunidadeId, String estado);
 }

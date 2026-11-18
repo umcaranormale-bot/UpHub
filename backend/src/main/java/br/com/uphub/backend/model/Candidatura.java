@@ -122,4 +122,9 @@ public class Candidatura {
     public void mudarEstado(String novo) { this.estado = novo; }
 
     public void moverNoFunil(String estagio) { this.estagioFunil = estagio; }
+
+    // a posição na lista de espera existe só enquanto o estado é LISTA_DE_ESPERA (ck_candidatura_lista)
+    public void entrarNaLista(short posicao) { this.posicaoLista = posicao; }
+
+    public void sairDaLista() { this.posicaoLista = null; }
 }
