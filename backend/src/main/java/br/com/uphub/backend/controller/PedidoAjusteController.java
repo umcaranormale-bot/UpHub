@@ -1,8 +1,11 @@
 package br.com.uphub.backend.controller;
 
+import br.com.uphub.backend.dto.CorrecaoItemRequest;
+import br.com.uphub.backend.dto.ItemAjusteResponse;
 import br.com.uphub.backend.dto.PedidoAjusteResponse;
 import br.com.uphub.backend.dto.ReenvioRequest;
 import br.com.uphub.backend.seguranca.PessoaLogada;
+import br.com.uphub.backend.service.ItemAjusteService;
 import br.com.uphub.backend.service.PedidoAjusteService;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,9 +20,19 @@ import org.springframework.web.bind.annotation.RestController;
 public class PedidoAjusteController {
 
     private final PedidoAjusteService pedidoService;
+    private final ItemAjusteService itemService;
 
-    public PedidoAjusteController(PedidoAjusteService pedidoService) {
+    public PedidoAjusteController(PedidoAjusteService pedidoService, ItemAjusteService itemService) {
         this.pedidoService = pedidoService;
+        this.itemService = itemService;
+    }
+
+    @PostMapping("/itens/{itemId}/corrigir")
+    public ItemAjusteResponse corrigir(@PathVariable("candidaturaId") Long candidaturaId,
+                                       @PathVariable("itemId") Long itemId,
+                                       @RequestBody(required = false) CorrecaoItemRequest dados,
+                                       @PessoaLogada Long pessoaId) {
+        return itemService.corrigir(candidaturaId, itemId, dados, pessoaId);
     }
 
     @GetMapping
