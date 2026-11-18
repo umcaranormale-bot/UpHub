@@ -11,6 +11,10 @@ import CandidateHome from './pages/CandidateHome'
 import PrivacidadePage from './pages/PrivacidadePage'
 import InvitePage from './pages/InvitePage'
 import ProviderHome from './pages/ProviderHome'
+import FilaAvaliacao from './pages/FilaAvaliacao'
+import InicioSquad from './pages/InicioSquad'
+import InicioMentor from './pages/InicioMentor'
+import PainelEcossistema from './pages/PainelEcossistema'
 
 /**
  * Índice das telas do site.
@@ -44,6 +48,13 @@ function App() {
                     <Route path="/provedor" element={<ProviderHome />} />
                 </Route>
             </Route>
+
+            {/* Telas com casca propria por papel: trazem o proprio topo e menu,
+                por isso ficam fora do HomeLayout. */}
+            <Route path="/inicio/squad" element={<InicioSquad />} />
+            <Route path="/avaliacao" element={<FilaAvaliacao />} />
+            <Route path="/mentor" element={<InicioMentor />} />
+            <Route path="/painel" element={<PainelEcossistema />} />
 
             <Route path="/entrar" element={<Login />} />
             <Route path="/convite" element={<InvitePage />} />
