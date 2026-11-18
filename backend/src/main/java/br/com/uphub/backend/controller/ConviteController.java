@@ -6,6 +6,8 @@ import br.com.uphub.backend.dto.ConviteResponse;
 import br.com.uphub.backend.dto.ConviteValidacaoResponse;
 import br.com.uphub.backend.dto.LoginResponse;
 import br.com.uphub.backend.dto.RecusaConviteRequest;
+import br.com.uphub.backend.seguranca.PessoaLogada;
+import br.com.uphub.backend.seguranca.Publico;
 import br.com.uphub.backend.service.ConviteService;
 import java.net.URI;
 import java.util.List;
@@ -28,8 +30,9 @@ public class ConviteController {
     }
 
     @PostMapping
-    public ResponseEntity<ConviteResponse> cadastrar(@RequestBody ConviteCadastroRequest dados) {
-        ConviteResponse criado = conviteService.cadastrar(dados);
+    public ResponseEntity<ConviteResponse> cadastrar(@RequestBody ConviteCadastroRequest dados,
+                                                     @PessoaLogada Long pessoaId) {
+        ConviteResponse criado = conviteService.cadastrar(dados, pessoaId);
         return ResponseEntity
                 .created(URI.create("/api/convites/" + criado.id()))
                 .body(criado);
@@ -37,21 +40,25 @@ public class ConviteController {
 
     @GetMapping
     public List<ConviteResponse> listar(
-            @RequestParam(name = "organizacaoId", required = false) Long organizacaoId) {
-        return conviteService.listarPorOrganizacao(organizacaoId);
+            @RequestParam(name = "organizacaoId", required = false) Long organizacaoId,
+            @PessoaLogada Long pessoaId) {
+        return conviteService.listarPorOrganizacao(organizacaoId, pessoaId);
     }
 
+    @Publico
     @GetMapping("/validar")
     public ConviteValidacaoResponse validar(
             @RequestParam(name = "codigo", required = false) String codigo) {
         return conviteService.validar(codigo);
     }
 
+    @Publico
     @PostMapping("/aceitar")
     public LoginResponse aceitar(@RequestBody AceiteConviteRequest dados) {
         return conviteService.aceitar(dados);
     }
 
+    @Publico
     @PostMapping("/recusar")
     public ResponseEntity<Void> recusar(@RequestBody RecusaConviteRequest dados) {
         conviteService.recusar(dados);

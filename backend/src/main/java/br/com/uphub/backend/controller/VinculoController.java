@@ -2,6 +2,7 @@ package br.com.uphub.backend.controller;
 
 import br.com.uphub.backend.dto.VinculoCadastroRequest;
 import br.com.uphub.backend.dto.VinculoResponse;
+import br.com.uphub.backend.seguranca.PessoaLogada;
 import br.com.uphub.backend.service.VinculoService;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -24,16 +25,18 @@ public class VinculoController {
     }
 
     @PostMapping
-    public ResponseEntity<VinculoResponse> cadastrar(@RequestBody VinculoCadastroRequest dados) {
+    public ResponseEntity<VinculoResponse> cadastrar(@RequestBody VinculoCadastroRequest dados,
+                                                     @PessoaLogada Long pessoaId) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(vinculoService.cadastrar(dados));
+                .body(vinculoService.cadastrar(dados, pessoaId));
     }
 
     @GetMapping
     public List<VinculoResponse> listar(
             @RequestParam(name = "pessoaId", required = false) Long pessoaId,
-            @RequestParam(name = "organizacaoId", required = false) Long organizacaoId) {
-        return vinculoService.listar(pessoaId, organizacaoId);
+            @RequestParam(name = "organizacaoId", required = false) Long organizacaoId,
+            @PessoaLogada Long pessoaLogadaId) {
+        return vinculoService.listar(pessoaId, organizacaoId, pessoaLogadaId);
     }
 }
