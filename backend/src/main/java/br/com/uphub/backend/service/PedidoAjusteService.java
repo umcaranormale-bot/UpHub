@@ -1,6 +1,7 @@
 package br.com.uphub.backend.service;
 
 import br.com.uphub.backend.candidatura.MaquinaDeEstados.Ator;
+import br.com.uphub.backend.dto.ItemAjusteRequest;
 import br.com.uphub.backend.dto.PedidoAjusteResponse;
 import br.com.uphub.backend.dto.ReenvioRequest;
 import br.com.uphub.backend.model.Avaliacao;
@@ -37,6 +38,7 @@ public class PedidoAjusteService {
     private final CandidaturaRepository candidaturaRepository;
     private final VersaoOportunidadeRepository versaoRepository;
     private final CandidaturaService candidaturaService;
+    private final ItemAjusteService itemService;
     private final Acesso acesso;
     private final TransactionTemplate transacao;
 
@@ -45,6 +47,7 @@ public class PedidoAjusteService {
                                CandidaturaRepository candidaturaRepository,
                                VersaoOportunidadeRepository versaoRepository,
                                CandidaturaService candidaturaService,
+                               ItemAjusteService itemService,
                                Acesso acesso,
                                TransactionTemplate transacao) {
         this.pedidoRepository = pedidoRepository;
@@ -52,21 +55,24 @@ public class PedidoAjusteService {
         this.candidaturaRepository = candidaturaRepository;
         this.versaoRepository = versaoRepository;
         this.candidaturaService = candidaturaService;
+        this.itemService = itemService;
         this.acesso = acesso;
         this.transacao = transacao;
     }
 
     // ---------- chamado pela avaliação
 
-    // o primeiro avaliador que assina AJUSTE na rodada abre o pedido; os outros usam o mesmo
+    // o primeiro avaliador que assina AJUSTE na rodada abre o pedido; os outros põem os itens no mesmo
     @Transactional
-    public PedidoAjuste abrirOuUsar(Avaliacao avaliacao) {
-        return pedidoRepository.findFirstByCandidaturaIdAndSituacaoInOrderByPedidoEmDesc(avaliacao.getCandidaturaId(), List.of("AGUARDANDO"))
+    public PedidoAjuste abrirOuUsar(Avaliacao avaliacao, List<ItemAjusteRequest> itens) {
+        PedidoAjuste pedido = pedidoRepository.findFirstByCandidaturaIdAndSituacaoInOrderByPedidoEmDesc(avaliacao.getCandidaturaId(), List.of("AGUARDANDO"))
                 .orElseGet(() -> {
                     OffsetDateTime agora = OffsetDateTime.now();
                     return pedidoRepository.save(new PedidoAjuste(avaliacao.getCandidaturaId(), avaliacao.getId(), agora,
                             agora.plusDays(prazoDias(avaliacao.getCandidaturaId()))));
                 });
+        itemService.criar(pedido, itens);
+        return pedido;
     }
 
     // a rodada fechou em AJUSTE: o prazo conta a partir de agora
@@ -102,7 +108,7 @@ public class PedidoAjusteService {
         if (agora.isAfter(pedido.getPrazoReenvio())) {
             throw erro(HttpStatus.CONFLICT, "O prazo do ajuste venceu em " + pedido.getPrazoReenvio().format(DATA_HORA));
         }
-        conferirAntesDoReenvio(pedido);
+        itemService.conferir(pedido);
         short rodadaQueFechou = rodadaAtual(candidaturaId);
         pedido.reenviar(resposta, pessoaId, agora);
         pedidoRepository.saveAndFlush(pedido);
@@ -115,10 +121,6 @@ public class PedidoAjusteService {
                     anterior.getAtribuidaPor(), agora, novaRodada));
         }
         return resposta(pedido, candidatura);
-    }
-
-    // a V30 confere os itens do ajuste aqui
-    protected void conferirAntesDoReenvio(PedidoAjuste pedido) {
     }
 
     // ---------- provedor
@@ -192,7 +194,7 @@ public class PedidoAjusteService {
         Short rodada = avaliacaoRepository.findById(p.getAvaliacaoId()).map(Avaliacao::getRodada).orElse(null);
         return new PedidoAjusteResponse(p.getId(), p.getCandidaturaId(), p.getAvaliacaoId(), rodada, p.getPedidoEm(),
                 p.getPrazoReenvio(), p.getSituacao(), p.getResposta(), p.getReenviadoEm(), p.getPrazoPerdidoEm(),
-                p.getReabertoEm(), c.getEstado());
+                p.getReabertoEm(), c.getEstado(), itemService.itensDo(p.getId()));
     }
 
     private ResponseStatusException erro(HttpStatus status, String mensagem) {

@@ -1,6 +1,7 @@
 package br.com.uphub.backend.dto;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 public record PedidoAjusteResponse(
         Long id,
@@ -14,6 +15,7 @@ public record PedidoAjusteResponse(
         OffsetDateTime reenviadoEm,
         OffsetDateTime prazoPerdidoEm,
         OffsetDateTime reabertoEm,
-        String estadoCandidatura
+        String estadoCandidatura,
+        List<ItemAjusteResponse> itens
 ) {
 }

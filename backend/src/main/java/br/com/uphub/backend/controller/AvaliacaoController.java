@@ -1,5 +1,6 @@
 package br.com.uphub.backend.controller;
 
+import br.com.uphub.backend.dto.AssinaturaRequest;
 import br.com.uphub.backend.dto.AtribuicaoRequest;
 import br.com.uphub.backend.dto.AvaliacaoRascunhoRequest;
 import br.com.uphub.backend.dto.AvaliacaoResponse;
@@ -55,8 +56,10 @@ public class AvaliacaoController {
     }
 
     @PostMapping("/api/avaliacoes/{id}/assinar")
-    public AvaliacaoResponse assinar(@PathVariable("id") Long id, @PessoaLogada Long pessoaId) {
-        return avaliacaoService.assinar(id, pessoaId);
+    public AvaliacaoResponse assinar(@PathVariable("id") Long id,
+                                     @RequestBody(required = false) AssinaturaRequest dados,
+                                     @PessoaLogada Long pessoaId) {
+        return avaliacaoService.assinar(id, dados, pessoaId);
     }
 
     @DeleteMapping("/api/avaliacoes/{id}")

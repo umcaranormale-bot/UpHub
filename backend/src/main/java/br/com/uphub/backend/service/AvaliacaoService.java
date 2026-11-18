@@ -1,5 +1,6 @@
 package br.com.uphub.backend.service;
 
+import br.com.uphub.backend.dto.AssinaturaRequest;
 import br.com.uphub.backend.dto.AtribuicaoRequest;
 import br.com.uphub.backend.dto.AvaliacaoRascunhoRequest;
 import br.com.uphub.backend.dto.AvaliacaoResponse;
@@ -61,6 +62,7 @@ public class AvaliacaoService {
     private final RetificacaoParecerRepository retificacaoRepository;
     private final CandidaturaService candidaturaService;
     private final PedidoAjusteService pedidoAjusteService;
+    private final ItemAjusteService itemAjusteService;
     private final Acesso acesso;
 
     public AvaliacaoService(AvaliacaoRepository avaliacaoRepository,
@@ -74,6 +76,7 @@ public class AvaliacaoService {
                             RetificacaoParecerRepository retificacaoRepository,
                             CandidaturaService candidaturaService,
                             PedidoAjusteService pedidoAjusteService,
+                            ItemAjusteService itemAjusteService,
                             Acesso acesso) {
         this.avaliacaoRepository = avaliacaoRepository;
         this.designacaoRepository = designacaoRepository;
@@ -86,6 +89,7 @@ public class AvaliacaoService {
         this.retificacaoRepository = retificacaoRepository;
         this.candidaturaService = candidaturaService;
         this.pedidoAjusteService = pedidoAjusteService;
+        this.itemAjusteService = itemAjusteService;
         this.acesso = acesso;
     }
 
@@ -186,7 +190,7 @@ public class AvaliacaoService {
 
     // assinar fecha a avaliação; quando todos da rodada assinam, a candidatura anda
     @Transactional
-    public AvaliacaoResponse assinar(Long avaliacaoId, Long pessoaId) {
+    public AvaliacaoResponse assinar(Long avaliacaoId, AssinaturaRequest dados, Long pessoaId) {
         Avaliacao avaliacao = doAvaliadorParaEscrever(avaliacaoId, pessoaId);
         Candidatura candidatura = candidaturaRepository.findById(avaliacao.getCandidaturaId()).orElseThrow();
         candidaturaService.exigirQueAnda(candidatura);
@@ -202,10 +206,17 @@ public class AvaliacaoService {
         if (!decisoesAceitas(avaliacao).contains(avaliacao.getDecisao())) {
             throw erro(HttpStatus.BAD_REQUEST, "Na rodada " + ULTIMA_RODADA + ", a última, a decisão é APROVADA ou REPROVADA");
         }
+        boolean ajuste = "AJUSTE".equals(avaliacao.getDecisao());
+        var itens = dados == null ? null : dados.itens();
+        if (ajuste) {
+            itemAjusteService.validar(itens, candidatura.getVersaoId());
+        } else if (itens != null && !itens.isEmpty()) {
+            throw erro(HttpStatus.BAD_REQUEST, "Itens de ajuste só vão com a decisão AJUSTE");
+        }
         avaliacao.assinar(notaFinal(avaliacao, candidatura.getVersaoId()), OffsetDateTime.now());
         avaliacaoRepository.saveAndFlush(avaliacao);
-        if ("AJUSTE".equals(avaliacao.getDecisao())) {
-            pedidoAjusteService.abrirOuUsar(avaliacao);
+        if (ajuste) {
+            pedidoAjusteService.abrirOuUsar(avaliacao, itens);
         }
         candidatura = consolidar(candidatura, avaliacao.getRodada());
         return resposta(avaliacao, candidatura, true);
