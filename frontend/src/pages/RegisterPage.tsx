@@ -131,7 +131,7 @@ function RegisterPage() {
 
 
                                 {/*Definir rota para a tela de convite*/}
-                                <CustomButton variant="aprovar" size="grande" to="/">
+                                <CustomButton variant="aprovar" size="grande" to="/convite">
                                     Recebi um convite
                                 </CustomButton>
                             </div>
