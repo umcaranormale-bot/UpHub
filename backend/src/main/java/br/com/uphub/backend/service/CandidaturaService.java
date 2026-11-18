@@ -17,6 +17,7 @@ import br.com.uphub.backend.model.CandidaturaParticipanteId;
 import br.com.uphub.backend.model.Oportunidade;
 import br.com.uphub.backend.model.Organizacao;
 import br.com.uphub.backend.model.VersaoOportunidade;
+import br.com.uphub.backend.repository.AlocacaoMentorRepository;
 import br.com.uphub.backend.repository.AvaliacaoRepository;
 import br.com.uphub.backend.repository.CandidaturaParticipanteRepository;
 import br.com.uphub.backend.repository.CandidaturaRepository;
@@ -53,6 +54,7 @@ public class CandidaturaService {
     private final CandidaturaRepository candidaturaRepository;
     private final CandidaturaParticipanteRepository participanteRepository;
     private final AvaliacaoRepository avaliacaoRepository;
+    private final AlocacaoMentorRepository alocacaoRepository;
     private final OportunidadeRepository oportunidadeRepository;
     private final VersaoOportunidadeRepository versaoRepository;
     private final OrganizacaoRepository organizacaoRepository;
@@ -63,6 +65,7 @@ public class CandidaturaService {
     public CandidaturaService(CandidaturaRepository candidaturaRepository,
                               CandidaturaParticipanteRepository participanteRepository,
                               AvaliacaoRepository avaliacaoRepository,
+                              AlocacaoMentorRepository alocacaoRepository,
                               OportunidadeRepository oportunidadeRepository,
                               VersaoOportunidadeRepository versaoRepository,
                               OrganizacaoRepository organizacaoRepository,
@@ -72,6 +75,7 @@ public class CandidaturaService {
         this.candidaturaRepository = candidaturaRepository;
         this.participanteRepository = participanteRepository;
         this.avaliacaoRepository = avaliacaoRepository;
+        this.alocacaoRepository = alocacaoRepository;
         this.oportunidadeRepository = oportunidadeRepository;
         this.versaoRepository = versaoRepository;
         this.organizacaoRepository = organizacaoRepository;
@@ -416,6 +420,10 @@ public class CandidaturaService {
         }
         // o avaliador vê só as candidaturas que recebeu para avaliar
         if (avaliacaoRepository.contarDoAvaliador(candidatura.getId(), pessoaId) > 0) {
+            return candidatura;
+        }
+        // o mentor convidado (para decidir) ou que aceitou acompanhar
+        if (alocacaoRepository.contarDoMentor(candidatura.getId(), pessoaId, Set.of("PENDENTE", "ACEITA")) > 0) {
             return candidatura;
         }
         throw erro(HttpStatus.NOT_FOUND, "Candidatura não encontrada");

@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import org.hibernate.annotations.Generated;
 
@@ -43,6 +44,13 @@ public class Vinculo {
 
     @Column(name = "encerrado_em")
     private OffsetDateTime encerradoEm;
+
+    // só no papel MENTOR (V41)
+    @Column(name = "area_atuacao", length = 80)
+    private String areaAtuacao;
+
+    @Column(name = "horas_disponiveis_mes", precision = 5, scale = 1)
+    private BigDecimal horasDisponiveisMes;
 
     protected Vinculo() {
     }
@@ -86,5 +94,18 @@ public class Vinculo {
 
     public OffsetDateTime getEncerradoEm() {
         return encerradoEm;
+    }
+
+    public String getAreaAtuacao() {
+        return areaAtuacao;
+    }
+
+    public BigDecimal getHorasDisponiveisMes() {
+        return horasDisponiveisMes;
+    }
+
+    public void definirMentoria(String areaAtuacao, BigDecimal horasDisponiveisMes) {
+        this.areaAtuacao = areaAtuacao;
+        this.horasDisponiveisMes = horasDisponiveisMes;
     }
 }
