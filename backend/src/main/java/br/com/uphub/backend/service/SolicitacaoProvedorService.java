@@ -10,8 +10,9 @@ import br.com.uphub.backend.repository.DocumentoRepository;
 import br.com.uphub.backend.repository.OrganizacaoRepository;
 import br.com.uphub.backend.repository.PessoaRepository;
 import br.com.uphub.backend.repository.SolicitacaoProvedorRepository;
-import br.com.uphub.backend.repository.VinculoRepository;
 import java.util.List;
+import br.com.uphub.backend.seguranca.Acesso;
+import br.com.uphub.backend.seguranca.Permissao;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,28 +24,25 @@ public class SolicitacaoProvedorService {
     private final SolicitacaoProvedorRepository solicitacaoRepository;
     private final OrganizacaoRepository organizacaoRepository;
     private final PessoaRepository pessoaRepository;
-    private final VinculoRepository vinculoRepository;
     private final DocumentoRepository documentoRepository;
+    private final Acesso acesso;
 
     public SolicitacaoProvedorService(SolicitacaoProvedorRepository solicitacaoRepository,
                                       OrganizacaoRepository organizacaoRepository,
                                       PessoaRepository pessoaRepository,
-                                      VinculoRepository vinculoRepository,
-                                      DocumentoRepository documentoRepository) {
+                                      DocumentoRepository documentoRepository,
+                                      Acesso acesso) {
         this.solicitacaoRepository = solicitacaoRepository;
         this.organizacaoRepository = organizacaoRepository;
         this.pessoaRepository = pessoaRepository;
-        this.vinculoRepository = vinculoRepository;
         this.documentoRepository = documentoRepository;
+        this.acesso = acesso;
     }
 
     @Transactional
-    public SolicitacaoProvedorResponse cadastrar(SolicitacaoProvedorCadastroRequest dados) {
+    public SolicitacaoProvedorResponse cadastrar(SolicitacaoProvedorCadastroRequest dados, Long pessoaId) {
         if (dados.organizacaoId() == null) {
             throw erro(HttpStatus.BAD_REQUEST, "O campo organizacaoId é obrigatório");
-        }
-        if (dados.solicitanteId() == null) {
-            throw erro(HttpStatus.BAD_REQUEST, "O campo solicitanteId é obrigatório");
         }
         if (dados.emailInstitucional() == null || dados.emailInstitucional().isBlank()) {
             throw erro(HttpStatus.BAD_REQUEST, "O campo emailInstitucional é obrigatório");
@@ -57,12 +55,9 @@ public class SolicitacaoProvedorService {
 
         Organizacao organizacao = organizacaoRepository.findById(dados.organizacaoId())
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Organização não encontrada"));
-        Pessoa solicitante = pessoaRepository.findById(dados.solicitanteId())
+        acesso.exigir(pessoaId, organizacao.getId(), Permissao.PEDIR_PERMISSAO_DE_PROVEDOR);
+        Pessoa solicitante = pessoaRepository.findById(pessoaId)
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Pessoa não encontrada"));
-
-        if (!vinculoRepository.existsByPessoa_IdAndOrganizacao_Id(solicitante.getId(), organizacao.getId())) {
-            throw erro(HttpStatus.FORBIDDEN, "Esta pessoa não tem vínculo com esta organização");
-        }
 
         if (dados.documentoId() != null) {
             Documento documento = documentoRepository.findById(dados.documentoId())
@@ -117,22 +112,24 @@ public class SolicitacaoProvedorService {
     }
 
     @Transactional(readOnly = true)
-    public List<SolicitacaoProvedorResponse> listar(Long organizacaoId) {
+    public List<SolicitacaoProvedorResponse> listar(Long organizacaoId, Long pessoaId) {
         if (organizacaoId == null) {
             throw erro(HttpStatus.BAD_REQUEST, "O parâmetro organizacaoId é obrigatório");
         }
         if (!organizacaoRepository.existsById(organizacaoId)) {
             throw erro(HttpStatus.NOT_FOUND, "Organização não encontrada");
         }
+        acesso.exigirAcesso(pessoaId, organizacaoId);
         return solicitacaoRepository.listarPorOrganizacao(organizacaoId)
                 .stream().map(SolicitacaoProvedorResponse::de).toList();
     }
 
     @Transactional(readOnly = true)
-    public SolicitacaoProvedorResponse buscarPorId(Long id) {
-        return solicitacaoRepository.buscarPorId(id)
-                .map(SolicitacaoProvedorResponse::de)
+    public SolicitacaoProvedorResponse buscarPorId(Long id, Long pessoaId) {
+        SolicitacaoProvedor solicitacao = solicitacaoRepository.buscarPorId(id)
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Solicitação não encontrada"));
+        acesso.exigirAcesso(pessoaId, solicitacao.getOrganizacao().getId());
+        return SolicitacaoProvedorResponse.de(solicitacao);
     }
 
     private ResponseStatusException erro(HttpStatus status, String mensagem) {

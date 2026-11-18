@@ -1,15 +1,37 @@
 
 import { useState, type FormEvent } from "react";
 import { CustomButton } from "./CustomButton";
+import { useNavigate } from "react-router-dom";
+import { entrar } from "../api/auth";
+import { ErroApi } from "../api/cliente";
+import { mensagemDeErro } from "../api/erros";
+
 
 export default function LoginCard() {
+    const navigate = useNavigate();
+    const [erro, setErro] = useState<string | null>(null);
+    const [enviando, setEnviando] = useState(false);
+
     const [email, setEmail] = useState("");
     const [senha, setSenha] = useState("");
 
-    function handleSubmit(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
 
-        console.log({ email, senha });
+    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        setErro(null);
+        setEnviando(true);
+        try {
+            await entrar(email, senha);
+            navigate('/candidato');
+        } catch (e) {
+            if (e instanceof ErroApi && e.status === 403) {
+                navigate('/confirmar-email', { state: { email } });
+                return;
+            }
+            setErro(mensagemDeErro(e));
+        } finally {
+            setEnviando(false);
+        }
     }
 
     return (
@@ -56,13 +78,19 @@ export default function LoginCard() {
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
                     />
                 </div>
+                {erro && (
+                    <p role="alert" className="text-sm text-red-600">
+                        {erro}
+                    </p>
+                )}
                 <CustomButton
                     type="submit"
                     variant="aprovar"
                     size="grande"
                     className="w-full mt-2"
+                    disabled={enviando}
                 >
-                    Entrar
+                    {enviando ? 'Entrando...' : 'Entrar'}
                 </CustomButton>
                 {/* Espaço para links de recuperação de senha e criação de conta*/}
                 <div className="mt-4 flex items-center gap-2 text-sm">

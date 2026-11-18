@@ -10,5 +10,7 @@ public interface OportunidadeRepository extends JpaRepository<Oportunidade, Long
 
     List<Oportunidade> findByOrganizacaoIdAndEstado(Long organizacaoId, String estado);
 
+    List<Oportunidade> findByOrganizacaoIdAndEstadoNot(Long organizacaoId, String estado);
+
     List<Oportunidade> findByTrilhaCodigoAndEstado(String trilhaCodigo, String estado);
 }

@@ -3,12 +3,14 @@ package br.com.uphub.backend.controller;
 import br.com.uphub.backend.dto.ConfirmacaoEmailRequest;
 import br.com.uphub.backend.dto.ReenvioCodigoRequest;
 import br.com.uphub.backend.service.ConfirmacaoEmailService;
+import br.com.uphub.backend.seguranca.Publico;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Publico
 @RestController
 @RequestMapping("/api/confirmacao-email")
 public class ConfirmacaoEmailController {

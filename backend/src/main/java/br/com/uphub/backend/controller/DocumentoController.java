@@ -2,6 +2,7 @@ package br.com.uphub.backend.controller;
 
 import br.com.uphub.backend.dto.DocumentoCadastroRequest;
 import br.com.uphub.backend.dto.DocumentoResponse;
+import br.com.uphub.backend.seguranca.PessoaLogada;
 import br.com.uphub.backend.service.DocumentoService;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -25,20 +26,22 @@ public class DocumentoController {
     }
 
     @PostMapping
-    public ResponseEntity<DocumentoResponse> cadastrar(@RequestBody DocumentoCadastroRequest dados) {
+    public ResponseEntity<DocumentoResponse> cadastrar(@RequestBody DocumentoCadastroRequest dados,
+                                                       @PessoaLogada Long pessoaId) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(documentoService.cadastrar(dados));
+                .body(documentoService.cadastrar(dados, pessoaId));
     }
 
     @GetMapping
     public List<DocumentoResponse> listar(
-            @RequestParam(name = "organizacaoId", required = false) Long organizacaoId) {
-        return documentoService.listar(organizacaoId);
+            @RequestParam(name = "organizacaoId", required = false) Long organizacaoId,
+            @PessoaLogada Long pessoaId) {
+        return documentoService.listar(organizacaoId, pessoaId);
     }
 
     @GetMapping("/{id}")
-    public DocumentoResponse buscar(@PathVariable Long id) {
-        return documentoService.buscarPorId(id);
+    public DocumentoResponse buscar(@PathVariable Long id, @PessoaLogada Long pessoaId) {
+        return documentoService.buscarPorId(id, pessoaId);
     }
 }
