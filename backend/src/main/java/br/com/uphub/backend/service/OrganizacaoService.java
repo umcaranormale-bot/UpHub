@@ -7,6 +7,11 @@ import br.com.uphub.backend.repository.OrganizacaoRepository;
 import java.time.Year;
 import java.util.List;
 import java.util.Locale;
+import br.com.uphub.backend.model.Pessoa;
+import br.com.uphub.backend.model.Vinculo;
+import br.com.uphub.backend.repository.PessoaRepository;
+import br.com.uphub.backend.repository.VinculoRepository;
+import br.com.uphub.backend.seguranca.Acesso;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,20 +23,42 @@ public class OrganizacaoService {
     private static final List<String> TIPOS = List.of(
             "EMPRESA", "SQUAD", "PESSOA_FISICA", "ORGAO_FOMENTO", "INVESTIDOR", "EMPRESA_PARCEIRA");
 
-    private final OrganizacaoRepository organizacaoRepository;
+    private static final List<String> TIPOS_PROVEDORES = List.of("ORGAO_FOMENTO", "INVESTIDOR", "EMPRESA_PARCEIRA");
+    private static final List<String> PAPEIS_DE_QUEM_CADASTRA = List.of("PROVEDOR", "CANDIDATO");
 
-    public OrganizacaoService(OrganizacaoRepository organizacaoRepository) {
+    private final OrganizacaoRepository organizacaoRepository;
+    private final PessoaRepository pessoaRepository;
+    private final VinculoRepository vinculoRepository;
+    private final Acesso acesso;
+
+    public OrganizacaoService(OrganizacaoRepository organizacaoRepository,
+                              PessoaRepository pessoaRepository,
+                              VinculoRepository vinculoRepository,
+                              Acesso acesso) {
         this.organizacaoRepository = organizacaoRepository;
+        this.pessoaRepository = pessoaRepository;
+        this.vinculoRepository = vinculoRepository;
+        this.acesso = acesso;
     }
 
     @Transactional
-    public OrganizacaoResponse cadastrar(OrganizacaoCadastroRequest dados) {
+    public OrganizacaoResponse cadastrar(OrganizacaoCadastroRequest dados, Long pessoaId) {
         String tipo = obrigatorio(dados.tipo(), "tipo", 30).toUpperCase(Locale.ROOT);
         if (!TIPOS.contains(tipo)) {
             throw erro(HttpStatus.BAD_REQUEST, "Tipo inválido. Use: " + String.join(", ", TIPOS));
         }
         String nome = obrigatorio(dados.nome(), "nome", 200);
         String cnpj = cnpj(dados.cnpj());
+
+        // quem cadastra entra na organização como representante. Sem papel informado,
+        // órgão de fomento, investidor e empresa parceira entram como PROVEDOR; os outros, como CANDIDATO
+        String papel = TIPOS_PROVEDORES.contains(tipo) ? "PROVEDOR" : "CANDIDATO";
+        if (dados.papel() != null && !dados.papel().isBlank()) {
+            papel = dados.papel().trim().toUpperCase(Locale.ROOT);
+            if (!PAPEIS_DE_QUEM_CADASTRA.contains(papel)) {
+                throw erro(HttpStatus.BAD_REQUEST, "Papel inválido. Use: PROVEDOR ou CANDIDATO");
+            }
+        }
 
         if (cnpj != null && organizacaoRepository.existsByCnpj(cnpj)) {
             throw erro(HttpStatus.CONFLICT, "Este CNPJ já está cadastrado");
@@ -62,14 +89,30 @@ public class OrganizacaoService {
         organizacao.setSedeCidade(opcional(dados.sedeCidade(), "sedeCidade", 80));
         organizacao.setSedeUf(uf);
 
-        return OrganizacaoResponse.de(organizacaoRepository.save(organizacao));
+        Organizacao salva = organizacaoRepository.save(organizacao);
+        Pessoa pessoa = pessoaRepository.findById(pessoaId)
+                .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Pessoa não encontrada"));
+        vinculoRepository.save(new Vinculo(pessoa, salva, papel, null, true));
+
+        return OrganizacaoResponse.de(salva);
     }
 
     @Transactional(readOnly = true)
-    public List<OrganizacaoResponse> listar(String nome) {
-        List<Organizacao> encontradas = (nome == null || nome.isBlank())
-                ? organizacaoRepository.findAll()
-                : organizacaoRepository.findByNomeContainingIgnoreCase(nome.trim());
+    public List<OrganizacaoResponse> listar(String nome, Long pessoaId) {
+        boolean semNome = nome == null || nome.isBlank();
+        List<Organizacao> encontradas;
+        if (acesso.ehGestao(pessoaId)) {
+            // a gestão vê todas as organizações
+            encontradas = semNome
+                    ? organizacaoRepository.findAll()
+                    : organizacaoRepository.findByNomeContainingIgnoreCase(nome.trim());
+        } else {
+            // os outros veem só as organizações em que têm vínculo
+            List<Long> minhas = acesso.organizacoesDa(pessoaId);
+            encontradas = semNome
+                    ? organizacaoRepository.findByIdIn(minhas)
+                    : organizacaoRepository.findByIdInAndNomeContainingIgnoreCase(minhas, nome.trim());
+        }
         return encontradas.stream().map(OrganizacaoResponse::de).toList();
     }
 
