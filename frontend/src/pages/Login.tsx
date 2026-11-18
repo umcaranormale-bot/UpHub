@@ -1,4 +1,5 @@
-import { CustomButton } from '../components/Botao';
+import LoginCard from '../components/LoginCard';
+import AuthLayout from '../layouts/AuthLayout';
 /**
  * Entrar — rota /entrar
  *
@@ -15,27 +16,11 @@ import { CustomButton } from '../components/Botao';
  * Para ver na tela: npm run dev e abra http://localhost:5173/entrar
  */
 function Login() {
-    return (
-        <main className="min-h-screen bg-page p-secao flex flex-col items-center justify-center gap-6">
-            <h1 className="text-h1 text-titulo">Entrar</h1>
-
-            {/* Container ou formulário para os botões */}
-            <div className="flex flex-col gap-4 items-center bg-white p-6 rounded-card shadow-md">
-                {/* Exemplo do botão grande */}
-                <CustomButton variant="aprovar" size="grande">
-                    Entrar
-                </CustomButton>
-
-                {/* Exemplo do botão médio */}
-                <CustomButton variant="neutro" size="medio">
-                    Voltar
-                </CustomButton>
-                 <CustomButton variant="reprovar" size="pequeno">
-                    Teste
-                </CustomButton>
-            </div>
-        </main>
-    )
+  return (
+    <AuthLayout>
+      <LoginCard />
+    </AuthLayout>
+  )
 }
 
-export default Login
+export default Login;
