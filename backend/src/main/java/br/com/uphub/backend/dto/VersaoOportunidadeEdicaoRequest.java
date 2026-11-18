@@ -5,7 +5,6 @@ import java.time.LocalDate;
 
 // Campo null = "não alterar".
 public record VersaoOportunidadeEdicaoRequest(
-        Long pessoaId,
         LocalDate prazoEnvio,
         BigDecimal notaMinima,
         Integer validadeNotaDias,

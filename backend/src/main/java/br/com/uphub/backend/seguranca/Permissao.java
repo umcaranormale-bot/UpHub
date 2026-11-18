@@ -5,6 +5,7 @@ import java.util.Set;
 public enum Permissao {
 
     CRIAR_OPORTUNIDADE("criar oportunidades", "PROVEDOR"),
+    EDITAR_OPORTUNIDADE("editar e publicar oportunidades", "PROVEDOR"),
     CONVIDAR_AVALIADOR_OU_MENTOR("convidar avaliadores e mentores", "PROVEDOR"),
     PEDIR_PERMISSAO_DE_PROVEDOR("pedir a permissão de provedor", "PROVEDOR"),
     ENVIAR_DOCUMENTO("enviar documentos", "PROVEDOR", "CANDIDATO"),

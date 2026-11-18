@@ -1,9 +1,8 @@
 package br.com.uphub.backend.controller;
 
-import br.com.uphub.backend.dto.VersaoOportunidadeCadastroRequest;
 import br.com.uphub.backend.dto.VersaoOportunidadeEdicaoRequest;
-import br.com.uphub.backend.dto.VersaoOportunidadePublicacaoRequest;
 import br.com.uphub.backend.dto.VersaoOportunidadeResponse;
+import br.com.uphub.backend.seguranca.PessoaLogada;
 import br.com.uphub.backend.service.VersaoOportunidadeService;
 import java.net.URI;
 import java.util.List;
@@ -29,35 +28,38 @@ public class VersaoOportunidadeController {
     @PostMapping
     public ResponseEntity<VersaoOportunidadeResponse> cadastrar(
             @PathVariable("oportunidadeId") Long oportunidadeId,
-            @RequestBody VersaoOportunidadeCadastroRequest dados) {
-        VersaoOportunidadeResponse criada = versaoService.cadastrar(oportunidadeId, dados);
+            @PessoaLogada Long pessoaId) {
+        VersaoOportunidadeResponse criada = versaoService.cadastrar(oportunidadeId, pessoaId);
         return ResponseEntity
                 .created(URI.create("/api/oportunidades/" + oportunidadeId + "/versoes/" + criada.id()))
                 .body(criada);
     }
 
     @GetMapping
-    public List<VersaoOportunidadeResponse> listar(@PathVariable("oportunidadeId") Long oportunidadeId) {
-        return versaoService.listar(oportunidadeId);
+    public List<VersaoOportunidadeResponse> listar(@PathVariable("oportunidadeId") Long oportunidadeId,
+                                                   @PessoaLogada Long pessoaId) {
+        return versaoService.listar(oportunidadeId, pessoaId);
     }
 
     @GetMapping("/{versaoId}")
     public VersaoOportunidadeResponse buscar(@PathVariable("oportunidadeId") Long oportunidadeId,
-                                             @PathVariable("versaoId") Long versaoId) {
-        return versaoService.buscarPorId(oportunidadeId, versaoId);
+                                             @PathVariable("versaoId") Long versaoId,
+                                             @PessoaLogada Long pessoaId) {
+        return versaoService.buscarPorId(oportunidadeId, versaoId, pessoaId);
     }
 
     @PutMapping("/{versaoId}")
     public VersaoOportunidadeResponse editar(@PathVariable("oportunidadeId") Long oportunidadeId,
                                              @PathVariable("versaoId") Long versaoId,
-                                             @RequestBody VersaoOportunidadeEdicaoRequest dados) {
-        return versaoService.editar(oportunidadeId, versaoId, dados);
+                                             @RequestBody VersaoOportunidadeEdicaoRequest dados,
+                                             @PessoaLogada Long pessoaId) {
+        return versaoService.editar(oportunidadeId, versaoId, dados, pessoaId);
     }
 
     @PostMapping("/{versaoId}/publicar")
     public VersaoOportunidadeResponse publicar(@PathVariable("oportunidadeId") Long oportunidadeId,
                                                @PathVariable("versaoId") Long versaoId,
-                                               @RequestBody VersaoOportunidadePublicacaoRequest dados) {
-        return versaoService.publicar(oportunidadeId, versaoId, dados);
+                                               @PessoaLogada Long pessoaId) {
+        return versaoService.publicar(oportunidadeId, versaoId, pessoaId);
     }
 }
