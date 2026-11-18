@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import br.com.uphub.backend.dto.PessoaCadastroRequest;
 import br.com.uphub.backend.dto.PessoaResponse;
+import br.com.uphub.backend.seguranca.PessoaLogada;
+import br.com.uphub.backend.seguranca.Publico;
 import br.com.uphub.backend.service.PessoaService;
 
 @RestController
@@ -24,6 +26,7 @@ public class PessoaController {
         this.pessoaService = pessoaService;
     }
 
+    @Publico
     @PostMapping
     public ResponseEntity<PessoaResponse> cadastrar(@RequestBody PessoaCadastroRequest dados) {
         PessoaResponse criada = pessoaService.cadastrar(dados);
@@ -33,7 +36,7 @@ public class PessoaController {
     }
 
     @GetMapping("/{id}")
-    public PessoaResponse buscar(@PathVariable Long id) {
-        return pessoaService.buscarPorId(id);
+    public PessoaResponse buscar(@PathVariable Long id, @PessoaLogada Long pessoaId) {
+        return pessoaService.buscarPorId(id, pessoaId);
     }
 }

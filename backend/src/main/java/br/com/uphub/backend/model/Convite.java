@@ -1,13 +1,15 @@
 package br.com.uphub.backend.model;
 
+import java.time.OffsetDateTime;
+
+import org.hibernate.annotations.Generated;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.OffsetDateTime;
-import org.hibernate.annotations.Generated;
 
 @Entity
 @Table(name = "convite")
@@ -63,28 +65,37 @@ public class Convite {
     }
 
     public Long getId() { return id; }
-
     public String getEmail() { return email; }
-
     public String getPapel() { return papel; }
-
     public Long getOrganizacaoId() { return organizacaoId; }
-
     public Long getEnviadoPor() { return enviadoPor; }
-
     public OffsetDateTime getEnviadoEm() { return enviadoEm; }
-
     public OffsetDateTime getExpiraEm() { return expiraEm; }
-
-
     public String getSituacao() { return situacao; }
-    public void setSituacao(String situacao) { this.situacao = situacao; }
-
     public OffsetDateTime getAceitoEm() { return aceitoEm; }
-    public void setAceitoEm(OffsetDateTime aceitoEm) { this.aceitoEm = aceitoEm; }
-
     public Long getPessoaId() { return pessoaId; }
-    public void setPessoaId(Long pessoaId) { this.pessoaId = pessoaId; }
-
     public String getTokenHash() { return tokenHash; }
+
+
+    public boolean aguardando() {
+        return "AGUARDANDO".equals(situacao);
+    }
+
+    public boolean vencido() {
+        return expiraEm.isBefore(OffsetDateTime.now());
+    }
+
+    public void aceitar(Long pessoaId) {
+        this.situacao = "ACEITO";
+        this.aceitoEm = OffsetDateTime.now();
+        this.pessoaId = pessoaId;
+    }
+
+    public void recusar() {
+        this.situacao = "RECUSADO";
+    }
+
+    public void expirar() {
+        this.situacao = "EXPIRADO";
+    }
 }

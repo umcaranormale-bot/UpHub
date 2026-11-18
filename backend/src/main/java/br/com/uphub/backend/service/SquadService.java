@@ -7,6 +7,8 @@ import br.com.uphub.backend.model.Squad;
 import br.com.uphub.backend.repository.OrganizacaoRepository;
 import br.com.uphub.backend.repository.SquadRepository;
 import java.util.List;
+import br.com.uphub.backend.seguranca.Acesso;
+import br.com.uphub.backend.seguranca.Permissao;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,21 +19,26 @@ public class SquadService {
 
     private final SquadRepository squadRepository;
     private final OrganizacaoRepository organizacaoRepository;
+    private final Acesso acesso;
 
     public SquadService(SquadRepository squadRepository,
-                        OrganizacaoRepository organizacaoRepository) {
+                        OrganizacaoRepository organizacaoRepository,
+                        Acesso acesso) {
         this.squadRepository = squadRepository;
         this.organizacaoRepository = organizacaoRepository;
+        this.acesso = acesso;
     }
 
     @Transactional
-    public SquadResponse cadastrar(SquadCadastroRequest dados) {
+    public SquadResponse cadastrar(SquadCadastroRequest dados, Long pessoaId) {
         if (dados.organizacaoId() == null) {
             throw erro(HttpStatus.BAD_REQUEST, "O campo organizacaoId é obrigatório");
         }
 
         Organizacao organizacao = organizacaoRepository.findById(dados.organizacaoId())
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Organização não encontrada"));
+
+        acesso.exigir(pessoaId, organizacao.getId(), Permissao.MONTAR_SQUAD);
 
         if (!"SQUAD".equals(organizacao.getTipo())) {
             throw erro(HttpStatus.BAD_REQUEST,
@@ -51,14 +58,20 @@ public class SquadService {
     }
 
     @Transactional(readOnly = true)
-    public List<SquadResponse> listar() {
-        return squadRepository.listarTodas().stream()
+    public List<SquadResponse> listar(Long pessoaId) {
+        List<Squad> squads = acesso.ehGestao(pessoaId)
+                ? squadRepository.listarTodas()
+                : squadRepository.listarPorOrganizacoes(acesso.organizacoesDa(pessoaId));
+        return squads.stream()
                 .map(SquadResponse::de)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public SquadResponse buscarPorId(Long id) {
+    public SquadResponse buscarPorId(Long id, Long pessoaId) {
+        if (squadRepository.existsById(id)) {
+            acesso.exigirAcesso(pessoaId, id);
+        }
         return squadRepository.buscarComOrganizacao(id)
                 .map(SquadResponse::de)
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Squad não encontrada"));

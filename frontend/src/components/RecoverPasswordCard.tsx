@@ -2,18 +2,24 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { CustomButton } from "./CustomButton";
+import { pedirLinkDeSenha } from "../api/redefinicaoSenha";
+import { mensagemDeErro } from "../api/erros";
 
 export default function RecoverPasswordCard() {
     const [email, setEmail] = useState("");
     const [submitted, setSubmitted] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
+        setError(null);
 
-        // Futuramente, aqui será feita a chamada para a API.
-        console.log("Solicitação de recuperação para:", email);
-
-        setSubmitted(true);
+        try {
+            await pedirLinkDeSenha(email);
+            setSubmitted(true);
+        } catch (e) {
+            setError(mensagemDeErro(e));
+        }
     }
 
     return (
@@ -52,6 +58,12 @@ export default function RecoverPasswordCard() {
                                 required
                             />
                         </div>
+
+                        {error && (
+                            <p role="alert" className="text-sm text-red-600">
+                                {error}
+                            </p>
+                        )}
 
                         <CustomButton
                             type="submit"

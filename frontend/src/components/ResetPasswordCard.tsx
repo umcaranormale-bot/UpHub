@@ -2,6 +2,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { CustomButton } from "./CustomButton";
+import { mensagemDeErro } from "../api/erros";
+import { redefinirSenha } from "../api/redefinicaoSenha";
 
 interface ResetPasswordCardProps {
     token: string;
@@ -18,7 +20,7 @@ export default function ResetPasswordCard({
     const inputClasses =
         "w-full rounded-card border border-sutil bg-card px-4 py-3 text-corpo text-titulo outline-none transition focus:border-acento focus:ring-1 focus:ring-acento";
 
-    function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setError("");
 
@@ -32,18 +34,12 @@ export default function ResetPasswordCard({
             return;
         }
 
-        const dados = {
-            token,
-            senha,
-        };
-
-        // Futuramente, enviar os dados para o backend.
-        console.log("Dados para redefinição:", dados);
-
-        // Simulação de sucesso.
-        setSuccess(true);
-        setSenha("");
-        setConfirmarSenha("");
+        try {
+            await redefinirSenha(token, senha);
+            setSuccess(true);
+        } catch (e) {
+            setError(mensagemDeErro(e));
+        }
     }
 
     return (

@@ -2,6 +2,8 @@ package br.com.uphub.backend.service;
 
 import java.util.Locale;
 
+import br.com.uphub.backend.repository.VinculoRepository;
+import br.com.uphub.backend.seguranca.Acesso;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,12 +21,17 @@ public class PessoaService {
     private final PessoaRepository pessoaRepository;
     private final PasswordEncoder passwordEncoder;
     private final ConfirmacaoEmailService confirmacaoEmailService;
+    private final VinculoRepository vinculoRepository;
+    private final Acesso acesso;
 
     public PessoaService(PessoaRepository pessoaRepository, PasswordEncoder passwordEncoder,
-                         ConfirmacaoEmailService confirmacaoEmailService) {
+                         ConfirmacaoEmailService confirmacaoEmailService,
+                         VinculoRepository vinculoRepository, Acesso acesso) {
         this.pessoaRepository = pessoaRepository;
         this.passwordEncoder = passwordEncoder;
         this.confirmacaoEmailService = confirmacaoEmailService;
+        this.vinculoRepository = vinculoRepository;
+        this.acesso = acesso;
     }
 
     @Transactional
@@ -50,7 +57,14 @@ public class PessoaService {
     }
 
     @Transactional(readOnly = true)
-    public PessoaResponse buscarPorId(Long id) {
+    public PessoaResponse buscarPorId(Long id, Long pessoaId) {
+        // vê os dados de uma pessoa: ela mesma, quem está numa organização com ela, e a gestão
+        boolean podeVer = id.equals(pessoaId)
+                || vinculoRepository.contarOrganizacoesEmComum(pessoaId, id) > 0
+                || acesso.ehGestao(pessoaId);
+        if (!podeVer) {
+            throw erro(HttpStatus.FORBIDDEN, "Você não tem acesso aos dados desta pessoa");
+        }
         return pessoaRepository.findById(id)
                 .map(PessoaResponse::de)
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Pessoa não encontrada"));
