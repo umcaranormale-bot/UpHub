@@ -24,6 +24,7 @@ import br.com.uphub.backend.repository.CandidaturaParticipanteRepository;
 import br.com.uphub.backend.repository.CandidaturaRepository;
 import br.com.uphub.backend.repository.OportunidadeRepository;
 import br.com.uphub.backend.repository.OrganizacaoRepository;
+import br.com.uphub.backend.repository.SquadRepository;
 import br.com.uphub.backend.repository.VersaoOportunidadeRepository;
 import br.com.uphub.backend.seguranca.Acesso;
 import br.com.uphub.backend.seguranca.Permissao;
@@ -56,6 +57,7 @@ public class CandidaturaService {
     private final CandidaturaParticipanteRepository participanteRepository;
     private final AvaliacaoRepository avaliacaoRepository;
     private final AlocacaoMentorRepository alocacaoRepository;
+    private final SquadRepository squadRepository;
     private final OportunidadeRepository oportunidadeRepository;
     private final VersaoOportunidadeRepository versaoRepository;
     private final OrganizacaoRepository organizacaoRepository;
@@ -67,6 +69,7 @@ public class CandidaturaService {
                               CandidaturaParticipanteRepository participanteRepository,
                               AvaliacaoRepository avaliacaoRepository,
                               AlocacaoMentorRepository alocacaoRepository,
+                              SquadRepository squadRepository,
                               OportunidadeRepository oportunidadeRepository,
                               VersaoOportunidadeRepository versaoRepository,
                               OrganizacaoRepository organizacaoRepository,
@@ -77,6 +80,7 @@ public class CandidaturaService {
         this.participanteRepository = participanteRepository;
         this.avaliacaoRepository = avaliacaoRepository;
         this.alocacaoRepository = alocacaoRepository;
+        this.squadRepository = squadRepository;
         this.oportunidadeRepository = oportunidadeRepository;
         this.versaoRepository = versaoRepository;
         this.organizacaoRepository = organizacaoRepository;
@@ -102,6 +106,7 @@ public class CandidaturaService {
         }
         exigirAberta(oportunidade);
         exigirTipoDaTrilha(oportunidade.getTrilhaCodigo(), organizacao.getTipo());
+        exigirMesmaResidencia(oportunidade, organizacao.getId());
         if (candidaturaRepository.existsByOportunidadeIdAndOrganizacaoId(oportunidadeId, organizacao.getId())) {
             throw erro(HttpStatus.CONFLICT, "Esta organização já tem uma candidatura nesta oportunidade");
         }
@@ -329,6 +334,17 @@ public class CandidaturaService {
     }
 
     // ---------- apoio
+
+    // desafio de uma residência: só a squad que entrou nela se candidata
+    private void exigirMesmaResidencia(Oportunidade oportunidade, Long organizacaoId) {
+        if (oportunidade.getResidenciaId() == null) {
+            return;
+        }
+        Long daSquad = squadRepository.findById(organizacaoId).map(s -> s.getResidenciaId()).orElse(null);
+        if (!oportunidade.getResidenciaId().equals(daSquad)) {
+            throw erro(HttpStatus.BAD_REQUEST, "Este desafio é de uma residência: a squad precisa entrar nela com o código da coordenação");
+        }
+    }
 
     private void exigirTipoDaTrilha(String trilhaCodigo, String tipo) {
         if (!TiposPorTrilha.aceita(trilhaCodigo, tipo)) {

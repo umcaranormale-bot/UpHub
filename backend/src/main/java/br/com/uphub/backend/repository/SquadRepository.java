@@ -12,6 +12,8 @@ public interface SquadRepository extends JpaRepository<Squad, Long> {
     @Query("select s from Squad s join fetch s.organizacao")
     List<Squad> listarTodas();
 
+    List<Squad> findByResidenciaId(Long residenciaId);
+
     @Query("select s from Squad s join fetch s.organizacao where s.organizacaoId in :organizacoes")
     List<Squad> listarPorOrganizacoes(Collection<Long> organizacoes);
 

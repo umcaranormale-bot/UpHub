@@ -5,6 +5,7 @@ public record OportunidadeEdicaoRequest(
         String titulo,
         String resumo,
         String area,
-        String tese
+        String tese,
+        Long residenciaId
 ) {
 }

@@ -25,17 +25,20 @@ public class OportunidadeService {
     private final OrganizacaoRepository organizacaoRepository;
     private final TrilhaRepository trilhaRepository;
     private final OrganizacaoTrilhaRepository organizacaoTrilhaRepository;
+    private final ResidenciaService residenciaService;
     private final Acesso acesso;
 
     public OportunidadeService(OportunidadeRepository oportunidadeRepository,
                                OrganizacaoRepository organizacaoRepository,
                                TrilhaRepository trilhaRepository,
                                OrganizacaoTrilhaRepository organizacaoTrilhaRepository,
+                               ResidenciaService residenciaService,
                                Acesso acesso) {
         this.oportunidadeRepository = oportunidadeRepository;
         this.organizacaoRepository = organizacaoRepository;
         this.trilhaRepository = trilhaRepository;
         this.organizacaoTrilhaRepository = organizacaoTrilhaRepository;
+        this.residenciaService = residenciaService;
         this.acesso = acesso;
     }
 
@@ -71,6 +74,7 @@ public class OportunidadeService {
 
         Oportunidade oportunidade = new Oportunidade(organizacaoId, trilhaCodigo, titulo, resumo, criadaPor);
         oportunidade.editar(null, null, area, tese);
+        ligarResidencia(oportunidade, dados.residenciaId());
 
         return OportunidadeResponse.de(oportunidadeRepository.save(oportunidade));
     }
@@ -127,7 +131,19 @@ public class OportunidadeService {
         String tese = dados.tese() == null ? null : dados.tese().trim();
         exigirTeseSoNoInvestimento(tese == null || tese.isEmpty() ? null : tese, oportunidade.getTrilhaCodigo());
         oportunidade.editar(titulo, resumo, area, tese);
+        ligarResidencia(oportunidade, dados.residenciaId());
         return OportunidadeResponse.de(oportunidadeRepository.saveAndFlush(oportunidade));
+    }
+
+    // o desafio da Formação pode entrar numa residência aberta
+    private void ligarResidencia(Oportunidade oportunidade, Long residenciaId) {
+        if (residenciaId == null) {
+            return;
+        }
+        if (!"FORMACAO".equals(oportunidade.getTrilhaCodigo())) {
+            throw erro(HttpStatus.BAD_REQUEST, "Só os desafios da trilha FORMACAO entram numa residência");
+        }
+        oportunidade.ligarResidencia(residenciaService.aberta(residenciaId).getId());
     }
 
     private void exigirTeseSoNoInvestimento(String tese, String trilhaCodigo) {

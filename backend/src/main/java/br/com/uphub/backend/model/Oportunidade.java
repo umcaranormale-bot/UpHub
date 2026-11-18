@@ -55,6 +55,10 @@ public class Oportunidade {
     @Column(name = "tese")
     private String tese;
 
+    // V44: a residência do desafio (só na trilha FORMACAO)
+    @Column(name = "residencia_id")
+    private Long residenciaId;
+
     protected Oportunidade() {
     }
 
@@ -120,4 +124,8 @@ public class Oportunidade {
             this.tese = tese.isBlank() ? null : tese;
         }
     }
+
+    public Long getResidenciaId() { return residenciaId; }
+
+    public void ligarResidencia(Long residenciaId) { this.residenciaId = residenciaId; }
 }
