@@ -5,6 +5,7 @@ import br.com.uphub.backend.dto.VersaoOportunidadeResponse;
 import br.com.uphub.backend.model.Oportunidade;
 import br.com.uphub.backend.model.VersaoOportunidade;
 import br.com.uphub.backend.repository.OportunidadeRepository;
+import br.com.uphub.backend.repository.ReservaVagasRepository;
 import br.com.uphub.backend.repository.SolicitacaoProvedorRepository;
 import br.com.uphub.backend.repository.VersaoOportunidadeRepository;
 import br.com.uphub.backend.seguranca.Acesso;
@@ -28,15 +29,18 @@ public class VersaoOportunidadeService {
     private final VersaoOportunidadeRepository versaoRepository;
     private final OportunidadeRepository oportunidadeRepository;
     private final SolicitacaoProvedorRepository solicitacaoRepository;
+    private final ReservaVagasRepository reservaRepository;
     private final Acesso acesso;
 
     public VersaoOportunidadeService(VersaoOportunidadeRepository versaoRepository,
                                      OportunidadeRepository oportunidadeRepository,
                                      SolicitacaoProvedorRepository solicitacaoRepository,
+                                     ReservaVagasRepository reservaRepository,
                                      Acesso acesso) {
         this.versaoRepository = versaoRepository;
         this.oportunidadeRepository = oportunidadeRepository;
         this.solicitacaoRepository = solicitacaoRepository;
+        this.reservaRepository = reservaRepository;
         this.acesso = acesso;
     }
 
@@ -124,6 +128,12 @@ public class VersaoOportunidadeService {
         if (dados.quantidadeVagas() != null) {
             if (dados.quantidadeVagas() <= 0) {
                 throw erro(HttpStatus.BAD_REQUEST, "O campo quantidadeVagas deve ser maior que zero");
+            }
+            // o total não pode ficar abaixo do que já está reservado (V16)
+            int reservadas = reservaRepository.somaReservada(versaoId);
+            if (dados.quantidadeVagas() < reservadas) {
+                throw erro(HttpStatus.BAD_REQUEST, "Já existem " + reservadas
+                        + " vagas reservadas. O total de vagas não pode ser menor que isso");
             }
             versao.setQuantidadeVagas(dados.quantidadeVagas());
         }
