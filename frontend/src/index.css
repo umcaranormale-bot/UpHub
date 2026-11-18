@@ -71,30 +71,95 @@
   --radius-modal: 12px;
   --radius-badge: 6px;
 
-  /* Status de inscrição — AGUARDANDO DEFINIÇÃO
-   O Bloco 3 especifica trio fixo de cores por status, mas não traz os hex.
-   Descomente conforme forem definidos. Sempre ponto + texto: cor sozinha
-   nunca comunica estado (WCAG 1.4.1). */
+  /* Status de inscricao — valores oficiais do design system (tokens/colors.css).
+     Sempre texto junto: cor sozinha nunca comunica estado (WCAG 1.4.1).
+     Contraste texto/fundo conferido, o menor e 4,77:1, acima do minimo AA. */
 
-  /* --color-status-rascunho-texto: ; */
-  /* --color-status-rascunho-fundo: ; */
-  /* --color-status-rascunho-borda: ; */
+  --color-status-rascunho-texto: #5B6180;   /* 5,23:1 */
+  --color-status-rascunho-fundo: #EDEEF4;
+  --color-status-rascunho-borda: #C7CAD9;
 
-  /* --color-status-enviada-texto: ; */
-  /* --color-status-enviada-fundo: ; */
-  /* --color-status-enviada-borda: ; */
+  --color-status-enviada-texto: #3232AE;    /* 7,63:1 */
+  --color-status-enviada-fundo: #E4E4FD;
+  --color-status-enviada-borda: #A9A9F8;
 
-  /* --color-status-avaliacao-texto: ; */
-  /* --color-status-avaliacao-fundo: ; */
-  /* --color-status-avaliacao-borda: ; */
+  /* Em analise sai azul porque e assim que esta no prototipo aprovado
+     (Figma, tela 07). O tokens/colors.css do design system traz ambar aqui;
+     o prototipo e a fonte de verdade da tela. Contraste 7,63:1. */
+  --color-status-avaliacao-texto: #3232AE;
+  --color-status-avaliacao-fundo: #E4E4FD;
+  --color-status-avaliacao-borda: #A9A9F8;
 
-  /* --color-status-aprovada-texto: ; */
-  /* --color-status-aprovada-fundo: ; */
-  /* --color-status-aprovada-borda: ; */
+  --color-status-aprovada-texto: #0F7A47;   /* 4,77:1 */
+  --color-status-aprovada-fundo: #E1F6EB;
+  --color-status-aprovada-borda: #8CD9B1;
 
-  /* --color-status-reprovada-texto: ; */
-  /* --color-status-reprovada-fundo: ; */
-  /* --color-status-reprovada-borda: ; */
+  --color-status-reprovada-texto: #B3221F;  /* 5,73:1 */
+  --color-status-reprovada-fundo: #FDEAE9;
+  --color-status-reprovada-borda: #F3A9A6;
+
+  /* Fundos suaves das trilhas e do aviso, lidos no Dev Mode (tela 52). */
+  --color-trilha-fomento-suave: #E4E4FD;
+  --color-trilha-investimento-suave: #DCF2F5;
+  --color-trilha-formacao-suave: #DFF3FA;
+  --color-aviso-fundo: #FBEFE6;
+  --color-aviso-borda: #EBC9AE;
+  --color-ocre: #8A5A00;
+
+  /* Medidas lidas no Dev Mode do Figma, tela 07. A escala do projeto
+     (display/h1/h3) continua valendo; estes sao os papeis que faltavam. */
+  --text-tela: 24px;
+  --text-tela--line-height: 36px;
+  --text-tela--font-weight: 700;
+
+  --text-bloco: 15px;
+  --text-bloco--line-height: 23px;
+  --text-bloco--font-weight: 600;
+
+  --text-item: 13px;
+  --text-item--line-height: 20px;
+  --text-item--font-weight: 500;
+
+  --text-apoio: 13px;
+  --text-apoio--line-height: 20px;
+  --text-apoio--font-weight: 400;
+
+  --text-selo: 11px;
+  --text-selo--line-height: 17px;
+  --text-selo--font-weight: 600;
+  --text-selo--letter-spacing: 0.3px;
+
+  --radius-bloco: 12px;
+
+  /* Elevacao — estetica flat: a borda faz o trabalho, a sombra so insinua. */
+  --shadow-card: 0 1px 2px rgba(14, 20, 64, 0.06);
+  --shadow-card-hover: 0 2px 8px rgba(14, 20, 64, 0.08);
+  --shadow-dropdown: 0 8px 24px rgba(14, 20, 64, 0.10);
+  --shadow-modal: 0 16px 48px rgba(14, 20, 64, 0.14);
+  --shadow-acento: 0 4px 16px rgba(83, 83, 241, 0.20);
+  --shadow-foco: 0 0 0 3px rgba(83, 83, 241, 0.35);
+
+  /* Movimento — fade e deslize curto. Sem bounce, sem mola. */
+  --ease-padrao: cubic-bezier(0.2, 0, 0.2, 1);
+  --ease-saida: cubic-bezier(0.4, 0, 1, 1);
+  --ease-entrada: cubic-bezier(0, 0, 0.2, 1);
+}
+
+:root {
+  --dur-instant: 80ms;
+  --dur-rapida: 140ms;
+  --dur-padrao: 200ms;
+  --dur-lenta: 320ms;
+}
+
+/* Quem pediu menos movimento no sistema operacional recebe tudo em 0ms. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-instant: 0ms;
+    --dur-rapida: 0ms;
+    --dur-padrao: 0ms;
+    --dur-lenta: 0ms;
+  }
 }
 
 @layer base {
