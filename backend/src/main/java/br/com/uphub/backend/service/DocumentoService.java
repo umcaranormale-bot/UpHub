@@ -8,8 +8,9 @@ import br.com.uphub.backend.model.Pessoa;
 import br.com.uphub.backend.repository.DocumentoRepository;
 import br.com.uphub.backend.repository.OrganizacaoRepository;
 import br.com.uphub.backend.repository.PessoaRepository;
-import br.com.uphub.backend.repository.VinculoRepository;
 import java.util.List;
+import br.com.uphub.backend.seguranca.Acesso;
+import br.com.uphub.backend.seguranca.Permissao;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,25 +22,22 @@ public class DocumentoService {
     private final DocumentoRepository documentoRepository;
     private final OrganizacaoRepository organizacaoRepository;
     private final PessoaRepository pessoaRepository;
-    private final VinculoRepository vinculoRepository;
+    private final Acesso acesso;
 
     public DocumentoService(DocumentoRepository documentoRepository,
                             OrganizacaoRepository organizacaoRepository,
                             PessoaRepository pessoaRepository,
-                            VinculoRepository vinculoRepository) {
+                            Acesso acesso) {
         this.documentoRepository = documentoRepository;
         this.organizacaoRepository = organizacaoRepository;
         this.pessoaRepository = pessoaRepository;
-        this.vinculoRepository = vinculoRepository;
+        this.acesso = acesso;
     }
 
     @Transactional
-    public DocumentoResponse cadastrar(DocumentoCadastroRequest dados) {
+    public DocumentoResponse cadastrar(DocumentoCadastroRequest dados, Long pessoaId) {
         if (dados.organizacaoId() == null) {
             throw erro(HttpStatus.BAD_REQUEST, "O campo organizacaoId é obrigatório");
-        }
-        if (dados.enviadoPor() == null) {
-            throw erro(HttpStatus.BAD_REQUEST, "O campo enviadoPor é obrigatório");
         }
         String tipo = obrigatorio(dados.tipo(), "tipo", 60);
         String nomeArquivo = obrigatorio(dados.nomeArquivo(), "nomeArquivo", 255);
@@ -52,12 +50,9 @@ public class DocumentoService {
 
         Organizacao organizacao = organizacaoRepository.findById(dados.organizacaoId())
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Organização não encontrada"));
-        Pessoa enviadoPor = pessoaRepository.findById(dados.enviadoPor())
+        acesso.exigir(pessoaId, organizacao.getId(), Permissao.ENVIAR_DOCUMENTO);
+        Pessoa enviadoPor = pessoaRepository.findById(pessoaId)
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Pessoa não encontrada"));
-
-        if (!vinculoRepository.existsByPessoa_IdAndOrganizacao_Id(enviadoPor.getId(), organizacao.getId())) {
-            throw erro(HttpStatus.FORBIDDEN, "Esta pessoa não tem vínculo com esta organização");
-        }
 
         Documento documento = new Documento(
                 organizacao,
@@ -74,22 +69,24 @@ public class DocumentoService {
     }
 
     @Transactional(readOnly = true)
-    public List<DocumentoResponse> listar(Long organizacaoId) {
+    public List<DocumentoResponse> listar(Long organizacaoId, Long pessoaId) {
         if (organizacaoId == null) {
             throw erro(HttpStatus.BAD_REQUEST, "O parâmetro organizacaoId é obrigatório");
         }
         if (!organizacaoRepository.existsById(organizacaoId)) {
             throw erro(HttpStatus.NOT_FOUND, "Organização não encontrada");
         }
+        acesso.exigirAcesso(pessoaId, organizacaoId);
         return documentoRepository.listarPorOrganizacao(organizacaoId)
                 .stream().map(DocumentoResponse::de).toList();
     }
 
     @Transactional(readOnly = true)
-    public DocumentoResponse buscarPorId(Long id) {
-        return documentoRepository.buscarPorId(id)
-                .map(DocumentoResponse::de)
+    public DocumentoResponse buscarPorId(Long id, Long pessoaId) {
+        Documento documento = documentoRepository.buscarPorId(id)
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Documento não encontrado"));
+        acesso.exigirAcesso(pessoaId, documento.getOrganizacao().getId());
+        return DocumentoResponse.de(documento);
     }
 
     private String obrigatorio(String valor, String campo, int maximo) {

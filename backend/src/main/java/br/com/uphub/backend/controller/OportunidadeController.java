@@ -2,6 +2,7 @@ package br.com.uphub.backend.controller;
 
 import br.com.uphub.backend.dto.OportunidadeCadastroRequest;
 import br.com.uphub.backend.dto.OportunidadeResponse;
+import br.com.uphub.backend.seguranca.PessoaLogada;
 import br.com.uphub.backend.service.OportunidadeService;
 import java.net.URI;
 import java.util.List;
@@ -25,8 +26,9 @@ public class OportunidadeController {
     }
 
     @PostMapping
-    public ResponseEntity<OportunidadeResponse> cadastrar(@RequestBody OportunidadeCadastroRequest dados) {
-        OportunidadeResponse criada = oportunidadeService.cadastrar(dados);
+    public ResponseEntity<OportunidadeResponse> cadastrar(@RequestBody OportunidadeCadastroRequest dados,
+                                                          @PessoaLogada Long pessoaId) {
+        OportunidadeResponse criada = oportunidadeService.cadastrar(dados, pessoaId);
         return ResponseEntity
                 .created(URI.create("/api/oportunidades/" + criada.id()))
                 .body(criada);
@@ -34,12 +36,13 @@ public class OportunidadeController {
 
     @GetMapping
     public List<OportunidadeResponse> listar(
-            @RequestParam(name = "organizacaoId", required = false) Long organizacaoId) {
-        return oportunidadeService.listarPorOrganizacao(organizacaoId);
+            @RequestParam(name = "organizacaoId", required = false) Long organizacaoId,
+            @PessoaLogada Long pessoaId) {
+        return oportunidadeService.listarPorOrganizacao(organizacaoId, pessoaId);
     }
 
     @GetMapping("/{id}")
-    public OportunidadeResponse buscar(@PathVariable("id") Long id) {
-        return oportunidadeService.buscarPorId(id);
+    public OportunidadeResponse buscar(@PathVariable("id") Long id, @PessoaLogada Long pessoaId) {
+        return oportunidadeService.buscarPorId(id, pessoaId);
     }
 }

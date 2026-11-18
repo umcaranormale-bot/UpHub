@@ -13,7 +13,8 @@ public record OportunidadeResponse(
         Long criadaPor,
         OffsetDateTime criadaEm,
         OffsetDateTime publicadaEm,
-        OffsetDateTime encerradaEm
+        OffsetDateTime encerradaEm,
+        OffsetDateTime suspensaEm
 ) {
 
     public static OportunidadeResponse de(Oportunidade oportunidade) {
@@ -27,7 +28,8 @@ public record OportunidadeResponse(
                 oportunidade.getCriadaPor(),
                 oportunidade.getCriadaEm(),
                 oportunidade.getPublicadaEm(),
-                oportunidade.getEncerradaEm()
+                oportunidade.getEncerradaEm(),
+                oportunidade.getSuspensaEm()
         );
     }
 }
