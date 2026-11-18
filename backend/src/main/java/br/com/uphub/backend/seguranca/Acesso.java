@@ -45,9 +45,14 @@ public class Acesso {
         }
     }
 
+    // o mesmo que exigir, sem lançar erro
+    public boolean tem(Long pessoaId, Long organizacaoId, Permissao permissao) {
+        return vinculoRepository.existsByPessoa_IdAndOrganizacao_IdAndPapelInAndEncerradoEmIsNull(
+                pessoaId, organizacaoId, permissao.getPapeis());
+    }
+
     public void exigir(Long pessoaId, Long organizacaoId, Permissao permissao) {
-        if (!vinculoRepository.existsByPessoa_IdAndOrganizacao_IdAndPapelInAndEncerradoEmIsNull(
-                pessoaId, organizacaoId, permissao.getPapeis())) {
+        if (!tem(pessoaId, organizacaoId, permissao)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "Seu papel nesta organização não permite " + permissao.getDescricao());
         }

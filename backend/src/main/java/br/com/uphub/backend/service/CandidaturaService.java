@@ -17,6 +17,7 @@ import br.com.uphub.backend.model.CandidaturaParticipanteId;
 import br.com.uphub.backend.model.Oportunidade;
 import br.com.uphub.backend.model.Organizacao;
 import br.com.uphub.backend.model.VersaoOportunidade;
+import br.com.uphub.backend.repository.AvaliacaoRepository;
 import br.com.uphub.backend.repository.CandidaturaParticipanteRepository;
 import br.com.uphub.backend.repository.CandidaturaRepository;
 import br.com.uphub.backend.repository.OportunidadeRepository;
@@ -51,6 +52,7 @@ public class CandidaturaService {
 
     private final CandidaturaRepository candidaturaRepository;
     private final CandidaturaParticipanteRepository participanteRepository;
+    private final AvaliacaoRepository avaliacaoRepository;
     private final OportunidadeRepository oportunidadeRepository;
     private final VersaoOportunidadeRepository versaoRepository;
     private final OrganizacaoRepository organizacaoRepository;
@@ -60,6 +62,7 @@ public class CandidaturaService {
 
     public CandidaturaService(CandidaturaRepository candidaturaRepository,
                               CandidaturaParticipanteRepository participanteRepository,
+                              AvaliacaoRepository avaliacaoRepository,
                               OportunidadeRepository oportunidadeRepository,
                               VersaoOportunidadeRepository versaoRepository,
                               OrganizacaoRepository organizacaoRepository,
@@ -68,6 +71,7 @@ public class CandidaturaService {
                               ObjectProvider<EtapaDoEnvio> etapasDoEnvio) {
         this.candidaturaRepository = candidaturaRepository;
         this.participanteRepository = participanteRepository;
+        this.avaliacaoRepository = avaliacaoRepository;
         this.oportunidadeRepository = oportunidadeRepository;
         this.versaoRepository = versaoRepository;
         this.organizacaoRepository = organizacaoRepository;
@@ -183,7 +187,10 @@ public class CandidaturaService {
     @Transactional(readOnly = true)
     public List<CandidaturaResponse> listarDaOportunidade(Long oportunidadeId, String estado, Long pessoaId) {
         Oportunidade oportunidade = buscarOportunidade(oportunidadeId);
-        acesso.exigirAcesso(pessoaId, oportunidade.getOrganizacaoId());
+        // o avaliador não vê a lista inteira: ele trabalha pela fila dele (GET /api/avaliacoes)
+        if (!acesso.ehGestao(pessoaId)) {
+            acesso.exigir(pessoaId, oportunidade.getOrganizacaoId(), Permissao.CONDUZIR_SELECAO);
+        }
         List<Candidatura> lista;
         if (estado == null || estado.isBlank()) {
             lista = candidaturaRepository.findByOportunidadeIdAndEstadoNotInOrderByEnviadaEm(oportunidadeId, FORA_DA_LISTA_DO_PROVEDOR);
@@ -290,6 +297,27 @@ public class CandidaturaService {
         return candidaturaRepository.saveAndFlush(candidatura);
     }
 
+    // o avaliador leva a candidatura ao resultado da rodada (aprovada, reprovada ou ajuste)
+    @Transactional
+    public Candidatura moverComoAvaliador(Candidatura candidatura, String para) {
+        mover(candidatura, para, Ator.AVALIADOR);
+        return candidaturaRepository.saveAndFlush(candidatura);
+    }
+
+    // a seleção só anda com a oportunidade ativa
+    public void exigirQueAnda(Candidatura candidatura) {
+        exigirNaoPausada(buscarOportunidade(candidatura.getOportunidadeId()));
+    }
+
+    // vê a candidatura só por ser avaliador dela (não é da organização, não participa, não conduz a seleção)
+    @Transactional(readOnly = true)
+    public boolean soComoAvaliador(Candidatura candidatura, Long pessoaId) {
+        Oportunidade oportunidade = buscarOportunidade(candidatura.getOportunidadeId());
+        return !acesso.podeVer(pessoaId, candidatura.getOrganizacaoId())
+                && !participanteRepository.existsById(new CandidaturaParticipanteId(candidatura.getId(), pessoaId))
+                && !acesso.tem(pessoaId, oportunidade.getOrganizacaoId(), Permissao.CONDUZIR_SELECAO);
+    }
+
     // ---------- apoio
 
     private void mover(Candidatura candidatura, String para, Ator ator) {
@@ -375,8 +403,12 @@ public class CandidaturaService {
             return candidatura;
         }
         Oportunidade oportunidade = buscarOportunidade(candidatura.getOportunidadeId());
-        if (acesso.ehMembro(pessoaId, oportunidade.getOrganizacaoId())
+        if (acesso.tem(pessoaId, oportunidade.getOrganizacaoId(), Permissao.CONDUZIR_SELECAO)
                 && !FORA_DA_LISTA_DO_PROVEDOR.contains(candidatura.getEstado())) {
+            return candidatura;
+        }
+        // o avaliador vê só as candidaturas que recebeu para avaliar
+        if (avaliacaoRepository.contarDoAvaliador(candidatura.getId(), pessoaId) > 0) {
             return candidatura;
         }
         throw erro(HttpStatus.NOT_FOUND, "Candidatura não encontrada");
