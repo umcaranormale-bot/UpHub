@@ -2,6 +2,7 @@ package br.com.uphub.backend.controller;
 
 import br.com.uphub.backend.dto.OrganizacaoCadastroRequest;
 import br.com.uphub.backend.dto.OrganizacaoResponse;
+import br.com.uphub.backend.seguranca.PessoaLogada;
 import br.com.uphub.backend.service.OrganizacaoService;
 import java.net.URI;
 import java.util.List;
@@ -25,16 +26,18 @@ public class OrganizacaoController {
     }
 
     @PostMapping
-    public ResponseEntity<OrganizacaoResponse> cadastrar(@RequestBody OrganizacaoCadastroRequest dados) {
-        OrganizacaoResponse criada = organizacaoService.cadastrar(dados);
+    public ResponseEntity<OrganizacaoResponse> cadastrar(@RequestBody OrganizacaoCadastroRequest dados,
+                                                         @PessoaLogada Long pessoaId) {
+        OrganizacaoResponse criada = organizacaoService.cadastrar(dados, pessoaId);
         return ResponseEntity
                 .created(URI.create("/api/organizacoes/" + criada.id()))
                 .body(criada);
     }
 
     @GetMapping
-    public List<OrganizacaoResponse> listar(@RequestParam(name = "nome", required = false) String nome) {
-        return organizacaoService.listar(nome);
+    public List<OrganizacaoResponse> listar(@RequestParam(name = "nome", required = false) String nome,
+                                            @PessoaLogada Long pessoaId) {
+        return organizacaoService.listar(nome, pessoaId);
     }
 
     @GetMapping("/{id}")

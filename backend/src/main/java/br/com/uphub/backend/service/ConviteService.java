@@ -14,6 +14,8 @@ import br.com.uphub.backend.repository.ConviteRepository;
 import br.com.uphub.backend.repository.OrganizacaoRepository;
 import br.com.uphub.backend.repository.PessoaRepository;
 import br.com.uphub.backend.repository.VinculoRepository;
+import br.com.uphub.backend.seguranca.Acesso;
+import br.com.uphub.backend.seguranca.Permissao;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -41,6 +43,7 @@ public class ConviteService {
     private final PasswordEncoder passwordEncoder;
     private final LoginService loginService;
     private final String frontUrl;
+    private final Acesso acesso;
 
     public ConviteService(ConviteRepository conviteRepository,
                           OrganizacaoRepository organizacaoRepository,
@@ -50,7 +53,8 @@ public class ConviteService {
                           EnvioEmail envioEmail,
                           PasswordEncoder passwordEncoder,
                           LoginService loginService,
-                          @Value("${uphub.front.url}") String frontUrl) {
+                          @Value("${uphub.front.url}") String frontUrl,
+                          Acesso acesso) {
         this.conviteRepository = conviteRepository;
         this.organizacaoRepository = organizacaoRepository;
         this.pessoaRepository = pessoaRepository;
@@ -59,12 +63,13 @@ public class ConviteService {
         this.envioEmail = envioEmail;
         this.passwordEncoder = passwordEncoder;
         this.loginService = loginService;
+        this.acesso = acesso;
         String url = frontUrl.trim();
         this.frontUrl = url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
     }
 
     @Transactional
-    public ConviteResponse cadastrar(ConviteCadastroRequest dados) {
+    public ConviteResponse cadastrar(ConviteCadastroRequest dados, Long enviadoPor) {
         String email = obrigatorio(dados.email(), "email", 254).toLowerCase(Locale.ROOT);
         if (!email.contains("@")) {
             throw erro(HttpStatus.BAD_REQUEST, "O e-mail é inválido");
@@ -79,15 +84,9 @@ public class ConviteService {
         }
         Organizacao organizacao = organizacaoRepository.findById(organizacaoId)
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Organização não encontrada"));
-        Long enviadoPor = dados.enviadoPor();
-        if (enviadoPor == null) {
-            throw erro(HttpStatus.BAD_REQUEST, "O campo enviadoPor é obrigatório");
-        }
+        acesso.exigir(enviadoPor, organizacaoId, Permissao.CONVIDAR_AVALIADOR_OU_MENTOR);
         Pessoa remetente = pessoaRepository.findById(enviadoPor)
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Pessoa que está enviando não encontrada"));
-        if (!vinculoRepository.existsByPessoa_IdAndOrganizacao_Id(enviadoPor, organizacaoId)) {
-            throw erro(HttpStatus.FORBIDDEN, "Esta pessoa não tem vínculo com esta organização");
-        }
 
         Convite aberto = conviteRepository
                 .findFirstByOrganizacaoIdAndPapelAndEmailIgnoreCaseAndSituacao(organizacaoId, papel, email, "AGUARDANDO")
@@ -119,13 +118,14 @@ public class ConviteService {
     }
 
     @Transactional(readOnly = true)
-    public List<ConviteResponse> listarPorOrganizacao(Long organizacaoId) {
+    public List<ConviteResponse> listarPorOrganizacao(Long organizacaoId, Long pessoaId) {
         if (organizacaoId == null) {
             throw erro(HttpStatus.BAD_REQUEST, "O parâmetro organizacaoId é obrigatório");
         }
         if (!organizacaoRepository.existsById(organizacaoId)) {
             throw erro(HttpStatus.NOT_FOUND, "Organização não encontrada");
         }
+        acesso.exigirAcesso(pessoaId, organizacaoId);
         return conviteRepository.findByOrganizacaoId(organizacaoId).stream()
                 .map(ConviteResponse::de)
                 .toList();

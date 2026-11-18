@@ -73,13 +73,7 @@ public class LoginService {
     }
 
     @Transactional(readOnly = true)
-    public SessaoResponse sessao(String cabecalhoAuthorization) {
-        String token = null;
-        if (cabecalhoAuthorization != null && cabecalhoAuthorization.startsWith("Bearer ")) {
-            token = cabecalhoAuthorization.substring("Bearer ".length());
-        }
-        Long pessoaId = tokenAcesso.pessoaIdDoToken(token);
-
+    public SessaoResponse sessao(Long pessoaId) {
         Pessoa pessoa = pessoaRepository.findById(pessoaId)
                 .filter(p -> p.getExcluidaEm() == null)
                 .orElseThrow(() -> erro(HttpStatus.UNAUTHORIZED, "Sessão inválida ou expirada. Entre de novo"));
