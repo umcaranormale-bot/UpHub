@@ -4,6 +4,8 @@ import { CustomButton } from '../components/CustomButton'
 import CascaDoApp from '../components/CascaDoApp'
 import SeloStatus, { type Status } from '../components/SeloStatus'
 import { MENU_SQUAD } from '../navegacao/menus'
+import SeloDeTrilha, { type Trilha } from '../components/SeloDeTrilha'
+import AbasDeFiltro, { type Aba } from '../components/AbasDeFiltro'
 
 /**
  * 55 · Candidato squad — minhas candidaturas · rota /candidaturas
@@ -14,7 +16,6 @@ import { MENU_SQUAD } from '../navegacao/menus'
  * Dados simulados nesta etapa, conforme o Bloco 4: nenhuma chamada à API.
  */
 
-type Trilha = 'fomento' | 'investimento' | 'formacao'
 
 interface Candidatura {
     id: number
@@ -54,22 +55,12 @@ const candidaturas: Candidatura[] = [
     },
 ]
 
-const rotuloDaTrilha: Record<Trilha, string> = {
-    fomento: 'Fomento',
-    investimento: 'Investimento',
-    formacao: 'Formação',
-}
 
-const corDaTrilha: Record<Trilha, string> = {
-    fomento: 'bg-trilha-fomento-suave text-trilha-fomento',
-    investimento: 'bg-trilha-investimento-suave text-trilha-investimento',
-    formacao: 'bg-trilha-formacao-suave text-trilha-formacao',
-}
 
-type Aba = 'todas' | 'andamento' | 'decididas'
+type AbaId = 'todas' | 'andamento' | 'decididas'
 
 function CandidaturasSquad() {
-    const [aba, setAba] = useState<Aba>('todas')
+    const [aba, setAba] = useState<AbaId>('todas')
 
     const emAndamento = candidaturas.filter((c) => !c.decidida)
     const decididas = candidaturas.filter((c) => c.decidida)
@@ -77,7 +68,7 @@ function CandidaturasSquad() {
     const lista =
         aba === 'andamento' ? emAndamento : aba === 'decididas' ? decididas : candidaturas
 
-    const abas: { id: Aba; rotulo: string; quantidade: number }[] = [
+    const abas: Aba<AbaId>[] = [
         { id: 'todas', rotulo: 'Todas', quantidade: candidaturas.length },
         { id: 'andamento', rotulo: 'Em andamento', quantidade: emAndamento.length },
         { id: 'decididas', rotulo: 'Decididas', quantidade: decididas.length },
@@ -98,30 +89,16 @@ function CandidaturasSquad() {
                 pertencem à Squad 3 · FICR.
             </p>
 
-            <div
-                role="tablist"
-                aria-label="Filtrar candidaturas"
-                className="mt-6 flex flex-wrap items-center gap-3"
-            >
-                {abas.map((item) => (
-                    <button
-                        key={item.id}
-                        type="button"
-                        role="tab"
-                        aria-selected={aba === item.id}
-                        onClick={() => setAba(item.id)}
-                        className={`inline-flex items-center gap-2 rounded-badge border px-4 py-2 text-item transition-colors duration-[var(--dur-rapida)] ease-padrao focus-visible:shadow-foco focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento ${
-                            aba === item.id
-                                ? 'border-profundo bg-profundo text-white'
-                                : 'border-sutil bg-card text-secundario hover:border-secundario'
-                        }`}
-                    >
-                        {item.rotulo}
-                        <span className={aba === item.id ? 'text-white' : 'text-secundario'}>
-                            {item.quantidade}
-                        </span>
-                    </button>
-                ))}
+            <div className="mt-6">
+
+                <AbasDeFiltro
+                    abas={abas}
+                    ativa={aba}
+                    aoEscolher={setAba}
+                    rotulo="Filtrar candidaturas"
+                    variante="pilula"
+                />
+
             </div>
 
             {lista.length === 0 ? (
@@ -135,11 +112,7 @@ function CandidaturasSquad() {
                         <li key={candidatura.id}>
                             <article className="rounded-bloco border border-sutil bg-card p-card shadow-card transition-[box-shadow,border-color,transform] duration-[var(--dur-padrao)] ease-padrao hover:-translate-y-px hover:shadow-card-hover">
                                 <div className="flex items-center gap-3">
-                                    <span
-                                        className={`rounded-badge px-2 py-1 text-selo ${corDaTrilha[candidatura.trilha]}`}
-                                    >
-                                        {rotuloDaTrilha[candidatura.trilha]}
-                                    </span>
+                                    <SeloDeTrilha trilha={candidatura.trilha} />
                                     <span className="text-apoio text-secundario">
                                         {candidatura.ofertante}
                                     </span>

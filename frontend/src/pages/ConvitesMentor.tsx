@@ -4,6 +4,8 @@ import { CustomButton } from '../components/CustomButton'
 import CascaDoApp from '../components/CascaDoApp'
 import SeloStatus, { type Status } from '../components/SeloStatus'
 import { MENU_MENTOR } from '../navegacao/menus'
+import SeloDeTrilha, { type Trilha } from '../components/SeloDeTrilha'
+import AbasDeFiltro, { type Aba } from '../components/AbasDeFiltro'
 
 /**
  * 38 · Mentor — convites de alocação · rota /convites
@@ -14,7 +16,6 @@ import { MENU_MENTOR } from '../navegacao/menus'
  * Dados simulados nesta etapa, conforme o Bloco 4: nenhuma chamada à API.
  */
 
-type Trilha = 'fomento' | 'investimento' | 'formacao'
 
 interface Convite {
     id: number
@@ -64,29 +65,19 @@ const convites: Convite[] = [
     },
 ]
 
-const rotuloDaTrilha: Record<Trilha, string> = {
-    fomento: 'Fomento',
-    investimento: 'Investimento',
-    formacao: 'Formação',
-}
 
-const corDaTrilha: Record<Trilha, string> = {
-    fomento: 'bg-trilha-fomento-suave text-trilha-fomento',
-    investimento: 'bg-trilha-investimento-suave text-trilha-investimento',
-    formacao: 'bg-trilha-formacao-suave text-trilha-formacao',
-}
 
-type Aba = 'todas' | 'pendentes' | 'aceitas'
+type AbaId = 'todas' | 'pendentes' | 'aceitas'
 
 function ConvitesMentor() {
-    const [aba, setAba] = useState<Aba>('todas')
+    const [aba, setAba] = useState<AbaId>('todas')
 
     const pendentes = convites.filter((c) => !c.aceita)
     const aceitas = convites.filter((c) => c.aceita)
 
     const lista = aba === 'pendentes' ? pendentes : aba === 'aceitas' ? aceitas : convites
 
-    const abas: { id: Aba; rotulo: string; quantidade: number }[] = [
+    const abas: Aba<AbaId>[] = [
         { id: 'todas', rotulo: 'Todas', quantidade: convites.length },
         { id: 'pendentes', rotulo: 'Pendentes', quantidade: pendentes.length },
         { id: 'aceitas', rotulo: 'Aceitas', quantidade: aceitas.length },
@@ -107,30 +98,16 @@ function ConvitesMentor() {
                 resposta. Sem resposta até o prazo, o convite expira sozinho.
             </p>
 
-            <div
-                role="tablist"
-                aria-label="Filtrar convites"
-                className="mt-6 flex flex-wrap items-center gap-3"
-            >
-                {abas.map((item) => (
-                    <button
-                        key={item.id}
-                        type="button"
-                        role="tab"
-                        aria-selected={aba === item.id}
-                        onClick={() => setAba(item.id)}
-                        className={`inline-flex items-center gap-2 rounded-badge border px-4 py-2 text-item transition-colors duration-[var(--dur-rapida)] ease-padrao focus-visible:shadow-foco focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento ${
-                            aba === item.id
-                                ? 'border-profundo bg-profundo text-white'
-                                : 'border-sutil bg-card text-secundario hover:border-secundario'
-                        }`}
-                    >
-                        {item.rotulo}
-                        <span className={aba === item.id ? 'text-white' : 'text-secundario'}>
-                            {item.quantidade}
-                        </span>
-                    </button>
-                ))}
+            <div className="mt-6">
+
+                <AbasDeFiltro
+                    abas={abas}
+                    ativa={aba}
+                    aoEscolher={setAba}
+                    rotulo="Filtrar convites"
+                    variante="pilula"
+                />
+
             </div>
 
             <ul className="mt-6 flex flex-col gap-4">
@@ -138,11 +115,7 @@ function ConvitesMentor() {
                     <li key={convite.id}>
                         <article className="rounded-bloco border border-sutil bg-card p-card shadow-card transition-[box-shadow,border-color,transform] duration-[var(--dur-padrao)] ease-padrao hover:-translate-y-px hover:shadow-card-hover">
                             <div className="flex items-center gap-3">
-                                <span
-                                    className={`rounded-badge px-2 py-1 text-selo ${corDaTrilha[convite.trilha]}`}
-                                >
-                                    {rotuloDaTrilha[convite.trilha]}
-                                </span>
+                                <SeloDeTrilha trilha={convite.trilha} />
                                 <span className="text-apoio text-secundario">
                                     {convite.ofertante}
                                 </span>

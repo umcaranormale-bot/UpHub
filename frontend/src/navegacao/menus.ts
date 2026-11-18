@@ -1,4 +1,4 @@
-import type { ItemDeMenu } from '../components/CascaDoApp'
+import type { ItemDeMenu } from '../components/MenuLateral'
 
 /**
  * Menus laterais por papel, como estão no protótipo do Figma.
@@ -10,6 +10,9 @@ import type { ItemDeMenu } from '../components/CascaDoApp'
  * "Conta" existem em mais de um papel com conteúdo diferente, então um
  * caminho genérico como /oportunidades levaria quem está na área do provedor
  * para a tela da squad.
+ *
+ * Item sem "para" é uma tela que ainda não existe: o menu mostra o rótulo,
+ * mas não deixa clicar, em vez de mandar o usuário para a landing page.
  */
 
 export const MENU_SQUAD: ItemDeMenu[] = [
@@ -38,4 +41,19 @@ export const MENU_GESTAO: ItemDeMenu[] = [
     { rotulo: 'Aprovação de provedores', para: '/gestao/provedores' },
     { rotulo: 'Alocação de mentores', para: '/gestao/alocacao' },
     { rotulo: 'Conta', para: '/gestao/conta' },
+]
+
+/**
+ * Menu do HomeLayout, herdado do antigo SideMenu. Os rótulos são os que
+ * estavam lá. Nenhuma dessas telas foi implementada, então todas ficam sem
+ * "para": aparecem no menu, mas não levam à landing page por engano.
+ */
+export const MENU_HOME: ItemDeMenu[] = [
+    { rotulo: 'Painel' },
+    { rotulo: 'Oportunidades' },
+    { rotulo: 'Candidaturas' },
+    { rotulo: 'Avaliadores' },
+    { rotulo: 'Notificações e prazos' },
+    { rotulo: 'Histórico de auditoria' },
+    { rotulo: 'Conta' },
 ]

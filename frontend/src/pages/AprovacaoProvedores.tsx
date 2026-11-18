@@ -4,6 +4,9 @@ import { CustomButton } from '../components/CustomButton'
 import CascaDoApp from '../components/CascaDoApp'
 import SeloStatus, { type Status } from '../components/SeloStatus'
 import { MENU_GESTAO } from '../navegacao/menus'
+import Indicadores, { type Indicador } from '../components/Indicadores'
+import TabelaSelecionavel, { type ColunaDaTabela } from '../components/TabelaSelecionavel'
+import CartoesDeDetalhe from '../components/CartoesDeDetalhe'
 
 /**
  * 18 · Gestão do PD — aprovação de provedores · rota /provedores
@@ -14,12 +17,6 @@ import { MENU_GESTAO } from '../navegacao/menus'
  * Dados simulados nesta etapa, conforme o Bloco 4: nenhuma chamada à API.
  */
 
-interface Indicador {
-    id: string
-    rotulo: string
-    valor: string
-    cor: string
-}
 
 const indicadores: Indicador[] = [
     { id: 'analise', rotulo: 'Pedidos em análise', valor: '3', cor: 'text-ocre' },
@@ -134,7 +131,30 @@ const provedores: Provedor[] = [
     },
 ]
 
-const COLUNAS = ['Organização', 'CNPJ', 'Tipo', 'Trilha', 'Pedido em', 'Situação']
+const COLUNAS: ColunaDaTabela<Provedor>[] = [
+    {
+        rotulo: 'Organização',
+        celula: (l) => (
+            <>
+                <p className="text-item text-titulo">{l.organizacao}</p>
+                <p className="mt-1 text-apoio text-secundario">
+                    {l.responsavel} · {l.email}
+                </p>
+            </>
+        ),
+    },
+    { rotulo: 'CNPJ', celula: (l) => <span className="text-apoio text-titulo">{l.cnpj}</span> },
+    { rotulo: 'Tipo', celula: (l) => <span className="text-apoio text-titulo">{l.tipo}</span> },
+    { rotulo: 'Trilha', celula: (l) => <span className="text-apoio text-titulo">{l.trilha}</span> },
+    {
+        rotulo: 'Pedido em',
+        celula: (l) => <span className="text-apoio text-titulo">{l.pedidoEm}</span>,
+    },
+    {
+        rotulo: 'Situação',
+        celula: (l) => <SeloStatus status={l.status} rotulo={l.rotulo} comPonto />,
+    },
+]
 
 function AprovacaoProvedores() {
     const [selecionado, setSelecionado] = useState(provedores[0].id)
@@ -156,80 +176,20 @@ function AprovacaoProvedores() {
                 pedido de publicação não é aprovado, ela navega mas não publica.
             </p>
 
-            <ul className="mt-6 grid grid-cols-4 gap-5">
-                {indicadores.map((indicador) => (
-                    <li
-                        key={indicador.id}
-                        className="rounded-bloco border border-sutil bg-card p-card shadow-card"
-                    >
-                        <p className="text-item text-secundario">{indicador.rotulo}</p>
-                        <p className={`mt-2 font-display text-tela ${indicador.cor}`}>
-                            {indicador.valor}
-                        </p>
-                    </li>
-                ))}
-            </ul>
+            <div className="mt-6">
+                <Indicadores itens={indicadores} rotulo="Indicadores do mês" />
+            </div>
 
-            <section
-                aria-label="Fila de pedidos"
-                className="mt-6 overflow-hidden rounded-bloco border border-sutil bg-card shadow-card"
-            >
-                <table className="w-full border-collapse text-left">
-                    <thead>
-                        <tr className="border-b border-sutil bg-page">
-                            {COLUNAS.map((coluna) => (
-                                <th
-                                    key={coluna}
-                                    scope="col"
-                                    className="px-card py-3 text-selo text-secundario uppercase"
-                                >
-                                    {coluna}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {provedores.map((linha) => (
-                            <tr
-                                key={linha.id}
-                                aria-selected={linha.id === selecionado}
-                                onClick={() => setSelecionado(linha.id)}
-                                className={`cursor-pointer border-b border-sutil transition-colors duration-[var(--dur-rapida)] ease-padrao last:border-b-0 ${
-                                    linha.id === selecionado
-                                        ? 'bg-acento-suave'
-                                        : 'hover:bg-page'
-                                }`}
-                            >
-                                <td className="px-card py-4">
-                                    <p className="text-item text-titulo">{linha.organizacao}</p>
-                                    <p className="mt-1 text-apoio text-secundario">
-                                        {linha.responsavel} · {linha.email}
-                                    </p>
-                                </td>
-                                <td className="px-card py-4 text-apoio text-titulo">
-                                    {linha.cnpj}
-                                </td>
-                                <td className="px-card py-4 text-apoio text-titulo">
-                                    {linha.tipo}
-                                </td>
-                                <td className="px-card py-4 text-apoio text-titulo">
-                                    {linha.trilha}
-                                </td>
-                                <td className="px-card py-4 text-apoio text-titulo">
-                                    {linha.pedidoEm}
-                                </td>
-                                <td className="px-card py-4">
-                                    <SeloStatus
-                                        status={linha.status}
-                                        rotulo={linha.rotulo}
-                                        comPonto
-                                    />
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </section>
+            <div className="mt-6">
+                <TabelaSelecionavel
+                    rotulo="Fila de pedidos"
+                    colunas={COLUNAS}
+                    linhas={provedores}
+                    chave={(l) => l.id}
+                    selecionada={selecionado}
+                    aoSelecionar={(id) => setSelecionado(Number(id))}
+                />
+            </div>
 
             <section
                 aria-label={`Conferência de ${provedor.organizacao}`}
@@ -251,30 +211,16 @@ function AprovacaoProvedores() {
                         pedido é aberto. Esta linha ainda não foi conferida.
                     </p>
                 ) : (
-                    <ul className="mt-5 grid grid-cols-4 gap-5">
-                        {provedor.conferencias.map((conferencia) => (
-                            <li
-                                key={conferencia.rotulo}
-                                className="rounded-card bg-page p-5"
-                            >
-                                <p className="text-apoio text-secundario">
-                                    {conferencia.rotulo}
-                                </p>
-                                <p className="mt-1 break-words text-item text-titulo">
-                                    {conferencia.valor}
-                                </p>
-                                <p
-                                    className={`mt-1 text-apoio ${
-                                        conferencia.confere
-                                            ? 'text-status-aprovada-texto'
-                                            : 'text-secundario'
-                                    }`}
-                                >
-                                    {conferencia.nota}
-                                </p>
-                            </li>
-                        ))}
-                    </ul>
+                    <div className="mt-5">
+                        <CartoesDeDetalhe
+                            itens={provedor.conferencias.map((c) => ({
+                                rotulo: c.rotulo,
+                                valor: c.valor,
+                                nota: c.nota,
+                                confirmado: c.confere,
+                            }))}
+                        />
+                    </div>
                 )}
 
                 <div className="mt-6 flex items-center gap-4 border-t border-sutil pt-5">

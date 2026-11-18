@@ -1,7 +1,11 @@
 import type { ReactNode } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 import Logo from './Logo'
+import MenuLateral, { type ItemDeMenu } from './MenuLateral'
+import { ANEL_FOCO, TRANSICAO_COR } from '../estilos/classes'
+
+export type { ItemDeMenu }
 
 /**
  * CascaDoApp — topo e menu lateral das telas de dentro do sistema.
@@ -11,10 +15,6 @@ import Logo from './Logo'
  * adotados pelo projeto, é aqui que essa moldura vive.
  */
 
-export interface ItemDeMenu {
-    rotulo: string
-    para: string
-}
 
 interface CascaDoAppProps {
     /** Organização ativa, mostrada ao lado da logo. */
@@ -54,7 +54,7 @@ export function CascaDoApp({
                 {voltarPara && (
                     <Link
                         to={voltarPara}
-                        className="rounded-card border border-sutil px-4 py-2 text-apoio text-titulo transition-colors duration-[var(--dur-rapida)] ease-padrao hover:bg-page focus-visible:shadow-foco focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
+                        className={`rounded-card border border-sutil px-4 py-2 text-apoio text-titulo ${TRANSICAO_COR} hover:bg-page ${ANEL_FOCO}`}
                     >
                         ‹ Voltar
                     </Link>
@@ -80,34 +80,7 @@ export function CascaDoApp({
             </header>
 
             <div className="flex">
-                {!semMenu && (
-                <aside className="w-[260px] shrink-0 border-r border-sutil bg-card px-4 py-6">
-                    <nav aria-label={`Menu de ${papel}`}>
-                        <ul className="flex flex-col gap-1">
-                            {itens.map((item) => (
-                                <li key={item.para}>
-                                    <NavLink
-                                        to={item.para}
-                                        end
-                                        className={({ isActive }) =>
-                                            [
-                                                'block rounded-card px-4 py-3 text-apoio',
-                                                'transition-colors duration-[var(--dur-rapida)] ease-padrao',
-                                                'focus-visible:shadow-foco focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento',
-                                                isActive
-                                                    ? 'bg-acento-suave text-titulo'
-                                                    : 'text-secundario hover:bg-page',
-                                            ].join(' ')
-                                        }
-                                    >
-                                        {item.rotulo}
-                                    </NavLink>
-                                </li>
-                            ))}
-                        </ul>
-                    </nav>
-                </aside>
-                )}
+                {!semMenu && <MenuLateral itens={itens} rotulo={`Menu de ${papel}`} />}
 
                 <main id="conteudo" className="flex-1 px-10 py-8">
                     {children}

@@ -4,6 +4,7 @@ import { CustomButton } from '../components/CustomButton'
 import CascaDoApp from '../components/CascaDoApp'
 import SeloStatus from '../components/SeloStatus'
 import { MENU_AVALIADOR } from '../navegacao/menus'
+import { ANEL_FOCO, TRANSICAO_COR, TRANSICAO_ELEVACAO } from '../estilos/classes'
 
 /**
  * 07 · Avaliador — rubrica e parecer · rota /avaliacao
@@ -16,12 +17,6 @@ import { MENU_AVALIADOR } from '../navegacao/menus'
  */
 
 // Transições do design system: cor em 140ms, elevação e layout em 200ms.
-const TRANSICAO_COR =
-    'transition-colors duration-[var(--dur-rapida)] ease-padrao'
-const TRANSICAO_ELEV =
-    'transition-[box-shadow,border-color,transform] duration-[var(--dur-padrao)] ease-padrao'
-const ANEL_FOCO =
-    'focus-visible:shadow-foco focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento'
 
 
 const PRAZO = { data: '30/11/2026', diasRestantes: 28 }
@@ -131,7 +126,7 @@ function FilaAvaliacao() {
                                                 className={[
                                                     'w-full rounded-bloco border bg-card p-card text-left shadow-card',
                                                     'hover:-translate-y-px hover:shadow-card-hover',
-                                                    TRANSICAO_ELEV,
+                                                    TRANSICAO_ELEVACAO,
                                                     ANEL_FOCO,
                                                     ativa
                                                         ? 'border-acento shadow-acento'
@@ -201,7 +196,7 @@ function FilaAvaliacao() {
                                                         [criterio.id]: Number(evento.target.value),
                                                     }))
                                                 }
-                                                className={`w-16 rounded-card border border-sutil px-2 py-1 text-right text-corpo text-titulo ${TRANSICAO_ELEV} ${ANEL_FOCO} hover:border-acento`}
+                                                className={`w-16 rounded-card border border-sutil px-2 py-1 text-right text-corpo text-titulo ${TRANSICAO_ELEVACAO} ${ANEL_FOCO} hover:border-acento`}
                                             />
                                             <span className="text-corpo text-secundario">/ 10</span>
                                         </span>
@@ -254,7 +249,7 @@ function FilaAvaliacao() {
                                     value={parecer}
                                     aria-describedby="ajuda-parecer"
                                     onChange={(evento) => setParecer(evento.target.value)}
-                                    className={`mt-4 w-full rounded-card border border-sutil p-4 text-corpo text-titulo ${TRANSICAO_ELEV} ${ANEL_FOCO} hover:border-acento`}
+                                    className={`mt-4 w-full rounded-card border border-sutil p-4 text-corpo text-titulo ${TRANSICAO_ELEVACAO} ${ANEL_FOCO} hover:border-acento`}
                                 />
                             </section>
 
