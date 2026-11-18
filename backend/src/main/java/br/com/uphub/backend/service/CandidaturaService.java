@@ -283,6 +283,13 @@ public class CandidaturaService {
         return buscarComoProvedor(id, pessoaId);
     }
 
+    // o provedor leva a candidatura a outro estado por causa de uma parte dela (ex.: autodeclaração recusada)
+    @Transactional
+    public Candidatura moverComoProvedor(Candidatura candidatura, String para) {
+        mover(candidatura, para, Ator.PROVEDOR);
+        return candidaturaRepository.saveAndFlush(candidatura);
+    }
+
     // ---------- apoio
 
     private void mover(Candidatura candidatura, String para, Ator ator) {
