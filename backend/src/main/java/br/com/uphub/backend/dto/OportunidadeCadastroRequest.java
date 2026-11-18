@@ -6,6 +6,7 @@ public record OportunidadeCadastroRequest(
         String titulo,
         String resumo,
         String area,
-        String tese
+        String tese,
+        Long residenciaId
 ) {
 }
