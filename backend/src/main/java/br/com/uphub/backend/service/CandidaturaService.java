@@ -304,6 +304,13 @@ public class CandidaturaService {
         return candidaturaRepository.saveAndFlush(candidatura);
     }
 
+    // uma parte da candidatura (ajuste, prazos) leva o estado adiante pela máquina, com o ator certo
+    @Transactional
+    public Candidatura moverPor(Candidatura candidatura, String para, Ator ator) {
+        mover(candidatura, para, ator);
+        return candidaturaRepository.saveAndFlush(candidatura);
+    }
+
     // a seleção só anda com a oportunidade ativa
     public void exigirQueAnda(Candidatura candidatura) {
         exigirNaoPausada(buscarOportunidade(candidatura.getOportunidadeId()));
