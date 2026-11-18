@@ -12,6 +12,8 @@ public interface VersaoOportunidadeRepository extends JpaRepository<VersaoOportu
 
     Optional<VersaoOportunidade> findByIdAndOportunidadeId(Long id, Long oportunidadeId);
 
+    Optional<VersaoOportunidade> findFirstByOportunidadeIdAndPublicadaEmIsNotNull(Long oportunidadeId);
+
     boolean existsByOportunidadeIdAndPublicadaEmIsNotNull(Long oportunidadeId);
 
     @Query("select coalesce(max(v.numero), 0) from VersaoOportunidade v where v.oportunidadeId = :oportunidadeId")
