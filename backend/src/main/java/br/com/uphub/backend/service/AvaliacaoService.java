@@ -1,0 +1,257 @@
+package br.com.uphub.backend.service;
+
+import br.com.uphub.backend.dto.AtribuicaoRequest;
+import br.com.uphub.backend.dto.AvaliacaoRascunhoRequest;
+import br.com.uphub.backend.dto.AvaliacaoResponse;
+import br.com.uphub.backend.model.AvaliadorOportunidade;
+import br.com.uphub.backend.model.AvaliadorOportunidadeId;
+import br.com.uphub.backend.model.Avaliacao;
+import br.com.uphub.backend.model.Candidatura;
+import br.com.uphub.backend.model.CandidaturaParticipanteId;
+import br.com.uphub.backend.model.Oportunidade;
+import br.com.uphub.backend.model.Vinculo;
+import br.com.uphub.backend.repository.AvaliacaoRepository;
+import br.com.uphub.backend.repository.AvaliadorOportunidadeRepository;
+import br.com.uphub.backend.repository.CandidaturaParticipanteRepository;
+import br.com.uphub.backend.repository.CandidaturaRepository;
+import br.com.uphub.backend.repository.OportunidadeRepository;
+import br.com.uphub.backend.repository.VinculoRepository;
+import br.com.uphub.backend.seguranca.Acesso;
+import br.com.uphub.backend.seguranca.Permissao;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Set;
+
+@Service
+public class AvaliacaoService {
+
+    private static final Set<String> DECISOES = Set.of("APROVADA", "REPROVADA");
+
+    private final AvaliacaoRepository avaliacaoRepository;
+    private final AvaliadorOportunidadeRepository designacaoRepository;
+    private final CandidaturaRepository candidaturaRepository;
+    private final CandidaturaParticipanteRepository participanteRepository;
+    private final OportunidadeRepository oportunidadeRepository;
+    private final VinculoRepository vinculoRepository;
+    private final CandidaturaService candidaturaService;
+    private final Acesso acesso;
+
+    public AvaliacaoService(AvaliacaoRepository avaliacaoRepository,
+                            AvaliadorOportunidadeRepository designacaoRepository,
+                            CandidaturaRepository candidaturaRepository,
+                            CandidaturaParticipanteRepository participanteRepository,
+                            OportunidadeRepository oportunidadeRepository,
+                            VinculoRepository vinculoRepository,
+                            CandidaturaService candidaturaService,
+                            Acesso acesso) {
+        this.avaliacaoRepository = avaliacaoRepository;
+        this.designacaoRepository = designacaoRepository;
+        this.candidaturaRepository = candidaturaRepository;
+        this.participanteRepository = participanteRepository;
+        this.oportunidadeRepository = oportunidadeRepository;
+        this.vinculoRepository = vinculoRepository;
+        this.candidaturaService = candidaturaService;
+        this.acesso = acesso;
+    }
+
+    // ---------- provedor
+
+    // o provedor entrega a candidatura em análise a um avaliador designado para a oportunidade
+    @Transactional
+    public AvaliacaoResponse atribuir(Long candidaturaId, AtribuicaoRequest dados, Long pessoaId) {
+        if (dados == null || dados.vinculoId() == null) {
+            throw erro(HttpStatus.BAD_REQUEST, "O campo vinculoId é obrigatório");
+        }
+        Candidatura candidatura = candidaturaService.comoProvedor(candidaturaId, pessoaId);
+        candidaturaService.exigirQueAnda(candidatura);
+        if (!"EM_ANALISE".equals(candidatura.getEstado())) {
+            throw erro(HttpStatus.CONFLICT, "A candidatura precisa estar em análise para receber avaliadores");
+        }
+        if (!designacaoRepository.existsById(new AvaliadorOportunidadeId(candidatura.getOportunidadeId(), dados.vinculoId()))) {
+            throw erro(HttpStatus.BAD_REQUEST, "Este avaliador não está designado para a oportunidade");
+        }
+        Vinculo vinculo = vinculoRepository.findById(dados.vinculoId()).orElseThrow();
+        if (vinculo.getEncerradoEm() != null) {
+            throw erro(HttpStatus.BAD_REQUEST, "O vínculo deste avaliador foi encerrado");
+        }
+        Long avaliadorId = vinculo.getPessoa().getId();
+        if (acesso.ehMembro(avaliadorId, candidatura.getOrganizacaoId())
+                || participanteRepository.existsById(new CandidaturaParticipanteId(candidatura.getId(), avaliadorId))) {
+            throw erro(HttpStatus.CONFLICT, "Conflito de interesse: o avaliador faz parte da organização candidata");
+        }
+        short rodada = rodadaAtual(candidatura);
+        if (avaliacaoRepository.existsByCandidaturaIdAndVinculoIdAndRodada(candidaturaId, vinculo.getId(), rodada)) {
+            throw erro(HttpStatus.CONFLICT, "Este avaliador já recebeu esta candidatura nesta rodada");
+        }
+        Avaliacao avaliacao = avaliacaoRepository.save(new Avaliacao(candidaturaId, candidatura.getOportunidadeId(),
+                vinculo.getId(), pessoaId, OffsetDateTime.now(), rodada));
+        return resposta(avaliacao, candidatura, true);
+    }
+
+    // tirar o avaliador antes de ele assinar (por exemplo, para trocar por outro)
+    @Transactional
+    public void remover(Long avaliacaoId, Long pessoaId) {
+        Avaliacao avaliacao = buscar(avaliacaoId);
+        candidaturaService.comoProvedor(avaliacao.getCandidaturaId(), pessoaId);
+        if (avaliacao.assinada()) {
+            throw erro(HttpStatus.CONFLICT, "Esta avaliação já foi assinada");
+        }
+        avaliacaoRepository.delete(avaliacao);
+    }
+
+    // ---------- leitura
+
+    // provedor e gestão veem todas; o avaliador, a dele; a organização candidata, as assinadas das rodadas fechadas, sem o nome
+    @Transactional(readOnly = true)
+    public List<AvaliacaoResponse> listarDaCandidatura(Long candidaturaId, Long pessoaId) {
+        Candidatura candidatura = candidaturaService.paraLeitura(candidaturaId, pessoaId);
+        List<Avaliacao> todas = avaliacaoRepository.findByCandidaturaIdOrderByRodadaAscAtribuidaEmAsc(candidaturaId);
+        if (conduz(candidatura, pessoaId)) {
+            return todas.stream().map(a -> resposta(a, candidatura, true)).toList();
+        }
+        if (candidaturaService.soComoAvaliador(candidatura, pessoaId)) {
+            return todas.stream().filter(a -> ehDoAvaliador(a, pessoaId)).map(a -> resposta(a, candidatura, true)).toList();
+        }
+        short atual = rodadaAtual(candidatura);
+        return todas.stream()
+                .filter(a -> a.assinada() && (!"EM_ANALISE".equals(candidatura.getEstado()) || a.getRodada() < atual))
+                .map(a -> resposta(a, candidatura, false))
+                .toList();
+    }
+
+    // a fila do avaliador: o que falta assinar vem primeiro
+    @Transactional(readOnly = true)
+    public List<AvaliacaoResponse> fila(Long pessoaId) {
+        return avaliacaoRepository.filaDa(pessoaId).stream()
+                .map(a -> resposta(a, candidaturaRepository.findById(a.getCandidaturaId()).orElseThrow(), true))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public AvaliacaoResponse buscarPorId(Long avaliacaoId, Long pessoaId) {
+        Avaliacao avaliacao = buscar(avaliacaoId);
+        Candidatura candidatura = candidaturaRepository.findById(avaliacao.getCandidaturaId()).orElseThrow();
+        if (!ehDoAvaliador(avaliacao, pessoaId) && !conduz(candidatura, pessoaId)) {
+            throw erro(HttpStatus.NOT_FOUND, "Avaliação não encontrada");
+        }
+        return resposta(avaliacao, candidatura, true);
+    }
+
+    // ---------- avaliador
+
+    @Transactional
+    public AvaliacaoResponse salvarRascunho(Long avaliacaoId, AvaliacaoRascunhoRequest dados, Long pessoaId) {
+        Avaliacao avaliacao = doAvaliadorParaEscrever(avaliacaoId, pessoaId);
+        String decisao = dados == null || dados.decisao() == null ? null : dados.decisao().trim().toUpperCase();
+        if (decisao != null && !decisoesAceitas(avaliacao).contains(decisao)) {
+            throw erro(HttpStatus.BAD_REQUEST, "Decisão inválida. Use: " + String.join(", ", decisoesAceitas(avaliacao).stream().sorted().toList()));
+        }
+        String parecer = dados == null || dados.parecer() == null ? null : dados.parecer().trim();
+        avaliacao.rascunho(decisao, parecer);
+        Candidatura candidatura = candidaturaRepository.findById(avaliacao.getCandidaturaId()).orElseThrow();
+        return resposta(avaliacaoRepository.saveAndFlush(avaliacao), candidatura, true);
+    }
+
+    // assinar fecha a avaliação; quando todos da rodada assinam, a candidatura anda
+    @Transactional
+    public AvaliacaoResponse assinar(Long avaliacaoId, Long pessoaId) {
+        Avaliacao avaliacao = doAvaliadorParaEscrever(avaliacaoId, pessoaId);
+        Candidatura candidatura = candidaturaRepository.findById(avaliacao.getCandidaturaId()).orElseThrow();
+        candidaturaService.exigirQueAnda(candidatura);
+        if (!"EM_ANALISE".equals(candidatura.getEstado())) {
+            throw erro(HttpStatus.CONFLICT, "A candidatura não está em análise");
+        }
+        if (avaliacao.getDecisao() == null) {
+            throw erro(HttpStatus.BAD_REQUEST, "Escolha a decisão antes de assinar");
+        }
+        if (avaliacao.getParecer() == null || avaliacao.getParecer().isBlank()) {
+            throw erro(HttpStatus.BAD_REQUEST, "Escreva o parecer antes de assinar");
+        }
+        avaliacao.assinar(notaFinal(avaliacao), OffsetDateTime.now());
+        avaliacaoRepository.saveAndFlush(avaliacao);
+        candidatura = consolidar(candidatura, avaliacao.getRodada());
+        return resposta(avaliacao, candidatura, true);
+    }
+
+    // ---------- regras da rodada
+
+    // fechada a rodada: maioria de aprovações aprova; empate ou maioria de reprovações reprova
+    private Candidatura consolidar(Candidatura candidatura, short rodada) {
+        List<Avaliacao> daRodada = avaliacaoRepository.findByCandidaturaIdAndRodada(candidatura.getId(), rodada);
+        if (daRodada.stream().anyMatch(a -> !a.assinada())) {
+            return candidatura;
+        }
+        long aprovadas = daRodada.stream().filter(a -> "APROVADA".equals(a.getDecisao())).count();
+        long reprovadas = daRodada.stream().filter(a -> "REPROVADA".equals(a.getDecisao())).count();
+        String resultado = aprovadas > reprovadas ? "APROVADA" : "REPROVADA";
+        if ("REPROVADA".equals(resultado)) {
+            candidatura.moverNoFunil(null);
+        }
+        return candidaturaService.moverComoAvaliador(candidatura, resultado);
+    }
+
+    // a nota de cada critério entra na V27
+    private BigDecimal notaFinal(Avaliacao avaliacao) {
+        return null;
+    }
+
+    private Set<String> decisoesAceitas(Avaliacao avaliacao) {
+        return DECISOES;
+    }
+
+    // a rodada de avaliação em que a candidatura está (a V29 soma os reenvios do ajuste)
+    private short rodadaAtual(Candidatura candidatura) {
+        return 1;
+    }
+
+    // ---------- apoio
+
+    private Avaliacao doAvaliadorParaEscrever(Long avaliacaoId, Long pessoaId) {
+        Avaliacao avaliacao = buscar(avaliacaoId);
+        if (!ehDoAvaliador(avaliacao, pessoaId)) {
+            throw erro(HttpStatus.FORBIDDEN, "Só o avaliador desta avaliação pode mexer nela");
+        }
+        if (avaliacao.assinada()) {
+            throw erro(HttpStatus.CONFLICT, "Esta avaliação já foi assinada e não muda mais");
+        }
+        return avaliacao;
+    }
+
+    private boolean ehDoAvaliador(Avaliacao avaliacao, Long pessoaId) {
+        return vinculoRepository.findById(avaliacao.getVinculoId())
+                .map(v -> v.getPessoa().getId().equals(pessoaId) && v.getEncerradoEm() == null)
+                .orElse(false);
+    }
+
+    private boolean conduz(Candidatura candidatura, Long pessoaId) {
+        Oportunidade oportunidade = oportunidadeRepository.findById(candidatura.getOportunidadeId()).orElseThrow();
+        return acesso.ehGestao(pessoaId)
+                || acesso.tem(pessoaId, oportunidade.getOrganizacaoId(), Permissao.CONDUZIR_SELECAO);
+    }
+
+    private Avaliacao buscar(Long id) {
+        return avaliacaoRepository.findById(id)
+                .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Avaliação não encontrada"));
+    }
+
+    private AvaliacaoResponse resposta(Avaliacao a, Candidatura c, boolean comAvaliador) {
+        Vinculo vinculo = comAvaliador ? vinculoRepository.findById(a.getVinculoId()).orElse(null) : null;
+        AvaliadorOportunidade designacao = designacaoRepository
+                .findById(new AvaliadorOportunidadeId(a.getOportunidadeId(), a.getVinculoId())).orElse(null);
+        return new AvaliacaoResponse(a.getId(), a.getCandidaturaId(), a.getOportunidadeId(), c.getTituloProposta(),
+                c.getEstado(), a.getRodada(), vinculo == null ? null : vinculo.getId(),
+                vinculo == null ? null : vinculo.getPessoa().getNome(), a.getAtribuidaEm(),
+                designacao == null ? null : designacao.getPrazoAvaliacao(), a.getDecisao(), a.getParecer(),
+                a.getNotaFinal(), a.getAssinadaEm());
+    }
+
+    private ResponseStatusException erro(HttpStatus status, String mensagem) {
+        return new ResponseStatusException(status, mensagem);
+    }
+}

@@ -6,6 +6,7 @@ import br.com.uphub.backend.model.AvaliadorOportunidade;
 import br.com.uphub.backend.model.AvaliadorOportunidadeId;
 import br.com.uphub.backend.model.Oportunidade;
 import br.com.uphub.backend.model.Vinculo;
+import br.com.uphub.backend.repository.AvaliacaoRepository;
 import br.com.uphub.backend.repository.AvaliadorOportunidadeRepository;
 import br.com.uphub.backend.repository.OportunidadeRepository;
 import br.com.uphub.backend.repository.VinculoRepository;
@@ -24,15 +25,18 @@ import java.util.List;
 public class AvaliadorService {
 
     private final AvaliadorOportunidadeRepository avaliadorRepository;
+    private final AvaliacaoRepository avaliacaoRepository;
     private final OportunidadeRepository oportunidadeRepository;
     private final VinculoRepository vinculoRepository;
     private final Acesso acesso;
 
     public AvaliadorService(AvaliadorOportunidadeRepository avaliadorRepository,
+                            AvaliacaoRepository avaliacaoRepository,
                             OportunidadeRepository oportunidadeRepository,
                             VinculoRepository vinculoRepository,
                             Acesso acesso) {
         this.avaliadorRepository = avaliadorRepository;
+        this.avaliacaoRepository = avaliacaoRepository;
         this.oportunidadeRepository = oportunidadeRepository;
         this.vinculoRepository = vinculoRepository;
         this.acesso = acesso;
@@ -93,6 +97,9 @@ public class AvaliadorService {
         acesso.exigir(pessoaId, oportunidade.getOrganizacaoId(), Permissao.CONDUZIR_SELECAO);
         AvaliadorOportunidade designacao = avaliadorRepository.findById(new AvaliadorOportunidadeId(oportunidadeId, vinculoId))
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Este avaliador não está designado para a oportunidade"));
+        if (avaliacaoRepository.existsByOportunidadeIdAndVinculoId(oportunidadeId, vinculoId)) {
+            throw erro(HttpStatus.CONFLICT, "Este avaliador já recebeu candidaturas desta oportunidade");
+        }
         avaliadorRepository.delete(designacao);
     }
 

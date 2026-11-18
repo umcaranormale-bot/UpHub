@@ -63,6 +63,10 @@ public class AutodeclaracaoService {
     @Transactional(readOnly = true)
     public List<AutodeclaracaoResponse> listar(Long candidaturaId, Long pessoaId) {
         Candidatura candidatura = candidaturaService.paraLeitura(candidaturaId, pessoaId);
+        // a autodeclaração não aparece para o avaliador, para não pesar na nota
+        if (candidaturaService.soComoAvaliador(candidatura, pessoaId)) {
+            throw erro(HttpStatus.FORBIDDEN, "A autodeclaração não aparece para o avaliador");
+        }
         return autodeclaracaoRepository.findById_CandidaturaIdOrderByDeclaradaEm(candidaturaId).stream()
                 .map(a -> AutodeclaracaoResponse.de(a, candidatura.getEstado()))
                 .toList();
