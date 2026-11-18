@@ -4,6 +4,7 @@ import br.com.uphub.backend.candidatura.EstagioFunil;
 import br.com.uphub.backend.candidatura.EtapaDoEnvio;
 import br.com.uphub.backend.candidatura.MaquinaDeEstados;
 import br.com.uphub.backend.candidatura.MaquinaDeEstados.Ator;
+import br.com.uphub.backend.candidatura.TiposPorTrilha;
 import br.com.uphub.backend.dto.CandidaturaEnvioResponse;
 import br.com.uphub.backend.dto.CandidaturaRequest;
 import br.com.uphub.backend.dto.CandidaturaResponse;
@@ -100,9 +101,7 @@ public class CandidaturaService {
             throw erro(HttpStatus.BAD_REQUEST, "A organização não pode se candidatar à própria oportunidade");
         }
         exigirAberta(oportunidade);
-        if ("FORMACAO".equals(oportunidade.getTrilhaCodigo()) && !"SQUAD".equals(organizacao.getTipo())) {
-            throw erro(HttpStatus.BAD_REQUEST, "Na trilha Formação, só squads se candidatam");
-        }
+        exigirTipoDaTrilha(oportunidade.getTrilhaCodigo(), organizacao.getTipo());
         if (candidaturaRepository.existsByOportunidadeIdAndOrganizacaoId(oportunidadeId, organizacao.getId())) {
             throw erro(HttpStatus.CONFLICT, "Esta organização já tem uma candidatura nesta oportunidade");
         }
@@ -330,6 +329,12 @@ public class CandidaturaService {
     }
 
     // ---------- apoio
+
+    private void exigirTipoDaTrilha(String trilhaCodigo, String tipo) {
+        if (!TiposPorTrilha.aceita(trilhaCodigo, tipo)) {
+            throw erro(HttpStatus.BAD_REQUEST, "Nesta trilha, só " + TiposPorTrilha.quem(trilhaCodigo) + " se candidatam");
+        }
+    }
 
     private void mover(Candidatura candidatura, String para, Ator ator) {
         exigirNaoPausada(buscarOportunidade(candidatura.getOportunidadeId()));
