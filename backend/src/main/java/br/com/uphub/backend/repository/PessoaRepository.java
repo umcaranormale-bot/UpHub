@@ -10,5 +10,7 @@ public interface PessoaRepository extends JpaRepository<Pessoa, Long> {
 
     boolean existsByEmailIgnoreCase(String email);
 
+    boolean existsByIdAndExcluidaEmIsNull(Long id);
+
     Optional<Pessoa> findByEmailIgnoreCase(String email);
 }
