@@ -9,6 +9,7 @@ import br.com.uphub.backend.model.Avaliacao;
 import br.com.uphub.backend.model.Candidatura;
 import br.com.uphub.backend.model.Criterio;
 import br.com.uphub.backend.model.NotaCriterio;
+import br.com.uphub.backend.model.RetificacaoParecer;
 import br.com.uphub.backend.model.CandidaturaParticipanteId;
 import br.com.uphub.backend.model.Oportunidade;
 import br.com.uphub.backend.model.Vinculo;
@@ -19,6 +20,7 @@ import br.com.uphub.backend.repository.CandidaturaRepository;
 import br.com.uphub.backend.repository.CriterioRepository;
 import br.com.uphub.backend.repository.NotaCriterioRepository;
 import br.com.uphub.backend.repository.OportunidadeRepository;
+import br.com.uphub.backend.repository.RetificacaoParecerRepository;
 import br.com.uphub.backend.repository.VinculoRepository;
 import br.com.uphub.backend.seguranca.Acesso;
 import br.com.uphub.backend.seguranca.Permissao;
@@ -53,6 +55,7 @@ public class AvaliacaoService {
     private final VinculoRepository vinculoRepository;
     private final CriterioRepository criterioRepository;
     private final NotaCriterioRepository notaRepository;
+    private final RetificacaoParecerRepository retificacaoRepository;
     private final CandidaturaService candidaturaService;
     private final Acesso acesso;
 
@@ -64,6 +67,7 @@ public class AvaliacaoService {
                             VinculoRepository vinculoRepository,
                             CriterioRepository criterioRepository,
                             NotaCriterioRepository notaRepository,
+                            RetificacaoParecerRepository retificacaoRepository,
                             CandidaturaService candidaturaService,
                             Acesso acesso) {
         this.avaliacaoRepository = avaliacaoRepository;
@@ -74,6 +78,7 @@ public class AvaliacaoService {
         this.vinculoRepository = vinculoRepository;
         this.criterioRepository = criterioRepository;
         this.notaRepository = notaRepository;
+        this.retificacaoRepository = retificacaoRepository;
         this.candidaturaService = candidaturaService;
         this.acesso = acesso;
     }
@@ -315,10 +320,13 @@ public class AvaliacaoService {
         Vinculo vinculo = comAvaliador ? vinculoRepository.findById(a.getVinculoId()).orElse(null) : null;
         AvaliadorOportunidade designacao = designacaoRepository
                 .findById(new AvaliadorOportunidadeId(a.getOportunidadeId(), a.getVinculoId())).orElse(null);
+        RetificacaoParecer retificacao = retificacaoRepository.findFirstByAvaliacaoIdOrderByRetificadaEmDesc(a.getId()).orElse(null);
         return new AvaliacaoResponse(a.getId(), a.getCandidaturaId(), a.getOportunidadeId(), c.getTituloProposta(),
                 c.getEstado(), a.getRodada(), vinculo == null ? null : vinculo.getId(),
                 vinculo == null ? null : vinculo.getPessoa().getNome(), a.getAtribuidaEm(),
                 designacao == null ? null : designacao.getPrazoAvaliacao(), a.getDecisao(), a.getParecer(),
+                retificacao == null ? null : retificacao.getParecerRetificado(),
+                retificacao == null ? null : retificacao.getRetificadaEm(),
                 a.getNotaFinal(), a.getAssinadaEm());
     }
 
