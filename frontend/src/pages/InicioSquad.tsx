@@ -1,6 +1,7 @@
 import { CustomButton } from '../components/CustomButton'
-import CascaDoApp, { type ItemDeMenu } from '../components/CascaDoApp'
+import CascaDoApp from '../components/CascaDoApp'
 import SeloStatus, { type Status } from '../components/SeloStatus'
+import { MENU_SQUAD } from '../navegacao/menus'
 
 /**
  * 52 · Candidato squad — início · rota /inicio/squad
@@ -12,13 +13,6 @@ import SeloStatus, { type Status } from '../components/SeloStatus'
  * Dados simulados nesta etapa, conforme o Bloco 4: nenhuma chamada à API.
  */
 
-const MENU: ItemDeMenu[] = [
-    { rotulo: 'Início', para: '/inicio/squad' },
-    { rotulo: 'Oportunidades', para: '/oportunidades' },
-    { rotulo: 'Minhas candidaturas', para: '/candidaturas' },
-    { rotulo: 'Perfil da squad', para: '/organizacao' },
-    { rotulo: 'Conta', para: '/conta' },
-]
 
 interface Aviso {
     id: string
@@ -113,7 +107,7 @@ function InicioSquad() {
             papel="Candidato · squad"
             iniciais="SC"
             nome="Sua Chen Letícia"
-            itens={MENU}
+            itens={MENU_SQUAD}
         >
             <h1 className="font-display text-tela text-titulo">Olá, Letícia</h1>
             <p className="mt-2 text-apoio text-secundario">

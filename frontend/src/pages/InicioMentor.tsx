@@ -1,6 +1,7 @@
 import { CustomButton } from '../components/CustomButton'
-import CascaDoApp, { type ItemDeMenu } from '../components/CascaDoApp'
+import CascaDoApp from '../components/CascaDoApp'
 import SeloStatus, { type Status } from '../components/SeloStatus'
+import { MENU_MENTOR } from '../navegacao/menus'
 
 /**
  * 58 · Mentor — início · rota /mentor
@@ -12,13 +13,6 @@ import SeloStatus, { type Status } from '../components/SeloStatus'
  * Dados simulados nesta etapa, conforme o Bloco 4: nenhuma chamada à API.
  */
 
-const MENU: ItemDeMenu[] = [
-    { rotulo: 'Início', para: '/mentor' },
-    { rotulo: 'Convites', para: '/convites' },
-    { rotulo: 'Acompanhados', para: '/acompanhados' },
-    { rotulo: 'Horas doadas', para: '/horas' },
-    { rotulo: 'Conta', para: '/conta' },
-]
 
 interface Aviso {
     id: string
@@ -143,7 +137,7 @@ function InicioMentor() {
             papel="Mentor"
             iniciais="PT"
             nome="Paulo Tavares"
-            itens={MENU}
+            itens={MENU_MENTOR}
         >
             <h1 className="font-display text-tela text-titulo">Olá, Paulo</h1>
             <p className="mt-2 text-apoio text-secundario">

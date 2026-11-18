@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 
 import { CustomButton } from '../components/CustomButton'
-import CascaDoApp, { type ItemDeMenu } from '../components/CascaDoApp'
+import CascaDoApp from '../components/CascaDoApp'
 import SeloStatus from '../components/SeloStatus'
+import { MENU_AVALIADOR } from '../navegacao/menus'
 
 /**
  * 07 · Avaliador — rubrica e parecer · rota /avaliacao
@@ -22,10 +23,6 @@ const TRANSICAO_ELEV =
 const ANEL_FOCO =
     'focus-visible:shadow-foco focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento'
 
-const MENU: ItemDeMenu[] = [
-    { rotulo: 'Fila de avaliação', para: '/avaliacao' },
-    { rotulo: 'Conta', para: '/conta' },
-]
 
 const PRAZO = { data: '30/11/2026', diasRestantes: 28 }
 const TOTAL_NA_FILA = 17
@@ -88,7 +85,7 @@ function FilaAvaliacao() {
             papel="Avaliador"
             iniciais="CR"
             nome="Cláudia Rangel"
-            itens={MENU}
+            itens={MENU_AVALIADOR}
         >
                     <div className="flex items-start justify-between gap-6">
                         <div>

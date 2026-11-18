@@ -15,6 +15,18 @@ import FilaAvaliacao from './pages/FilaAvaliacao'
 import InicioSquad from './pages/InicioSquad'
 import InicioMentor from './pages/InicioMentor'
 import PainelEcossistema from './pages/PainelEcossistema'
+import OportunidadesSquad from './pages/OportunidadesSquad'
+import CandidaturasSquad from './pages/CandidaturasSquad'
+import PerfilDaSquad from './pages/PerfilDaSquad'
+import ConvitesMentor from './pages/ConvitesMentor'
+import AcompanhadoMentor from './pages/AcompanhadoMentor'
+import RegistrarSessao from './pages/RegistrarSessao'
+import AprovacaoProvedores from './pages/AprovacaoProvedores'
+import AlocacaoMentores from './pages/AlocacaoMentores'
+import ContaSquad from './pages/ContaSquad'
+import ContaMentor from './pages/ContaMentor'
+import ContaAvaliador from './pages/ContaAvaliador'
+import ContaGestao from './pages/ContaGestao'
 
 /**
  * Índice das telas do site.
@@ -55,6 +67,22 @@ function App() {
             <Route path="/avaliacao" element={<FilaAvaliacao />} />
             <Route path="/mentor" element={<InicioMentor />} />
             <Route path="/painel" element={<PainelEcossistema />} />
+
+            {/* Destinos dos menus laterais de cada papel. */}
+            <Route path="/oportunidades" element={<OportunidadesSquad />} />
+            <Route path="/candidaturas" element={<CandidaturasSquad />} />
+            <Route path="/organizacao" element={<PerfilDaSquad />} />
+            <Route path="/convites" element={<ConvitesMentor />} />
+            <Route path="/acompanhados" element={<AcompanhadoMentor />} />
+            <Route path="/horas" element={<RegistrarSessao />} />
+            <Route path="/provedores" element={<AprovacaoProvedores />} />
+            <Route path="/alocacao" element={<AlocacaoMentores />} />
+
+            {/* Conta tem uma tela por papel (57, 59, 60 e 61 no Figma). */}
+            <Route path="/conta/squad" element={<ContaSquad />} />
+            <Route path="/conta/mentor" element={<ContaMentor />} />
+            <Route path="/conta/avaliador" element={<ContaAvaliador />} />
+            <Route path="/conta/gestao" element={<ContaGestao />} />
 
             <Route path="/entrar" element={<Login />} />
             <Route path="/convite" element={<InvitePage />} />

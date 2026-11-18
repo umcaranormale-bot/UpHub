@@ -1,5 +1,6 @@
 import { CustomButton } from '../components/CustomButton'
-import CascaDoApp, { type ItemDeMenu } from '../components/CascaDoApp'
+import CascaDoApp from '../components/CascaDoApp'
+import { MENU_GESTAO } from '../navegacao/menus'
 
 /**
  * 09 · Gestão do PD — painel do ecossistema · rota /painel
@@ -12,12 +13,6 @@ import CascaDoApp, { type ItemDeMenu } from '../components/CascaDoApp'
  * de estados. Nesta etapa os dados são simulados, conforme o Bloco 4.
  */
 
-const MENU: ItemDeMenu[] = [
-    { rotulo: 'Painel do ecossistema', para: '/painel' },
-    { rotulo: 'Aprovação de provedores', para: '/provedores' },
-    { rotulo: 'Alocação de mentores', para: '/alocacao' },
-    { rotulo: 'Conta', para: '/conta' },
-]
 
 interface Indicador {
     id: string
@@ -132,7 +127,7 @@ function PainelEcossistema() {
             papel="Gestão do PD"
             iniciais="MV"
             nome="Marcos Vilela"
-            itens={MENU}
+            itens={MENU_GESTAO}
         >
             <h1 className="font-display text-tela text-titulo">Painel do ecossistema</h1>
             <p className="mt-2 text-apoio text-secundario">
