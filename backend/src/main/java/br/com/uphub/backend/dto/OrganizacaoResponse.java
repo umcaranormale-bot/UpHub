@@ -15,6 +15,8 @@ public record OrganizacaoResponse(
         Short anoFundacao,
         String sedeCidade,
         String sedeUf,
+        String descricao,
+        Long deckDocumentoId,
         OffsetDateTime criadaEm
 ) {
 
@@ -31,6 +33,8 @@ public record OrganizacaoResponse(
                 organizacao.getAnoFundacao(),
                 organizacao.getSedeCidade(),
                 organizacao.getSedeUf(),
+                organizacao.getDescricao(),
+                organizacao.getDeckDocumentoId(),
                 organizacao.getCriadaEm()
         );
     }

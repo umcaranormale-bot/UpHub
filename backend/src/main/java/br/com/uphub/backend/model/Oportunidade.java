@@ -48,6 +48,13 @@ public class Oportunidade {
     @Column(name = "suspensa_em")
     private OffsetDateTime suspensaEm;
 
+    // V43: área de atuação (para o matching) e tese de investimento (só na trilha INVESTIMENTO)
+    @Column(name = "area", length = 80)
+    private String area;
+
+    @Column(name = "tese")
+    private String tese;
+
     protected Oportunidade() {
     }
 
@@ -93,4 +100,24 @@ public class Oportunidade {
 
     // nova aprovação do provedor: a oportunidade volta a andar
     public void retomar() { this.suspensaEm = null; }
+
+    public String getArea() { return area; }
+
+    public String getTese() { return tese; }
+
+    // só enquanto é rascunho; campo null = "não alterar", texto vazio = "apagar"
+    public void editar(String titulo, String resumo, String area, String tese) {
+        if (titulo != null) {
+            this.titulo = titulo;
+        }
+        if (resumo != null) {
+            this.resumo = resumo.isBlank() ? null : resumo;
+        }
+        if (area != null) {
+            this.area = area.isBlank() ? null : area;
+        }
+        if (tese != null) {
+            this.tese = tese.isBlank() ? null : tese;
+        }
+    }
 }

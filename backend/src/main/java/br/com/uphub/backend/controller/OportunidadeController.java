@@ -1,6 +1,7 @@
 package br.com.uphub.backend.controller;
 
 import br.com.uphub.backend.dto.OportunidadeCadastroRequest;
+import br.com.uphub.backend.dto.OportunidadeEdicaoRequest;
 import br.com.uphub.backend.dto.OportunidadeResponse;
 import br.com.uphub.backend.seguranca.PessoaLogada;
 import br.com.uphub.backend.service.OportunidadeService;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -44,5 +46,11 @@ public class OportunidadeController {
     @GetMapping("/{id}")
     public OportunidadeResponse buscar(@PathVariable("id") Long id, @PessoaLogada Long pessoaId) {
         return oportunidadeService.buscarPorId(id, pessoaId);
+    }
+
+    @PutMapping("/{id}")
+    public OportunidadeResponse editar(@PathVariable("id") Long id, @RequestBody OportunidadeEdicaoRequest dados,
+                                       @PessoaLogada Long pessoaId) {
+        return oportunidadeService.editar(id, dados, pessoaId);
     }
 }
