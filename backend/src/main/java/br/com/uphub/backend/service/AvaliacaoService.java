@@ -40,7 +40,10 @@ import java.util.stream.Collectors;
 @Service
 public class AvaliacaoService {
 
-    private static final Set<String> DECISOES = Set.of("APROVADA", "REPROVADA");
+    private static final Set<String> DECISOES = Set.of("APROVADA", "REPROVADA", "AJUSTE");
+    // na última rodada não se pede mais ajuste
+    private static final Set<String> DECISOES_ULTIMA_RODADA = Set.of("APROVADA", "REPROVADA");
+    private static final short ULTIMA_RODADA = 3;
     // critério sem peso vale 1; sem escala, vai de 0 a 10
     private static final BigDecimal PESO_PADRAO = BigDecimal.ONE;
     private static final BigDecimal ESCALA_MIN_PADRAO = BigDecimal.ZERO;
@@ -57,6 +60,7 @@ public class AvaliacaoService {
     private final NotaCriterioRepository notaRepository;
     private final RetificacaoParecerRepository retificacaoRepository;
     private final CandidaturaService candidaturaService;
+    private final PedidoAjusteService pedidoAjusteService;
     private final Acesso acesso;
 
     public AvaliacaoService(AvaliacaoRepository avaliacaoRepository,
@@ -69,6 +73,7 @@ public class AvaliacaoService {
                             NotaCriterioRepository notaRepository,
                             RetificacaoParecerRepository retificacaoRepository,
                             CandidaturaService candidaturaService,
+                            PedidoAjusteService pedidoAjusteService,
                             Acesso acesso) {
         this.avaliacaoRepository = avaliacaoRepository;
         this.designacaoRepository = designacaoRepository;
@@ -80,6 +85,7 @@ public class AvaliacaoService {
         this.notaRepository = notaRepository;
         this.retificacaoRepository = retificacaoRepository;
         this.candidaturaService = candidaturaService;
+        this.pedidoAjusteService = pedidoAjusteService;
         this.acesso = acesso;
     }
 
@@ -193,19 +199,30 @@ public class AvaliacaoService {
         if (avaliacao.getParecer() == null || avaliacao.getParecer().isBlank()) {
             throw erro(HttpStatus.BAD_REQUEST, "Escreva o parecer antes de assinar");
         }
+        if (!decisoesAceitas(avaliacao).contains(avaliacao.getDecisao())) {
+            throw erro(HttpStatus.BAD_REQUEST, "Na rodada " + ULTIMA_RODADA + ", a última, a decisão é APROVADA ou REPROVADA");
+        }
         avaliacao.assinar(notaFinal(avaliacao, candidatura.getVersaoId()), OffsetDateTime.now());
         avaliacaoRepository.saveAndFlush(avaliacao);
+        if ("AJUSTE".equals(avaliacao.getDecisao())) {
+            pedidoAjusteService.abrirOuUsar(avaliacao);
+        }
         candidatura = consolidar(candidatura, avaliacao.getRodada());
         return resposta(avaliacao, candidatura, true);
     }
 
     // ---------- regras da rodada
 
-    // fechada a rodada: maioria de aprovações aprova; empate ou maioria de reprovações reprova
+    // fechada a rodada: um pedido de ajuste já leva para AJUSTE; senão, maioria de aprovações aprova,
+    // e empate ou maioria de reprovações reprova
     private Candidatura consolidar(Candidatura candidatura, short rodada) {
         List<Avaliacao> daRodada = avaliacaoRepository.findByCandidaturaIdAndRodada(candidatura.getId(), rodada);
         if (daRodada.stream().anyMatch(a -> !a.assinada())) {
             return candidatura;
+        }
+        if (daRodada.stream().anyMatch(a -> "AJUSTE".equals(a.getDecisao()))) {
+            pedidoAjusteService.iniciarPrazo(candidatura.getId());
+            return candidaturaService.moverComoAvaliador(candidatura, "AJUSTE");
         }
         long aprovadas = daRodada.stream().filter(a -> "APROVADA".equals(a.getDecisao())).count();
         long reprovadas = daRodada.stream().filter(a -> "REPROVADA".equals(a.getDecisao())).count();
@@ -255,12 +272,11 @@ public class AvaliacaoService {
     }
 
     private Set<String> decisoesAceitas(Avaliacao avaliacao) {
-        return DECISOES;
+        return avaliacao.getRodada() >= ULTIMA_RODADA ? DECISOES_ULTIMA_RODADA : DECISOES;
     }
 
-    // a rodada de avaliação em que a candidatura está (a V29 soma os reenvios do ajuste)
     private short rodadaAtual(Candidatura candidatura) {
-        return 1;
+        return pedidoAjusteService.rodadaAtual(candidatura.getId());
     }
 
     // ---------- para as partes da avaliação (notas por critério, retificação)
