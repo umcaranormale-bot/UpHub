@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 
 // Campo null = "não alterar".
 public record CriterioEdicaoRequest(
-        Long pessoaId,
         Integer ordem,
         String descricao,
         BigDecimal peso,

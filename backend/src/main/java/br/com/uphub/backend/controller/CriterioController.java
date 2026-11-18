@@ -3,6 +3,7 @@ package br.com.uphub.backend.controller;
 import br.com.uphub.backend.dto.CriterioCadastroRequest;
 import br.com.uphub.backend.dto.CriterioEdicaoRequest;
 import br.com.uphub.backend.dto.CriterioResponse;
+import br.com.uphub.backend.seguranca.PessoaLogada;
 import br.com.uphub.backend.service.CriterioService;
 import java.net.URI;
 import java.util.List;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -30,8 +30,9 @@ public class CriterioController {
     @PostMapping
     public ResponseEntity<CriterioResponse> cadastrar(@PathVariable("oportunidadeId") Long oportunidadeId,
                                                       @PathVariable("versaoId") Long versaoId,
-                                                      @RequestBody CriterioCadastroRequest dados) {
-        CriterioResponse criado = criterioService.cadastrar(oportunidadeId, versaoId, dados);
+                                                      @RequestBody CriterioCadastroRequest dados,
+                                                      @PessoaLogada Long pessoaId) {
+        CriterioResponse criado = criterioService.cadastrar(oportunidadeId, versaoId, dados, pessoaId);
         return ResponseEntity
                 .created(URI.create("/api/oportunidades/" + oportunidadeId + "/versoes/" + versaoId
                         + "/criterios/" + criado.id()))
@@ -40,23 +41,25 @@ public class CriterioController {
 
     @GetMapping
     public List<CriterioResponse> listar(@PathVariable("oportunidadeId") Long oportunidadeId,
-                                         @PathVariable("versaoId") Long versaoId) {
-        return criterioService.listar(oportunidadeId, versaoId);
+                                         @PathVariable("versaoId") Long versaoId,
+                                         @PessoaLogada Long pessoaId) {
+        return criterioService.listar(oportunidadeId, versaoId, pessoaId);
     }
 
     @PutMapping("/{criterioId}")
     public CriterioResponse editar(@PathVariable("oportunidadeId") Long oportunidadeId,
                                    @PathVariable("versaoId") Long versaoId,
                                    @PathVariable("criterioId") Long criterioId,
-                                   @RequestBody CriterioEdicaoRequest dados) {
-        return criterioService.editar(oportunidadeId, versaoId, criterioId, dados);
+                                   @RequestBody CriterioEdicaoRequest dados,
+                                   @PessoaLogada Long pessoaId) {
+        return criterioService.editar(oportunidadeId, versaoId, criterioId, dados, pessoaId);
     }
 
     @DeleteMapping("/{criterioId}")
     public ResponseEntity<Void> remover(@PathVariable("oportunidadeId") Long oportunidadeId,
                                         @PathVariable("versaoId") Long versaoId,
                                         @PathVariable("criterioId") Long criterioId,
-                                        @RequestParam(name = "pessoaId", required = false) Long pessoaId) {
+                                        @PessoaLogada Long pessoaId) {
         criterioService.remover(oportunidadeId, versaoId, criterioId, pessoaId);
         return ResponseEntity.noContent().build();
     }

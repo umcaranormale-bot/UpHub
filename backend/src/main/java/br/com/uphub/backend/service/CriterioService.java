@@ -8,9 +8,9 @@ import br.com.uphub.backend.model.Oportunidade;
 import br.com.uphub.backend.model.VersaoOportunidade;
 import br.com.uphub.backend.repository.CriterioRepository;
 import br.com.uphub.backend.repository.OportunidadeRepository;
-import br.com.uphub.backend.repository.PessoaRepository;
 import br.com.uphub.backend.repository.VersaoOportunidadeRepository;
-import br.com.uphub.backend.repository.VinculoRepository;
+import br.com.uphub.backend.seguranca.Acesso;
+import br.com.uphub.backend.seguranca.Permissao;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
@@ -28,33 +28,27 @@ public class CriterioService {
     private final CriterioRepository criterioRepository;
     private final VersaoOportunidadeRepository versaoRepository;
     private final OportunidadeRepository oportunidadeRepository;
-    private final PessoaRepository pessoaRepository;
-    private final VinculoRepository vinculoRepository;
+    private final Acesso acesso;
 
     public CriterioService(CriterioRepository criterioRepository,
                            VersaoOportunidadeRepository versaoRepository,
                            OportunidadeRepository oportunidadeRepository,
-                           PessoaRepository pessoaRepository,
-                           VinculoRepository vinculoRepository) {
+                           Acesso acesso) {
         this.criterioRepository = criterioRepository;
         this.versaoRepository = versaoRepository;
         this.oportunidadeRepository = oportunidadeRepository;
-        this.pessoaRepository = pessoaRepository;
-        this.vinculoRepository = vinculoRepository;
+        this.acesso = acesso;
     }
 
     @Transactional
-    public CriterioResponse cadastrar(Long oportunidadeId, Long versaoId, CriterioCadastroRequest dados) {
+    public CriterioResponse cadastrar(Long oportunidadeId, Long versaoId, CriterioCadastroRequest dados, Long pessoaId) {
         // 1. obrigatórios (400)
-        if (dados.pessoaId() == null) {
-            throw erro(HttpStatus.BAD_REQUEST, "O campo pessoaId é obrigatório");
-        }
         if (dados.descricao() == null || dados.descricao().isBlank()) {
             throw erro(HttpStatus.BAD_REQUEST, "O campo descricao é obrigatório");
         }
 
         // 2. existência (404), permissão (403) e estado da versão (409)
-        VersaoOportunidade versao = buscarVersaoParaEscrita(oportunidadeId, versaoId, dados.pessoaId());
+        VersaoOportunidade versao = buscarVersaoParaEscrita(oportunidadeId, versaoId, pessoaId);
 
         // 3. regras dos valores (400)
         BigDecimal peso = validarPeso(dados.peso());
@@ -72,8 +66,8 @@ public class CriterioService {
     }
 
     @Transactional(readOnly = true)
-    public List<CriterioResponse> listar(Long oportunidadeId, Long versaoId) {
-        buscarVersao(oportunidadeId, versaoId);
+    public List<CriterioResponse> listar(Long oportunidadeId, Long versaoId, Long pessoaId) {
+        buscarVersaoVisivel(oportunidadeId, versaoId, pessoaId);
         return criterioRepository.listarPorVersao(versaoId).stream()
                 .map(CriterioResponse::de)
                 .toList();
@@ -81,11 +75,8 @@ public class CriterioService {
 
     @Transactional
     public CriterioResponse editar(Long oportunidadeId, Long versaoId, Long criterioId,
-                                   CriterioEdicaoRequest dados) {
-        if (dados.pessoaId() == null) {
-            throw erro(HttpStatus.BAD_REQUEST, "O campo pessoaId é obrigatório");
-        }
-        buscarVersaoParaEscrita(oportunidadeId, versaoId, dados.pessoaId());
+                                   CriterioEdicaoRequest dados, Long pessoaId) {
+        buscarVersaoParaEscrita(oportunidadeId, versaoId, pessoaId);
         Criterio criterio = buscarCriterio(versaoId, criterioId);
 
         if (dados.descricao() != null) {
@@ -118,39 +109,34 @@ public class CriterioService {
 
     @Transactional
     public void remover(Long oportunidadeId, Long versaoId, Long criterioId, Long pessoaId) {
-        if (pessoaId == null) {
-            throw erro(HttpStatus.BAD_REQUEST, "O parâmetro pessoaId é obrigatório");
-        }
         buscarVersaoParaEscrita(oportunidadeId, versaoId, pessoaId);
         Criterio criterio = buscarCriterio(versaoId, criterioId);
         criterioRepository.delete(criterio);
     }
 
-    // 404 (oportunidade/versão/pessoa) -> 403 (não é provedor) -> 409 (versão já publicada)
+    // 404 (oportunidade/versão) -> 403 (não é provedor) -> 409 (versão já publicada)
     private VersaoOportunidade buscarVersaoParaEscrita(Long oportunidadeId, Long versaoId, Long pessoaId) {
         Oportunidade oportunidade = oportunidadeRepository.findById(oportunidadeId)
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Oportunidade não encontrada"));
         VersaoOportunidade versao = versaoRepository.findByIdAndOportunidadeId(versaoId, oportunidadeId)
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Versão não encontrada"));
-        if (!pessoaRepository.existsById(pessoaId)) {
-            throw erro(HttpStatus.NOT_FOUND, "Pessoa não encontrada");
-        }
-        if (!vinculoRepository.existsByPessoa_IdAndOrganizacao_IdAndPapel(
-                pessoaId, oportunidade.getOrganizacaoId(), "PROVEDOR")) {
-            throw erro(HttpStatus.FORBIDDEN, "Só o provedor da organização pode alterar os critérios");
-        }
+        acesso.exigir(pessoaId, oportunidade.getOrganizacaoId(), Permissao.EDITAR_OPORTUNIDADE);
         if (versao.isPublicada()) {
             throw erro(HttpStatus.CONFLICT, "Os critérios só podem ser alterados enquanto a versão for rascunho");
         }
         return versao;
     }
 
-    private VersaoOportunidade buscarVersao(Long oportunidadeId, Long versaoId) {
-        if (!oportunidadeRepository.existsById(oportunidadeId)) {
-            throw erro(HttpStatus.NOT_FOUND, "Oportunidade não encontrada");
-        }
-        return versaoRepository.findByIdAndOportunidadeId(versaoId, oportunidadeId)
+    // rascunho de outra organização não aparece: responde como se não existisse (404)
+    private VersaoOportunidade buscarVersaoVisivel(Long oportunidadeId, Long versaoId, Long pessoaId) {
+        Oportunidade oportunidade = oportunidadeRepository.findById(oportunidadeId)
+                .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Oportunidade não encontrada"));
+        VersaoOportunidade versao = versaoRepository.findByIdAndOportunidadeId(versaoId, oportunidadeId)
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Versão não encontrada"));
+        if (!versao.isPublicada() && !acesso.podeVer(pessoaId, oportunidade.getOrganizacaoId())) {
+            throw erro(HttpStatus.NOT_FOUND, "Versão não encontrada");
+        }
+        return versao;
     }
 
     private Criterio buscarCriterio(Long versaoId, Long criterioId) {
