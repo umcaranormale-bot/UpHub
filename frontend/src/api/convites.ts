@@ -8,7 +8,6 @@ export interface ConviteCadastro {
     email: string;
     papel: PapelConvite;
     organizacaoId: number;
-    enviadoPor: number;
 }
 
 export interface Convite {

@@ -23,12 +23,12 @@ export interface Vinculo {
     encerradoEm: DataHora | null;
 }
 
-export type FiltroVinculos = { pessoaId: number } | { organizacaoId: number };
+export type FiltroVinculos = { pessoaId: number } | { organizacaoId: number } | Record<string, never>;
 
 export function cadastrarVinculo(dados: VinculoCadastro) {
     return requisicao<Vinculo>('/api/vinculos', { metodo: 'POST', corpo: dados });
 }
 
-export function listarVinculos(filtro: FiltroVinculos) {
+export function listarVinculos(filtro: FiltroVinculos = {}) {
     return requisicao<Vinculo[]>('/api/vinculos', { parametros: filtro });
 }
