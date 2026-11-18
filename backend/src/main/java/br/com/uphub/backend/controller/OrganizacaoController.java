@@ -1,6 +1,7 @@
 package br.com.uphub.backend.controller;
 
 import br.com.uphub.backend.dto.OrganizacaoCadastroRequest;
+import br.com.uphub.backend.dto.OrganizacaoEdicaoRequest;
 import br.com.uphub.backend.dto.OrganizacaoResponse;
 import br.com.uphub.backend.seguranca.PessoaLogada;
 import br.com.uphub.backend.service.OrganizacaoService;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -43,5 +45,11 @@ public class OrganizacaoController {
     @GetMapping("/{id}")
     public OrganizacaoResponse buscar(@PathVariable("id") Long id) {
         return organizacaoService.buscarPorId(id);
+    }
+
+    @PutMapping("/{id}")
+    public OrganizacaoResponse editar(@PathVariable("id") Long id, @RequestBody OrganizacaoEdicaoRequest dados,
+                                      @PessoaLogada Long pessoaId) {
+        return organizacaoService.editar(id, dados, pessoaId);
     }
 }

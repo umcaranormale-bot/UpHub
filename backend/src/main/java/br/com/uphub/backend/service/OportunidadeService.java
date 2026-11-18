@@ -1,6 +1,7 @@
 package br.com.uphub.backend.service;
 
 import br.com.uphub.backend.dto.OportunidadeCadastroRequest;
+import br.com.uphub.backend.dto.OportunidadeEdicaoRequest;
 import br.com.uphub.backend.dto.OportunidadeResponse;
 import br.com.uphub.backend.model.Oportunidade;
 import br.com.uphub.backend.model.OrganizacaoTrilhaId;
@@ -50,6 +51,9 @@ public class OportunidadeService {
         String resumo = (dados.resumo() == null || dados.resumo().isBlank())
                 ? null
                 : dados.resumo().trim();
+        String area = opcional(dados.area(), "area", 80);
+        String tese = dados.tese() == null || dados.tese().isBlank() ? null : dados.tese().trim();
+        exigirTeseSoNoInvestimento(tese, trilhaCodigo);
 
         // 2. o que precisa existir (404)
         if (!trilhaRepository.existsById(trilhaCodigo)) {
@@ -66,6 +70,7 @@ public class OportunidadeService {
         }
 
         Oportunidade oportunidade = new Oportunidade(organizacaoId, trilhaCodigo, titulo, resumo, criadaPor);
+        oportunidade.editar(null, null, area, tese);
 
         return OportunidadeResponse.de(oportunidadeRepository.save(oportunidade));
     }
@@ -96,6 +101,46 @@ public class OportunidadeService {
             throw erro(HttpStatus.NOT_FOUND, "Oportunidade não encontrada");
         }
         return OportunidadeResponse.de(oportunidade);
+    }
+
+    // título, resumo, área e tese mudam enquanto a oportunidade é rascunho
+    @Transactional
+    public OportunidadeResponse editar(Long id, OportunidadeEdicaoRequest dados, Long pessoaId) {
+        Oportunidade oportunidade = oportunidadeRepository.findById(id)
+                .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Oportunidade não encontrada"));
+        if ("RASCUNHO".equals(oportunidade.getEstado()) && !acesso.podeVer(pessoaId, oportunidade.getOrganizacaoId())) {
+            throw erro(HttpStatus.NOT_FOUND, "Oportunidade não encontrada");
+        }
+        acesso.exigir(pessoaId, oportunidade.getOrganizacaoId(), Permissao.EDITAR_OPORTUNIDADE);
+        if (!"RASCUNHO".equals(oportunidade.getEstado())) {
+            throw erro(HttpStatus.CONFLICT, "Depois de publicada, a oportunidade muda pela versão");
+        }
+        if (dados == null) {
+            return OportunidadeResponse.de(oportunidade);
+        }
+        String titulo = dados.titulo() == null ? null : obrigatorio(dados.titulo(), "titulo", 200);
+        String resumo = dados.resumo() == null ? null : dados.resumo().trim();
+        String area = dados.area() == null ? null : dados.area().trim();
+        if (area != null && area.length() > 80) {
+            throw erro(HttpStatus.BAD_REQUEST, "O campo area aceita no máximo 80 caracteres");
+        }
+        String tese = dados.tese() == null ? null : dados.tese().trim();
+        exigirTeseSoNoInvestimento(tese == null || tese.isEmpty() ? null : tese, oportunidade.getTrilhaCodigo());
+        oportunidade.editar(titulo, resumo, area, tese);
+        return OportunidadeResponse.de(oportunidadeRepository.saveAndFlush(oportunidade));
+    }
+
+    private void exigirTeseSoNoInvestimento(String tese, String trilhaCodigo) {
+        if (tese != null && !"INVESTIMENTO".equals(trilhaCodigo)) {
+            throw erro(HttpStatus.BAD_REQUEST, "A tese de investimento é só da trilha INVESTIMENTO");
+        }
+    }
+
+    private String opcional(String valor, String campo, int maximo) {
+        if (valor == null || valor.isBlank()) {
+            return null;
+        }
+        return obrigatorio(valor, campo, maximo);
     }
 
     private String obrigatorio(String valor, String campo, int maximo) {
