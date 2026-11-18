@@ -4,7 +4,6 @@ public record OportunidadeCadastroRequest(
         Long organizacaoId,
         String trilhaCodigo,
         String titulo,
-        String resumo,
-        Long criadaPor
+        String resumo
 ) {
 }
