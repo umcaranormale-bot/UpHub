@@ -2,6 +2,7 @@ package br.com.uphub.backend.controller;
 
 import br.com.uphub.backend.dto.SquadIntegranteCadastroRequest;
 import br.com.uphub.backend.dto.SquadIntegranteResponse;
+import br.com.uphub.backend.seguranca.PessoaLogada;
 import br.com.uphub.backend.service.SquadIntegranteService;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -26,14 +27,16 @@ public class SquadIntegranteController {
     @PostMapping
     public ResponseEntity<SquadIntegranteResponse> adicionar(
             @PathVariable("squadId") Long squadId,
-            @RequestBody SquadIntegranteCadastroRequest dados) {
+            @RequestBody SquadIntegranteCadastroRequest dados,
+            @PessoaLogada Long pessoaId) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(squadIntegranteService.adicionar(squadId, dados));
+                .body(squadIntegranteService.adicionar(squadId, dados, pessoaId));
     }
 
     @GetMapping
-    public List<SquadIntegranteResponse> listar(@PathVariable("squadId") Long squadId) {
-        return squadIntegranteService.listar(squadId);
+    public List<SquadIntegranteResponse> listar(@PathVariable("squadId") Long squadId,
+                                                @PessoaLogada Long pessoaId) {
+        return squadIntegranteService.listar(squadId, pessoaId);
     }
 }

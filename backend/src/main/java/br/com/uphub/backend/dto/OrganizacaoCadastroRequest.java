@@ -10,6 +10,7 @@ public record OrganizacaoCadastroRequest(
         String estagio,
         Short anoFundacao,
         String sedeCidade,
-        String sedeUf
+        String sedeUf,
+        String papel
 ) {
 }
