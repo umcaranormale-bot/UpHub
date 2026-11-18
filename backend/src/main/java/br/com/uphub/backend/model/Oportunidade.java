@@ -45,6 +45,9 @@ public class Oportunidade {
     @Column(name = "encerrada_em")
     private OffsetDateTime encerradaEm;
 
+    @Column(name = "suspensa_em")
+    private OffsetDateTime suspensaEm;
+
     protected Oportunidade() {
     }
 
@@ -80,4 +83,14 @@ public class Oportunidade {
 
     public OffsetDateTime getEncerradaEm() { return encerradaEm; }
     public void setEncerradaEm(OffsetDateTime encerradaEm) { this.encerradaEm = encerradaEm; }
+
+    public OffsetDateTime getSuspensaEm() { return suspensaEm; }
+
+    public boolean suspensa() { return suspensaEm != null; }
+
+    // revogação da permissão do provedor: a oportunidade para (nenhuma etapa anda, nenhum prazo vence)
+    public void suspender(OffsetDateTime quando) { this.suspensaEm = quando; }
+
+    // nova aprovação do provedor: a oportunidade volta a andar
+    public void retomar() { this.suspensaEm = null; }
 }

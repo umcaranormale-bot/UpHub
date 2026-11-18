@@ -32,6 +32,12 @@ public class Acesso {
         return vinculoRepository.organizacoesAtivasDa(pessoaId);
     }
 
+    public void exigirGestao(Long pessoaId, String acao) {
+        if (!ehGestao(pessoaId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Só a gestão do Porto Digital pode " + acao);
+        }
+    }
+
     public void exigirAcesso(Long pessoaId, Long organizacaoId) {
         if (!podeVer(pessoaId, organizacaoId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
