@@ -7,6 +7,8 @@ import br.com.uphub.backend.model.AvaliadorOportunidade;
 import br.com.uphub.backend.model.AvaliadorOportunidadeId;
 import br.com.uphub.backend.model.Avaliacao;
 import br.com.uphub.backend.model.Candidatura;
+import br.com.uphub.backend.model.Criterio;
+import br.com.uphub.backend.model.NotaCriterio;
 import br.com.uphub.backend.model.CandidaturaParticipanteId;
 import br.com.uphub.backend.model.Oportunidade;
 import br.com.uphub.backend.model.Vinculo;
@@ -14,6 +16,8 @@ import br.com.uphub.backend.repository.AvaliacaoRepository;
 import br.com.uphub.backend.repository.AvaliadorOportunidadeRepository;
 import br.com.uphub.backend.repository.CandidaturaParticipanteRepository;
 import br.com.uphub.backend.repository.CandidaturaRepository;
+import br.com.uphub.backend.repository.CriterioRepository;
+import br.com.uphub.backend.repository.NotaCriterioRepository;
 import br.com.uphub.backend.repository.OportunidadeRepository;
 import br.com.uphub.backend.repository.VinculoRepository;
 import br.com.uphub.backend.seguranca.Acesso;
@@ -24,14 +28,22 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class AvaliacaoService {
 
     private static final Set<String> DECISOES = Set.of("APROVADA", "REPROVADA");
+    // critério sem peso vale 1; sem escala, vai de 0 a 10
+    private static final BigDecimal PESO_PADRAO = BigDecimal.ONE;
+    private static final BigDecimal ESCALA_MIN_PADRAO = BigDecimal.ZERO;
+    private static final BigDecimal ESCALA_MAX_PADRAO = BigDecimal.TEN;
+    private static final BigDecimal CEM = new BigDecimal("100");
 
     private final AvaliacaoRepository avaliacaoRepository;
     private final AvaliadorOportunidadeRepository designacaoRepository;
@@ -39,6 +51,8 @@ public class AvaliacaoService {
     private final CandidaturaParticipanteRepository participanteRepository;
     private final OportunidadeRepository oportunidadeRepository;
     private final VinculoRepository vinculoRepository;
+    private final CriterioRepository criterioRepository;
+    private final NotaCriterioRepository notaRepository;
     private final CandidaturaService candidaturaService;
     private final Acesso acesso;
 
@@ -48,6 +62,8 @@ public class AvaliacaoService {
                             CandidaturaParticipanteRepository participanteRepository,
                             OportunidadeRepository oportunidadeRepository,
                             VinculoRepository vinculoRepository,
+                            CriterioRepository criterioRepository,
+                            NotaCriterioRepository notaRepository,
                             CandidaturaService candidaturaService,
                             Acesso acesso) {
         this.avaliacaoRepository = avaliacaoRepository;
@@ -56,6 +72,8 @@ public class AvaliacaoService {
         this.participanteRepository = participanteRepository;
         this.oportunidadeRepository = oportunidadeRepository;
         this.vinculoRepository = vinculoRepository;
+        this.criterioRepository = criterioRepository;
+        this.notaRepository = notaRepository;
         this.candidaturaService = candidaturaService;
         this.acesso = acesso;
     }
@@ -135,11 +153,8 @@ public class AvaliacaoService {
 
     @Transactional(readOnly = true)
     public AvaliacaoResponse buscarPorId(Long avaliacaoId, Long pessoaId) {
-        Avaliacao avaliacao = buscar(avaliacaoId);
+        Avaliacao avaliacao = paraLer(avaliacaoId, pessoaId);
         Candidatura candidatura = candidaturaRepository.findById(avaliacao.getCandidaturaId()).orElseThrow();
-        if (!ehDoAvaliador(avaliacao, pessoaId) && !conduz(candidatura, pessoaId)) {
-            throw erro(HttpStatus.NOT_FOUND, "Avaliação não encontrada");
-        }
         return resposta(avaliacao, candidatura, true);
     }
 
@@ -173,7 +188,7 @@ public class AvaliacaoService {
         if (avaliacao.getParecer() == null || avaliacao.getParecer().isBlank()) {
             throw erro(HttpStatus.BAD_REQUEST, "Escreva o parecer antes de assinar");
         }
-        avaliacao.assinar(notaFinal(avaliacao), OffsetDateTime.now());
+        avaliacao.assinar(notaFinal(avaliacao, candidatura.getVersaoId()), OffsetDateTime.now());
         avaliacaoRepository.saveAndFlush(avaliacao);
         candidatura = consolidar(candidatura, avaliacao.getRodada());
         return resposta(avaliacao, candidatura, true);
@@ -196,9 +211,42 @@ public class AvaliacaoService {
         return candidaturaService.moverComoAvaliador(candidatura, resultado);
     }
 
-    // a nota de cada critério entra na V27
-    private BigDecimal notaFinal(Avaliacao avaliacao) {
-        return null;
+    // nota final de 0 a 100: a média ponderada pelos pesos, com cada nota levada para a mesma escala.
+    // Todo critério da versão precisa de nota; sem critérios, a avaliação não tem nota final.
+    private BigDecimal notaFinal(Avaliacao avaliacao, Long versaoId) {
+        List<Criterio> criterios = criterioRepository.listarPorVersao(versaoId);
+        if (criterios.isEmpty()) {
+            return null;
+        }
+        Map<Long, BigDecimal> notas = notaRepository.findById_AvaliacaoId(avaliacao.getId()).stream()
+                .collect(Collectors.toMap(n -> n.getId().getCriterioId(), NotaCriterio::getNota));
+        List<String> faltam = criterios.stream().filter(c -> !notas.containsKey(c.getId()))
+                .map(Criterio::getDescricao).toList();
+        if (!faltam.isEmpty()) {
+            throw erro(HttpStatus.BAD_REQUEST, "Dê nota a todos os critérios antes de assinar. Faltam: " + String.join(", ", faltam));
+        }
+        BigDecimal soma = BigDecimal.ZERO;
+        BigDecimal pesos = BigDecimal.ZERO;
+        for (Criterio c : criterios) {
+            BigDecimal min = escalaMin(c);
+            BigDecimal normalizada = notas.get(c.getId()).subtract(min)
+                    .divide(escalaMax(c).subtract(min), 6, RoundingMode.HALF_UP).multiply(CEM);
+            soma = soma.add(normalizada.multiply(peso(c)));
+            pesos = pesos.add(peso(c));
+        }
+        return soma.divide(pesos, 2, RoundingMode.HALF_UP);
+    }
+
+    public static BigDecimal peso(Criterio c) {
+        return c.getPeso() == null ? PESO_PADRAO : c.getPeso();
+    }
+
+    public static BigDecimal escalaMin(Criterio c) {
+        return c.getEscalaMin() == null ? ESCALA_MIN_PADRAO : c.getEscalaMin();
+    }
+
+    public static BigDecimal escalaMax(Criterio c) {
+        return c.getEscalaMax() == null ? ESCALA_MAX_PADRAO : c.getEscalaMax();
     }
 
     private Set<String> decisoesAceitas(Avaliacao avaliacao) {
@@ -208,6 +256,29 @@ public class AvaliacaoService {
     // a rodada de avaliação em que a candidatura está (a V29 soma os reenvios do ajuste)
     private short rodadaAtual(Candidatura candidatura) {
         return 1;
+    }
+
+    // ---------- para as partes da avaliação (notas por critério, retificação)
+
+    // o avaliador mexendo na própria avaliação, antes de assinar
+    @Transactional(readOnly = true)
+    public Avaliacao paraEscrever(Long avaliacaoId, Long pessoaId) {
+        return doAvaliadorParaEscrever(avaliacaoId, pessoaId);
+    }
+
+    // o avaliador dela, o provedor e a gestão
+    @Transactional(readOnly = true)
+    public Avaliacao paraLer(Long avaliacaoId, Long pessoaId) {
+        Avaliacao avaliacao = buscar(avaliacaoId);
+        Candidatura candidatura = candidaturaRepository.findById(avaliacao.getCandidaturaId()).orElseThrow();
+        if (!ehDoAvaliador(avaliacao, pessoaId) && !conduz(candidatura, pessoaId)) {
+            throw erro(HttpStatus.NOT_FOUND, "Avaliação não encontrada");
+        }
+        return avaliacao;
+    }
+
+    public boolean ehDoAvaliadorLogado(Avaliacao avaliacao, Long pessoaId) {
+        return ehDoAvaliador(avaliacao, pessoaId);
     }
 
     // ---------- apoio
