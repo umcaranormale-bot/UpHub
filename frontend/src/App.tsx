@@ -11,6 +11,22 @@ import CandidateHome from './pages/CandidateHome'
 import PrivacidadePage from './pages/PrivacidadePage'
 import InvitePage from './pages/InvitePage'
 import ProviderHome from './pages/ProviderHome'
+import FilaAvaliacao from './pages/FilaAvaliacao'
+import InicioSquad from './pages/InicioSquad'
+import InicioMentor from './pages/InicioMentor'
+import PainelEcossistema from './pages/PainelEcossistema'
+import OportunidadesSquad from './pages/OportunidadesSquad'
+import CandidaturasSquad from './pages/CandidaturasSquad'
+import PerfilDaSquad from './pages/PerfilDaSquad'
+import ConvitesMentor from './pages/ConvitesMentor'
+import AcompanhadoMentor from './pages/AcompanhadoMentor'
+import RegistrarSessao from './pages/RegistrarSessao'
+import AprovacaoProvedores from './pages/AprovacaoProvedores'
+import AlocacaoMentores from './pages/AlocacaoMentores'
+import ContaSquad from './pages/ContaSquad'
+import ContaMentor from './pages/ContaMentor'
+import ContaAvaliador from './pages/ContaAvaliador'
+import ContaGestao from './pages/ContaGestao'
 
 /**
  * Índice das telas do site.
@@ -44,6 +60,29 @@ function App() {
                     <Route path="/provedor" element={<ProviderHome />} />
                 </Route>
             </Route>
+
+            {/* Telas com casca propria por papel: trazem o proprio topo e menu,
+                por isso ficam fora do HomeLayout. */}
+            <Route path="/squad" element={<InicioSquad />} />
+            <Route path="/avaliador" element={<FilaAvaliacao />} />
+            <Route path="/mentor" element={<InicioMentor />} />
+            <Route path="/gestao" element={<PainelEcossistema />} />
+
+            {/* Destinos dos menus laterais de cada papel. */}
+            <Route path="/squad/oportunidades" element={<OportunidadesSquad />} />
+            <Route path="/squad/candidaturas" element={<CandidaturasSquad />} />
+            <Route path="/squad/perfil" element={<PerfilDaSquad />} />
+            <Route path="/mentor/convites" element={<ConvitesMentor />} />
+            <Route path="/mentor/acompanhados" element={<AcompanhadoMentor />} />
+            <Route path="/mentor/horas" element={<RegistrarSessao />} />
+            <Route path="/gestao/provedores" element={<AprovacaoProvedores />} />
+            <Route path="/gestao/alocacao" element={<AlocacaoMentores />} />
+
+            {/* Conta tem uma tela por papel (57, 59, 60 e 61 no Figma). */}
+            <Route path="/squad/conta" element={<ContaSquad />} />
+            <Route path="/mentor/conta" element={<ContaMentor />} />
+            <Route path="/avaliador/conta" element={<ContaAvaliador />} />
+            <Route path="/gestao/conta" element={<ContaGestao />} />
 
             <Route path="/entrar" element={<Login />} />
             <Route path="/convite" element={<InvitePage />} />
