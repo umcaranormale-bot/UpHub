@@ -14,7 +14,7 @@ export class ErroApi extends Error {
 type Parametros = Record<string, string | number | undefined>;
 
 interface Opcoes {
-    metodo?: 'GET' | 'POST';
+    metodo?: 'GET' | 'POST' | 'PUT' | 'DELETE';
     corpo?: unknown;
     parametros?: Parametros;
 }
