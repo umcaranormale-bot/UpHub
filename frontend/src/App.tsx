@@ -27,6 +27,7 @@ import ContaSquad from './pages/ContaSquad'
 import ContaMentor from './pages/ContaMentor'
 import ContaAvaliador from './pages/ContaAvaliador'
 import ContaGestao from './pages/ContaGestao'
+import ConfirmEmailPage from './pages/ConfirmEmailPage'
 
 /**
  * Índice das telas do site.
@@ -87,6 +88,7 @@ function App() {
             <Route path="/entrar" element={<Login />} />
             <Route path="/convite" element={<InvitePage />} />
             <Route path="/recuperar-senha" element={<RecoveryPasswordPage />} />
+            <Route path="/confirmar-email" element={<ConfirmEmailPage />} />
 
             {/* A tela de redefinir senha é acessada a partir do link que o usuário recebe por e-mail.*/}
             <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
