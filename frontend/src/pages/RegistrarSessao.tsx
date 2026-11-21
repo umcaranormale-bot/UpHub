@@ -130,7 +130,7 @@ function RegistrarSessao() {
                             id="duracao"
                             type="text"
                             defaultValue="1 h 30 min"
-                            className={`mt-2 max-w-[240px] ${CAMPO} ${ANEL_FOCO}`}
+                            className={`mt-2 max-w-60 ${CAMPO} ${ANEL_FOCO}`}
                         />
                     </div>
 
@@ -155,7 +155,7 @@ function RegistrarSessao() {
                     </div>
                 </section>
 
-                <aside className="flex w-[344px] shrink-0 flex-col gap-5">
+                <aside className="flex w-86 shrink-0 flex-col gap-5">
                     <section
                         aria-labelledby="titulo-horas"
                         className="rounded-bloco border border-sutil bg-card p-card shadow-card"
