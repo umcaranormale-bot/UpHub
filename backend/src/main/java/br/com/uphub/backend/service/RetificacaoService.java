@@ -18,10 +18,13 @@ public class RetificacaoService {
 
     private final RetificacaoParecerRepository retificacaoRepository;
     private final AvaliacaoService avaliacaoService;
+    private final AuditoriaService auditoria;
 
-    public RetificacaoService(RetificacaoParecerRepository retificacaoRepository, AvaliacaoService avaliacaoService) {
+    public RetificacaoService(RetificacaoParecerRepository retificacaoRepository, AvaliacaoService avaliacaoService,
+                              AuditoriaService auditoria) {
         this.retificacaoRepository = retificacaoRepository;
         this.avaliacaoService = avaliacaoService;
+        this.auditoria = auditoria;
     }
 
     // só o texto do parecer muda; a decisão e as notas assinadas ficam como estão
@@ -38,6 +41,10 @@ public class RetificacaoService {
         }
         RetificacaoParecer retificacao = retificacaoRepository.save(
                 new RetificacaoParecer(avaliacaoId, parecer, justificativa, pessoaId, OffsetDateTime.now()));
+        auditoria.registrar(pessoaId, null, "AVALIADOR",
+                "PARECER_RETIFICADO", "RETIFICACAO_PARECER", retificacao.getId(),
+                avaliacao.getOportunidadeId(), avaliacao.getCandidaturaId(), null,
+                null, null, justificativa);
         return RetificacaoResponse.de(retificacao);
     }
 

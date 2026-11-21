@@ -268,7 +268,12 @@ public class CandidaturaService {
             throw erro(HttpStatus.CONFLICT, "O funil só anda para a frente: a candidatura já está em " + atual.name());
         }
         candidatura.moverNoFunil(novo.name());
-        return CandidaturaResponse.de(candidaturaRepository.saveAndFlush(candidatura));
+        Candidatura salva = candidaturaRepository.saveAndFlush(candidatura);
+        auditoria.registrar(pessoaId, null, "PROVEDOR",
+                "ESTAGIO_FUNIL_ALTERADO", "CANDIDATURA", salva.getId(),
+                salva.getOportunidadeId(), salva.getId(), null,
+                atual == null ? null : atual.name(), novo.name(), null);
+        return CandidaturaResponse.de(salva);
     }
 
     // ---------- máquina de estados, para a tela e para a documentação

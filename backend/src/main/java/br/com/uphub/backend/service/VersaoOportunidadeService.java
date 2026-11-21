@@ -203,8 +203,10 @@ public class VersaoOportunidadeService {
         }
 
         VersaoOportunidade salva = versaoRepository.save(versao);
+        // a primeira publicação abre a oportunidade; as seguintes são novas versões
+        String acao = "RASCUNHO".equals(estadoAntes) ? "OPORTUNIDADE_PUBLICADA" : "VERSAO_PUBLICADA";
         auditoria.registrar(pessoaId, null, "PROVEDOR",
-                "VERSAO_PUBLICADA", "VERSAO_OPORTUNIDADE", salva.getId(),
+                acao, "VERSAO_OPORTUNIDADE", salva.getId(),
                 oportunidadeId, null, salva.getId(),
                 estadoAntes, oportunidade.getEstado(), null);
         return VersaoOportunidadeResponse.de(salva);

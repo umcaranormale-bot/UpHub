@@ -182,7 +182,7 @@ public class PedidoAjusteService {
         pedido.perderPrazo(OffsetDateTime.now());
         pedidoRepository.saveAndFlush(pedido);
         candidaturaService.moverPor(candidatura, "PERDA_DE_PRAZO", Ator.SISTEMA);
-        auditoria.registrarTransicaoCandidatura(candidatura, null, AuditoriaService.AGENDADOR, "SISTEMA",
+        auditoria.registrarTransicaoCandidatura(candidatura, null, AuditoriaService.AGENDADOR, null,
                 "AJUSTE", "PERDA_DE_PRAZO", null);
     }
 

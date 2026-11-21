@@ -239,8 +239,11 @@ public class AvaliacaoService {
         if (daRodada.stream().anyMatch(a -> "AJUSTE".equals(a.getDecisao()))) {
             pedidoAjusteService.iniciarPrazo(candidatura.getId());
             Candidatura movida = candidaturaService.moverComoAvaliador(candidatura, "AJUSTE");
+            String motivoDoAjuste = daRodada.stream().filter(a -> "AJUSTE".equals(a.getDecisao()))
+                    .map(Avaliacao::getParecer).filter(p -> p != null && !p.isBlank())
+                    .collect(Collectors.joining("\n\n"));
             auditoria.registrarTransicaoCandidatura(movida, pessoaId, null, "AVALIADOR",
-                    estadoAntes, "AJUSTE", null);
+                    estadoAntes, "AJUSTE", motivoDoAjuste.isEmpty() ? null : motivoDoAjuste);
             return movida;
         }
         long aprovadas = daRodada.stream().filter(a -> "APROVADA".equals(a.getDecisao())).count();

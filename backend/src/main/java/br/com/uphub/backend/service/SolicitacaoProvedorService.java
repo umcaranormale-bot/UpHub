@@ -31,19 +31,22 @@ public class SolicitacaoProvedorService {
     private final DocumentoRepository documentoRepository;
     private final OportunidadeRepository oportunidadeRepository;
     private final Acesso acesso;
+    private final AuditoriaService auditoria;
 
     public SolicitacaoProvedorService(SolicitacaoProvedorRepository solicitacaoRepository,
                                       OrganizacaoRepository organizacaoRepository,
                                       PessoaRepository pessoaRepository,
                                       DocumentoRepository documentoRepository,
                                       OportunidadeRepository oportunidadeRepository,
-                                      Acesso acesso) {
+                                      Acesso acesso,
+                                      AuditoriaService auditoria) {
         this.solicitacaoRepository = solicitacaoRepository;
         this.organizacaoRepository = organizacaoRepository;
         this.pessoaRepository = pessoaRepository;
         this.documentoRepository = documentoRepository;
         this.oportunidadeRepository = oportunidadeRepository;
         this.acesso = acesso;
+        this.auditoria = auditoria;
     }
 
     @Transactional
@@ -166,6 +169,7 @@ public class SolicitacaoProvedorService {
                 .findByOrganizacaoIdAndSuspensaEmIsNotNull(solicitacao.getOrganizacao().getId())) {
             oportunidade.retomar();
         }
+        registrarDecisao(solicitacao, pessoaId, "PROVEDOR_APROVADO", "AGUARDANDO", null);
         return SolicitacaoProvedorResponse.de(solicitacao);
     }
 
@@ -179,6 +183,7 @@ public class SolicitacaoProvedorService {
         }
         boolean porDocumento = Boolean.TRUE.equals(dados.recusaPorDocumento());
         solicitacao.recusar(gestao(pessoaId), OffsetDateTime.now(), motivo, porDocumento);
+        registrarDecisao(solicitacao, pessoaId, "PROVEDOR_RECUSADO", "AGUARDANDO", motivo);
         return SolicitacaoProvedorResponse.de(solicitacao);
     }
 
@@ -198,7 +203,17 @@ public class SolicitacaoProvedorService {
                 solicitacao.getOrganizacao().getId(), List.of("PUBLICADA", "EM_AVALIACAO"))) {
             oportunidade.suspender(agora);
         }
+        registrarDecisao(solicitacao, pessoaId, "PROVEDOR_REVOGADO", "APROVADA", motivo);
         return SolicitacaoProvedorResponse.de(solicitacao);
+    }
+
+    // a decisão da gestão sobre o pedido entra no histórico da organização
+    private void registrarDecisao(SolicitacaoProvedor solicitacao, Long pessoaId, String acao,
+                                  String situacaoAntes, String motivo) {
+        auditoria.registrar(pessoaId, null, "GESTAO",
+                acao, "SOLICITACAO_PROVEDOR", solicitacao.getId(),
+                null, null, null,
+                situacaoAntes, solicitacao.getSituacao(), motivo);
     }
 
     private SolicitacaoProvedor buscar(Long id) {

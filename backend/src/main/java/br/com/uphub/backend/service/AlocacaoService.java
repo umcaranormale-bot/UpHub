@@ -199,8 +199,8 @@ public class AlocacaoService {
             alocacaoRepository.save(a);
             Long oportunidadeId = candidaturaRepository.findById(a.getCandidaturaId())
                     .map(Candidatura::getOportunidadeId).orElse(null);
-            auditoria.registrar(null, AuditoriaService.AGENDADOR, "SISTEMA",
-                    "CONVITE_MENTOR_EXPIRADO", "ALOCACAO_MENTOR", a.getId(),
+            auditoria.registrar(null, AuditoriaService.AGENDADOR, null,
+                    "CONVITE_EXPIRADO", "ALOCACAO_MENTOR", a.getId(),
                     oportunidadeId, a.getCandidaturaId(), null,
                     "PENDENTE", "EXPIRADA", null);
         }
