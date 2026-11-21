@@ -3,7 +3,7 @@ import AuthLayout from "../layouts/AuthLayout";
 import { useNavigate } from "react-router-dom";
 import { routeByPaper } from "../utils/RoutesByLink";
 import type { Vinculo } from "../api/vinculos";
-import { AuthProvider, useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 
 function LinkPage() {
     const { sessao } = useAuth();
@@ -22,16 +22,13 @@ function LinkPage() {
     }
 
     return (
-        <AuthProvider>
-
-            <AuthLayout>
-                <SelectLinkCard
-                    vinculos={sessao.vinculos}
-                    onContinue={handleContinue}
-                    onOutraConta={handleOutraConta}
-                />
-            </AuthLayout>
-        </AuthProvider>
+        <AuthLayout>
+            <SelectLinkCard
+                vinculos={sessao.vinculos}
+                onContinue={handleContinue}
+                onOutraConta={handleOutraConta}
+            />
+        </AuthLayout>
     );
 }
 
