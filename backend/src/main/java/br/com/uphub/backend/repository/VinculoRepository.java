@@ -21,6 +21,8 @@ public interface VinculoRepository extends JpaRepository<Vinculo, Long> {
 
     boolean existsByPessoa_IdAndPapelAndEncerradoEmIsNull(Long pessoaId, String papel);
 
+    List<Vinculo> findByPapelAndEncerradoEmIsNull(String papel);
+
     @Query("select v.organizacao.id from Vinculo v where v.pessoa.id = :pessoaId and v.encerradoEm is null")
     List<Long> organizacoesAtivasDa(Long pessoaId);
 

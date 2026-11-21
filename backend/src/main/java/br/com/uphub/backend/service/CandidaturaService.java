@@ -66,6 +66,8 @@ public class CandidaturaService {
     private final ObjectProvider<EtapaDoEnvio> etapasDoEnvio;
     private final AuditoriaService auditoria;
 
+    private final NotificacaoService notificacaoService;
+
     public CandidaturaService(CandidaturaRepository candidaturaRepository,
                               CandidaturaParticipanteRepository participanteRepository,
                               AvaliacaoRepository avaliacaoRepository,
@@ -77,7 +79,8 @@ public class CandidaturaService {
                               RequisitoElegibilidadeService requisitoService,
                               Acesso acesso,
                               ObjectProvider<EtapaDoEnvio> etapasDoEnvio,
-                              AuditoriaService auditoria) {
+                              AuditoriaService auditoria,
+                              NotificacaoService notificacaoService) {
         this.candidaturaRepository = candidaturaRepository;
         this.participanteRepository = participanteRepository;
         this.avaliacaoRepository = avaliacaoRepository;
@@ -90,6 +93,7 @@ public class CandidaturaService {
         this.acesso = acesso;
         this.etapasDoEnvio = etapasDoEnvio;
         this.auditoria = auditoria;
+        this.notificacaoService = notificacaoService;
     }
 
     // ---------- candidato
@@ -372,9 +376,12 @@ public class CandidaturaService {
     }
 
     private void mover(Candidatura candidatura, String para, Ator ator) {
-        exigirNaoPausada(buscarOportunidade(candidatura.getOportunidadeId()));
+        Oportunidade oportunidade = buscarOportunidade(candidatura.getOportunidadeId());
+        exigirNaoPausada(oportunidade);
         exigirTransicao(candidatura.getEstado(), para, ator);
         candidatura.mudarEstado(para);
+        // toda mudança de estado passa por aqui: o candidato recebe o aviso informativo
+        notificacaoService.avisarMudancaDeEstado(candidatura, oportunidade, ator);
     }
 
     private void exigirTransicao(String de, String para, Ator ator) {
