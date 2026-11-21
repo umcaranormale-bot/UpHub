@@ -9,6 +9,7 @@ import br.com.uphub.backend.model.AvaliadorOportunidadeId;
 import br.com.uphub.backend.model.Avaliacao;
 import br.com.uphub.backend.model.Candidatura;
 import br.com.uphub.backend.model.Criterio;
+import br.com.uphub.backend.model.Notificacao;
 import br.com.uphub.backend.model.NotaCriterio;
 import br.com.uphub.backend.model.RetificacaoParecer;
 import br.com.uphub.backend.model.CandidaturaParticipanteId;
@@ -64,6 +65,7 @@ public class AvaliacaoService {
     private final PedidoAjusteService pedidoAjusteService;
     private final ItemAjusteService itemAjusteService;
     private final Acesso acesso;
+    private final NotificacaoService notificacaoService;
 
     public AvaliacaoService(AvaliacaoRepository avaliacaoRepository,
                             AvaliadorOportunidadeRepository designacaoRepository,
@@ -77,7 +79,8 @@ public class AvaliacaoService {
                             CandidaturaService candidaturaService,
                             PedidoAjusteService pedidoAjusteService,
                             ItemAjusteService itemAjusteService,
-                            Acesso acesso) {
+                            Acesso acesso,
+                            NotificacaoService notificacaoService) {
         this.avaliacaoRepository = avaliacaoRepository;
         this.designacaoRepository = designacaoRepository;
         this.candidaturaRepository = candidaturaRepository;
@@ -91,6 +94,7 @@ public class AvaliacaoService {
         this.pedidoAjusteService = pedidoAjusteService;
         this.itemAjusteService = itemAjusteService;
         this.acesso = acesso;
+        this.notificacaoService = notificacaoService;
     }
 
     // ---------- provedor
@@ -124,6 +128,11 @@ public class AvaliacaoService {
         }
         Avaliacao avaliacao = avaliacaoRepository.save(new Avaliacao(candidaturaId, candidatura.getOportunidadeId(),
                 vinculo.getId(), pessoaId, OffsetDateTime.now(), rodada));
+        // avaliação atribuída: pede ação do avaliador (manda e-mail)
+        notificacaoService.criar(avaliadorId, candidatura.getOportunidadeId(),
+                "Nova avaliação para você",
+                "Você recebeu a candidatura \"" + candidatura.getTituloProposta() + "\" para avaliar (rodada " + rodada + ").",
+                Notificacao.PEDE_ACAO);
         return resposta(avaliacao, candidatura, true);
     }
 
@@ -233,7 +242,13 @@ public class AvaliacaoService {
         }
         if (daRodada.stream().anyMatch(a -> "AJUSTE".equals(a.getDecisao()))) {
             pedidoAjusteService.iniciarPrazo(candidatura.getId());
-            return candidaturaService.moverComoAvaliador(candidatura, "AJUSTE");
+            Candidatura movida = candidaturaService.moverComoAvaliador(candidatura, "AJUSTE");
+            // pedido de ajuste: pede ação do candidato (manda e-mail)
+            notificacaoService.criar(movida.getCriadaPor(), movida.getOportunidadeId(),
+                    "Ajuste solicitado na sua candidatura",
+                    "A candidatura \"" + movida.getTituloProposta() + "\" precisa de ajustes. Responda dentro do prazo.",
+                    Notificacao.PEDE_ACAO);
+            return movida;
         }
         long aprovadas = daRodada.stream().filter(a -> "APROVADA".equals(a.getDecisao())).count();
         long reprovadas = daRodada.stream().filter(a -> "REPROVADA".equals(a.getDecisao())).count();
