@@ -10,6 +10,8 @@ import br.com.uphub.backend.repository.PessoaRepository;
 import br.com.uphub.backend.repository.SquadIntegranteRepository;
 import br.com.uphub.backend.repository.SquadRepository;
 import java.util.List;
+import br.com.uphub.backend.seguranca.Acesso;
+import br.com.uphub.backend.seguranca.Permissao;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,19 +23,23 @@ public class SquadIntegranteService {
     private final SquadIntegranteRepository squadIntegranteRepository;
     private final SquadRepository squadRepository;
     private final PessoaRepository pessoaRepository;
+    private final Acesso acesso;
 
     public SquadIntegranteService(SquadIntegranteRepository squadIntegranteRepository,
                                   SquadRepository squadRepository,
-                                  PessoaRepository pessoaRepository) {
+                                  PessoaRepository pessoaRepository,
+                                  Acesso acesso) {
         this.squadIntegranteRepository = squadIntegranteRepository;
         this.squadRepository = squadRepository;
         this.pessoaRepository = pessoaRepository;
+        this.acesso = acesso;
     }
 
     @Transactional
-    public SquadIntegranteResponse adicionar(Long squadId, SquadIntegranteCadastroRequest dados) {
+    public SquadIntegranteResponse adicionar(Long squadId, SquadIntegranteCadastroRequest dados, Long pessoaId) {
         Squad squad = squadRepository.findById(squadId)
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Squad não encontrada"));
+        acesso.exigir(pessoaId, squadId, Permissao.MONTAR_SQUAD);
 
         if (dados.pessoaId() == null) {
             throw erro(HttpStatus.BAD_REQUEST, "O campo pessoaId é obrigatório");
@@ -53,10 +59,11 @@ public class SquadIntegranteService {
     }
 
     @Transactional(readOnly = true)
-    public List<SquadIntegranteResponse> listar(Long squadId) {
+    public List<SquadIntegranteResponse> listar(Long squadId, Long pessoaId) {
         if (!squadRepository.existsById(squadId)) {
             throw erro(HttpStatus.NOT_FOUND, "Squad não encontrada");
         }
+        acesso.exigirAcesso(pessoaId, squadId);
         return squadIntegranteRepository.listarPorSquad(squadId).stream()
                 .map(SquadIntegranteResponse::de)
                 .toList();

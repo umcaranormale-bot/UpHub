@@ -6,7 +6,8 @@ public record SquadResponse(
         Long organizacaoId,
         String nome,
         String descricao,
-        String codigoCoordenacao
+        String codigoCoordenacao,
+        Long residenciaId
 ) {
 
     public static SquadResponse de(Squad squad) {
@@ -14,7 +15,8 @@ public record SquadResponse(
                 squad.getOrganizacaoId(),
                 squad.getOrganizacao().getNome(),
                 squad.getDescricao(),
-                squad.getCodigoCoordenacao()
+                squad.getCodigoCoordenacao(),
+                squad.getResidenciaId()
         );
     }
 }

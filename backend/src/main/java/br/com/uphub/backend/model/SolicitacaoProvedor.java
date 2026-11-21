@@ -149,4 +149,36 @@ public class SolicitacaoProvedor {
     public String getMotivoRevogacao() {
         return motivoRevogacao;
     }
+
+    public boolean aguardando() {
+        return "AGUARDANDO".equals(situacao);
+    }
+
+    public boolean aprovada() {
+        return "APROVADA".equals(situacao);
+    }
+
+    // preenche situação, quem decidiu e quando juntos (ck_solicitacao_decisao)
+    public void aprovar(Pessoa gestao, OffsetDateTime quando) {
+        this.situacao = "APROVADA";
+        this.decididaPor = gestao;
+        this.decididaEm = quando;
+    }
+
+    // recusa sempre com motivo (ck_solicitacao_motivo)
+    public void recusar(Pessoa gestao, OffsetDateTime quando, String motivo, boolean porDocumento) {
+        this.situacao = "RECUSADA";
+        this.decididaPor = gestao;
+        this.decididaEm = quando;
+        this.motivo = motivo;
+        this.recusaPorDocumento = porDocumento;
+    }
+
+    // revogação de uma aprovada, sempre com motivo (ck_solicitacao_revogacao)
+    public void revogar(Pessoa gestao, OffsetDateTime quando, String motivo) {
+        this.situacao = "REVOGADA";
+        this.revogadaPor = gestao;
+        this.revogadaEm = quando;
+        this.motivoRevogacao = motivo;
+    }
 }
