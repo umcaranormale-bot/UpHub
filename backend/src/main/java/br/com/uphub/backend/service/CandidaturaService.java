@@ -64,6 +64,7 @@ public class CandidaturaService {
     private final RequisitoElegibilidadeService requisitoService;
     private final Acesso acesso;
     private final ObjectProvider<EtapaDoEnvio> etapasDoEnvio;
+    private final AuditoriaService auditoria;
 
     public CandidaturaService(CandidaturaRepository candidaturaRepository,
                               CandidaturaParticipanteRepository participanteRepository,
@@ -75,7 +76,8 @@ public class CandidaturaService {
                               OrganizacaoRepository organizacaoRepository,
                               RequisitoElegibilidadeService requisitoService,
                               Acesso acesso,
-                              ObjectProvider<EtapaDoEnvio> etapasDoEnvio) {
+                              ObjectProvider<EtapaDoEnvio> etapasDoEnvio,
+                              AuditoriaService auditoria) {
         this.candidaturaRepository = candidaturaRepository;
         this.participanteRepository = participanteRepository;
         this.avaliacaoRepository = avaliacaoRepository;
@@ -87,6 +89,7 @@ public class CandidaturaService {
         this.requisitoService = requisitoService;
         this.acesso = acesso;
         this.etapasDoEnvio = etapasDoEnvio;
+        this.auditoria = auditoria;
     }
 
     // ---------- candidato
@@ -163,6 +166,8 @@ public class CandidaturaService {
             candidatura.moverNoFunil(EstagioFunil.INSCRITA.name());
         }
         candidaturaRepository.saveAndFlush(candidatura);
+        auditoria.registrarTransicaoCandidatura(candidatura, pessoaId, null, "CANDIDATO",
+                "RASCUNHO", estadoDepois, null);
         etapasDoEnvio.orderedStream().forEach(etapa -> etapa.depoisDoEnvio(candidatura, versao, resultado));
 
         ElegibilidadeResponse elegibilidade = new ElegibilidadeResponse(organizacao.getId(), versao.getId(),
@@ -219,18 +224,27 @@ public class CandidaturaService {
             throw erro(HttpStatus.BAD_REQUEST, "O campo elegivel é obrigatório");
         }
         Candidatura candidatura = buscarComoProvedor(id, pessoaId);
-        mover(candidatura, dados.elegivel() ? "ELEGIVEL" : "NAO_ELEGIVEL", Ator.PROVEDOR);
+        String estadoAntes = candidatura.getEstado();
+        String estadoDepois = dados.elegivel() ? "ELEGIVEL" : "NAO_ELEGIVEL";
+        mover(candidatura, estadoDepois, Ator.PROVEDOR);
         if (!dados.elegivel()) {
             candidatura.moverNoFunil(null);
         }
-        return CandidaturaResponse.de(candidaturaRepository.saveAndFlush(candidatura));
+        candidaturaRepository.saveAndFlush(candidatura);
+        auditoria.registrarTransicaoCandidatura(candidatura, pessoaId, null, "PROVEDOR",
+                estadoAntes, estadoDepois, null);
+        return CandidaturaResponse.de(candidatura);
     }
 
     @Transactional
     public CandidaturaResponse iniciarAnalise(Long id, Long pessoaId) {
         Candidatura candidatura = buscarComoProvedor(id, pessoaId);
+        String estadoAntes = candidatura.getEstado();
         mover(candidatura, "EM_ANALISE", Ator.PROVEDOR);
-        return CandidaturaResponse.de(candidaturaRepository.saveAndFlush(candidatura));
+        candidaturaRepository.saveAndFlush(candidatura);
+        auditoria.registrarTransicaoCandidatura(candidatura, pessoaId, null, "PROVEDOR",
+                estadoAntes, "EM_ANALISE", null);
+        return CandidaturaResponse.de(candidatura);
     }
 
     // funil da trilha Investimento: só para a frente, enquanto a candidatura está na seleção
