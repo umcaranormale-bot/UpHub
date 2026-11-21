@@ -47,6 +47,13 @@ public class Organizacao {
     @Column(name = "sede_uf", length = 2)
     private String sedeUf;
 
+    // V43: perfil da startup (descrição do negócio e o documento do deck)
+    @Column(name = "descricao")
+    private String descricao;
+
+    @Column(name = "deck_documento_id")
+    private Long deckDocumentoId;
+
     @Generated
     @Column(name = "criada_em", nullable = false, updatable = false)
     private OffsetDateTime criadaEm;
@@ -137,5 +144,21 @@ public class Organizacao {
 
     public OffsetDateTime getCriadaEm() {
         return criadaEm;
+    }
+
+    public String getDescricao() {
+        return descricao;
+    }
+
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
+    }
+
+    public Long getDeckDocumentoId() {
+        return deckDocumentoId;
+    }
+
+    public void setDeckDocumentoId(Long deckDocumentoId) {
+        this.deckDocumentoId = deckDocumentoId;
     }
 }

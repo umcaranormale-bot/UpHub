@@ -1,17 +1,22 @@
 package br.com.uphub.backend.service;
 
+import br.com.uphub.backend.dto.DecisaoSolicitacaoRequest;
 import br.com.uphub.backend.dto.SolicitacaoProvedorCadastroRequest;
 import br.com.uphub.backend.dto.SolicitacaoProvedorResponse;
 import br.com.uphub.backend.model.Documento;
+import br.com.uphub.backend.model.Oportunidade;
 import br.com.uphub.backend.model.Organizacao;
 import br.com.uphub.backend.model.Pessoa;
 import br.com.uphub.backend.model.SolicitacaoProvedor;
 import br.com.uphub.backend.repository.DocumentoRepository;
+import br.com.uphub.backend.repository.OportunidadeRepository;
 import br.com.uphub.backend.repository.OrganizacaoRepository;
 import br.com.uphub.backend.repository.PessoaRepository;
 import br.com.uphub.backend.repository.SolicitacaoProvedorRepository;
-import br.com.uphub.backend.repository.VinculoRepository;
+import java.time.OffsetDateTime;
 import java.util.List;
+import br.com.uphub.backend.seguranca.Acesso;
+import br.com.uphub.backend.seguranca.Permissao;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,28 +28,28 @@ public class SolicitacaoProvedorService {
     private final SolicitacaoProvedorRepository solicitacaoRepository;
     private final OrganizacaoRepository organizacaoRepository;
     private final PessoaRepository pessoaRepository;
-    private final VinculoRepository vinculoRepository;
     private final DocumentoRepository documentoRepository;
+    private final OportunidadeRepository oportunidadeRepository;
+    private final Acesso acesso;
 
     public SolicitacaoProvedorService(SolicitacaoProvedorRepository solicitacaoRepository,
                                       OrganizacaoRepository organizacaoRepository,
                                       PessoaRepository pessoaRepository,
-                                      VinculoRepository vinculoRepository,
-                                      DocumentoRepository documentoRepository) {
+                                      DocumentoRepository documentoRepository,
+                                      OportunidadeRepository oportunidadeRepository,
+                                      Acesso acesso) {
         this.solicitacaoRepository = solicitacaoRepository;
         this.organizacaoRepository = organizacaoRepository;
         this.pessoaRepository = pessoaRepository;
-        this.vinculoRepository = vinculoRepository;
         this.documentoRepository = documentoRepository;
+        this.oportunidadeRepository = oportunidadeRepository;
+        this.acesso = acesso;
     }
 
     @Transactional
-    public SolicitacaoProvedorResponse cadastrar(SolicitacaoProvedorCadastroRequest dados) {
+    public SolicitacaoProvedorResponse cadastrar(SolicitacaoProvedorCadastroRequest dados, Long pessoaId) {
         if (dados.organizacaoId() == null) {
             throw erro(HttpStatus.BAD_REQUEST, "O campo organizacaoId é obrigatório");
-        }
-        if (dados.solicitanteId() == null) {
-            throw erro(HttpStatus.BAD_REQUEST, "O campo solicitanteId é obrigatório");
         }
         if (dados.emailInstitucional() == null || dados.emailInstitucional().isBlank()) {
             throw erro(HttpStatus.BAD_REQUEST, "O campo emailInstitucional é obrigatório");
@@ -57,12 +62,9 @@ public class SolicitacaoProvedorService {
 
         Organizacao organizacao = organizacaoRepository.findById(dados.organizacaoId())
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Organização não encontrada"));
-        Pessoa solicitante = pessoaRepository.findById(dados.solicitanteId())
+        acesso.exigir(pessoaId, organizacao.getId(), Permissao.PEDIR_PERMISSAO_DE_PROVEDOR);
+        Pessoa solicitante = pessoaRepository.findById(pessoaId)
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Pessoa não encontrada"));
-
-        if (!vinculoRepository.existsByPessoa_IdAndOrganizacao_Id(solicitante.getId(), organizacao.getId())) {
-            throw erro(HttpStatus.FORBIDDEN, "Esta pessoa não tem vínculo com esta organização");
-        }
 
         if (dados.documentoId() != null) {
             Documento documento = documentoRepository.findById(dados.documentoId())
@@ -117,22 +119,103 @@ public class SolicitacaoProvedorService {
     }
 
     @Transactional(readOnly = true)
-    public List<SolicitacaoProvedorResponse> listar(Long organizacaoId) {
+    public List<SolicitacaoProvedorResponse> listar(Long organizacaoId, String situacao, Long pessoaId) {
+        // sem organização: a fila da gestão, com todas as organizações (filtrável pela situação)
         if (organizacaoId == null) {
-            throw erro(HttpStatus.BAD_REQUEST, "O parâmetro organizacaoId é obrigatório");
+            if (!acesso.ehGestao(pessoaId)) {
+                throw erro(HttpStatus.BAD_REQUEST, "O parâmetro organizacaoId é obrigatório");
+            }
+            String filtro = null;
+            if (situacao != null && !situacao.isBlank()) {
+                filtro = situacao.trim().toUpperCase();
+                if (!List.of("AGUARDANDO", "APROVADA", "RECUSADA", "REVOGADA").contains(filtro)) {
+                    throw erro(HttpStatus.BAD_REQUEST, "Situação inválida. Use: AGUARDANDO, APROVADA, RECUSADA ou REVOGADA");
+                }
+            }
+            return solicitacaoRepository.listarTodas(filtro)
+                    .stream().map(SolicitacaoProvedorResponse::de).toList();
         }
         if (!organizacaoRepository.existsById(organizacaoId)) {
             throw erro(HttpStatus.NOT_FOUND, "Organização não encontrada");
         }
+        acesso.exigirAcesso(pessoaId, organizacaoId);
         return solicitacaoRepository.listarPorOrganizacao(organizacaoId)
                 .stream().map(SolicitacaoProvedorResponse::de).toList();
     }
 
     @Transactional(readOnly = true)
-    public SolicitacaoProvedorResponse buscarPorId(Long id) {
-        return solicitacaoRepository.buscarPorId(id)
-                .map(SolicitacaoProvedorResponse::de)
+    public SolicitacaoProvedorResponse buscarPorId(Long id, Long pessoaId) {
+        SolicitacaoProvedor solicitacao = solicitacaoRepository.buscarPorId(id)
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Solicitação não encontrada"));
+        acesso.exigirAcesso(pessoaId, solicitacao.getOrganizacao().getId());
+        return SolicitacaoProvedorResponse.de(solicitacao);
+    }
+
+    @Transactional
+    public SolicitacaoProvedorResponse aprovar(Long id, Long pessoaId) {
+        acesso.exigirGestao(pessoaId, "aprovar o pedido de provedor");
+        SolicitacaoProvedor solicitacao = buscar(id);
+        if (!solicitacao.aguardando()) {
+            throw erro(HttpStatus.CONFLICT, "Só dá para decidir um pedido que está aguardando");
+        }
+        OffsetDateTime agora = OffsetDateTime.now();
+        solicitacao.aprovar(gestao(pessoaId), agora);
+
+        // aprovação depois de uma revogação: as oportunidades pausadas voltam a andar
+        for (Oportunidade oportunidade : oportunidadeRepository
+                .findByOrganizacaoIdAndSuspensaEmIsNotNull(solicitacao.getOrganizacao().getId())) {
+            oportunidade.retomar();
+        }
+        return SolicitacaoProvedorResponse.de(solicitacao);
+    }
+
+    @Transactional
+    public SolicitacaoProvedorResponse recusar(Long id, DecisaoSolicitacaoRequest dados, Long pessoaId) {
+        acesso.exigirGestao(pessoaId, "recusar o pedido de provedor");
+        String motivo = motivo(dados, "motivo");
+        SolicitacaoProvedor solicitacao = buscar(id);
+        if (!solicitacao.aguardando()) {
+            throw erro(HttpStatus.CONFLICT, "Só dá para decidir um pedido que está aguardando");
+        }
+        boolean porDocumento = Boolean.TRUE.equals(dados.recusaPorDocumento());
+        solicitacao.recusar(gestao(pessoaId), OffsetDateTime.now(), motivo, porDocumento);
+        return SolicitacaoProvedorResponse.de(solicitacao);
+    }
+
+    @Transactional
+    public SolicitacaoProvedorResponse revogar(Long id, DecisaoSolicitacaoRequest dados, Long pessoaId) {
+        acesso.exigirGestao(pessoaId, "revogar a permissão de provedor");
+        String motivo = motivo(dados, "motivo");
+        SolicitacaoProvedor solicitacao = buscar(id);
+        if (!solicitacao.aprovada()) {
+            throw erro(HttpStatus.CONFLICT, "Só dá para revogar uma permissão aprovada");
+        }
+        OffsetDateTime agora = OffsetDateTime.now();
+        solicitacao.revogar(gestao(pessoaId), agora, motivo);
+
+        // as oportunidades publicadas da organização ficam pausadas até uma nova aprovação
+        for (Oportunidade oportunidade : oportunidadeRepository.findByOrganizacaoIdAndEstadoIn(
+                solicitacao.getOrganizacao().getId(), List.of("PUBLICADA", "EM_AVALIACAO"))) {
+            oportunidade.suspender(agora);
+        }
+        return SolicitacaoProvedorResponse.de(solicitacao);
+    }
+
+    private SolicitacaoProvedor buscar(Long id) {
+        return solicitacaoRepository.buscarPorId(id)
+                .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Solicitação não encontrada"));
+    }
+
+    private Pessoa gestao(Long pessoaId) {
+        return pessoaRepository.findById(pessoaId)
+                .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Pessoa não encontrada"));
+    }
+
+    private String motivo(DecisaoSolicitacaoRequest dados, String campo) {
+        if (dados == null || dados.motivo() == null || dados.motivo().isBlank()) {
+            throw erro(HttpStatus.BAD_REQUEST, "O campo " + campo + " é obrigatório");
+        }
+        return dados.motivo().trim();
     }
 
     private ResponseStatusException erro(HttpStatus status, String mensagem) {
