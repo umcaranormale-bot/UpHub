@@ -6,6 +6,7 @@ import br.com.uphub.backend.dto.PedidoAjusteResponse;
 import br.com.uphub.backend.dto.ReenvioRequest;
 import br.com.uphub.backend.model.Avaliacao;
 import br.com.uphub.backend.model.Candidatura;
+import br.com.uphub.backend.model.Notificacao;
 import br.com.uphub.backend.model.PedidoAjuste;
 import br.com.uphub.backend.model.VersaoOportunidade;
 import br.com.uphub.backend.repository.AvaliacaoRepository;
@@ -24,6 +25,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -31,7 +33,9 @@ import java.util.List;
 public class PedidoAjusteService {
 
     private static final Logger LOG = LoggerFactory.getLogger(PedidoAjusteService.class);
-    private static final DateTimeFormatter DATA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    // as datas aparecem na hora do Recife (o banco devolve em UTC)
+    private static final DateTimeFormatter DATA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+            .withZone(ZoneId.of("America/Recife"));
 
     private final PedidoAjusteRepository pedidoRepository;
     private final AvaliacaoRepository avaliacaoRepository;
@@ -42,6 +46,8 @@ public class PedidoAjusteService {
     private final Acesso acesso;
     private final TransactionTemplate transacao;
 
+    private final NotificacaoService notificacaoService;
+
     public PedidoAjusteService(PedidoAjusteRepository pedidoRepository,
                                AvaliacaoRepository avaliacaoRepository,
                                CandidaturaRepository candidaturaRepository,
@@ -49,7 +55,8 @@ public class PedidoAjusteService {
                                CandidaturaService candidaturaService,
                                ItemAjusteService itemService,
                                Acesso acesso,
-                               TransactionTemplate transacao) {
+                               TransactionTemplate transacao,
+                               NotificacaoService notificacaoService) {
         this.pedidoRepository = pedidoRepository;
         this.avaliacaoRepository = avaliacaoRepository;
         this.candidaturaRepository = candidaturaRepository;
@@ -58,6 +65,7 @@ public class PedidoAjusteService {
         this.itemService = itemService;
         this.acesso = acesso;
         this.transacao = transacao;
+        this.notificacaoService = notificacaoService;
     }
 
     // ---------- chamado pela avaliação
@@ -138,6 +146,11 @@ public class PedidoAjusteService {
         pedido.reabrir(pessoaId, agora, agora.plusDays(prazoDias(candidaturaId)));
         pedidoRepository.saveAndFlush(pedido);
         candidatura = candidaturaService.moverPor(candidatura, "AJUSTE", Ator.PROVEDOR);
+        notificacaoService.criar(candidatura.getCriadaPor(), candidatura.getOportunidadeId(),
+                "Prazo do ajuste reaberto",
+                "A candidatura \"" + candidatura.getTituloProposta() + "\" ganhou um novo prazo para o ajuste, até "
+                        + pedido.getPrazoReenvio().format(DATA_HORA) + ".",
+                Notificacao.PEDE_ACAO);
         return resposta(pedido, candidatura);
     }
 
@@ -164,6 +177,30 @@ public class PedidoAjusteService {
                 LOG.warn("Pedido de ajuste {} não mudou para perda de prazo: {}", vencido.getId(), e.getMessage());
             }
         }
+        // prazo a 2 dias de vencer: avisa o candidato uma vez por prazo
+        OffsetDateTime agora = OffsetDateTime.now();
+        for (PedidoAjuste perto : pedidoRepository.findBySituacaoAndPrazoReenvioBetween("AGUARDANDO", agora, agora.plusDays(2))) {
+            try {
+                transacao.executeWithoutResult(t -> avisarPrazoPerto(perto.getId()));
+            } catch (RuntimeException e) {
+                LOG.warn("Aviso de prazo do pedido de ajuste {} não saiu: {}", perto.getId(), e.getMessage());
+            }
+        }
+    }
+
+    private void avisarPrazoPerto(Long pedidoId) {
+        PedidoAjuste pedido = pedidoRepository.findById(pedidoId).orElseThrow();
+        Candidatura candidatura = candidaturaRepository.findById(pedido.getCandidaturaId()).orElseThrow();
+        String titulo = "O prazo do ajuste vence em breve";
+        // "este prazo" começa 3 dias antes do vencimento: uma reabertura gera um novo aviso
+        if (notificacaoService.jaAvisou(candidatura.getCriadaPor(), candidatura.getOportunidadeId(), titulo,
+                pedido.getPrazoReenvio().minusDays(3))) {
+            return;
+        }
+        notificacaoService.criar(candidatura.getCriadaPor(), candidatura.getOportunidadeId(), titulo,
+                "Responda o ajuste da candidatura \"" + candidatura.getTituloProposta() + "\" até "
+                        + pedido.getPrazoReenvio().format(DATA_HORA) + ".",
+                Notificacao.PEDE_ACAO);
     }
 
     private void perderPrazo(Long pedidoId) {

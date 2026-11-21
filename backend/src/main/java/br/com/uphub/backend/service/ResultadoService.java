@@ -4,7 +4,6 @@ import br.com.uphub.backend.candidatura.MaquinaDeEstados.Ator;
 import br.com.uphub.backend.dto.CandidaturaResponse;
 import br.com.uphub.backend.dto.VagasResponse;
 import br.com.uphub.backend.model.Candidatura;
-import br.com.uphub.backend.model.Notificacao;
 import br.com.uphub.backend.model.Oportunidade;
 import br.com.uphub.backend.model.ReservaVagas;
 import br.com.uphub.backend.model.VersaoOportunidade;
@@ -41,7 +40,6 @@ public class ResultadoService {
     private final OportunidadeRepository oportunidadeRepository;
     private final CandidaturaService candidaturaService;
     private final Acesso acesso;
-    private final NotificacaoService notificacaoService;
 
     public ResultadoService(CandidaturaRepository candidaturaRepository,
                             VersaoOportunidadeRepository versaoRepository,
@@ -49,8 +47,7 @@ public class ResultadoService {
                             AutodeclaracaoReservaRepository autodeclaracaoRepository,
                             OportunidadeRepository oportunidadeRepository,
                             CandidaturaService candidaturaService,
-                            Acesso acesso,
-                            NotificacaoService notificacaoService) {
+                            Acesso acesso) {
         this.candidaturaRepository = candidaturaRepository;
         this.versaoRepository = versaoRepository;
         this.reservaRepository = reservaRepository;
@@ -58,7 +55,6 @@ public class ResultadoService {
         this.oportunidadeRepository = oportunidadeRepository;
         this.candidaturaService = candidaturaService;
         this.acesso = acesso;
-        this.notificacaoService = notificacaoService;
     }
 
     // ---------- provedor
@@ -72,9 +68,7 @@ public class ResultadoService {
         if (semVaga != null) {
             throw erro(HttpStatus.CONFLICT, semVaga + ". Use a lista de espera");
         }
-        Candidatura movida = candidaturaService.moverPor(candidatura, "HOMOLOGADA", Ator.PROVEDOR);
-        avisarHomologada(movida);
-        return CandidaturaResponse.de(movida);
+        return CandidaturaResponse.de(candidaturaService.moverPor(candidatura, "HOMOLOGADA", Ator.PROVEDOR));
     }
 
     // a aprovada sem vaga entra no fim da lista
@@ -107,9 +101,7 @@ public class ResultadoService {
                     + " (posição " + primeira.getPosicaoLista() + ")");
         }
         candidatura.sairDaLista();
-        Candidatura movida = candidaturaService.moverPor(candidatura, "HOMOLOGADA", Ator.PROVEDOR);
-        avisarHomologada(movida);
-        return CandidaturaResponse.de(movida);
+        return CandidaturaResponse.de(candidaturaService.moverPor(candidatura, "HOMOLOGADA", Ator.PROVEDOR));
     }
 
     @Transactional
@@ -162,18 +154,6 @@ public class ResultadoService {
                 vagas.reservas.stream().map(r -> new VagasResponse.Reserva(r.getCriterio(), r.getQuantidade(),
                         vagas.ocupadasNaReserva.getOrDefault(r.getId(), 0))).toList(),
                 lista);
-    }
-
-    // ---------- notificação
-
-    // resultado homologado: avisa o candidato (quem criou a candidatura). Só informa, não manda e-mail
-    private void avisarHomologada(Candidatura candidatura) {
-        String titulo = oportunidadeRepository.findById(candidatura.getOportunidadeId())
-                .map(Oportunidade::getTitulo).orElse("a oportunidade");
-        notificacaoService.criar(candidatura.getCriadaPor(), candidatura.getOportunidadeId(),
-                "Resultado homologado",
-                "A candidatura \"" + candidatura.getTituloProposta() + "\" foi homologada em " + titulo + ".",
-                Notificacao.INFORMATIVA);
     }
 
     // ---------- contas das vagas

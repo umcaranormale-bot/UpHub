@@ -15,4 +15,6 @@ public interface PedidoAjusteRepository extends JpaRepository<PedidoAjuste, Long
     long countByCandidaturaIdAndSituacao(Long candidaturaId, String situacao);
 
     List<PedidoAjuste> findBySituacaoAndPrazoReenvioBefore(String situacao, OffsetDateTime agora);
+
+    List<PedidoAjuste> findBySituacaoAndPrazoReenvioBetween(String situacao, OffsetDateTime de, OffsetDateTime ate);
 }

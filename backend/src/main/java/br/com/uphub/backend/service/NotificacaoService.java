@@ -1,71 +1,103 @@
 package br.com.uphub.backend.service;
 
+import br.com.uphub.backend.candidatura.MaquinaDeEstados.Ator;
 import br.com.uphub.backend.dto.NotificacaoResponse;
 import br.com.uphub.backend.dto.QuantidadeResponse;
+import br.com.uphub.backend.model.Candidatura;
 import br.com.uphub.backend.model.Notificacao;
 import br.com.uphub.backend.model.Oportunidade;
+import br.com.uphub.backend.model.Vinculo;
 import br.com.uphub.backend.repository.NotificacaoRepository;
 import br.com.uphub.backend.repository.OportunidadeRepository;
-import br.com.uphub.backend.repository.PessoaRepository;
+import br.com.uphub.backend.repository.VinculoRepository;
 import java.time.OffsetDateTime;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+// Notificações só dentro do site, sem e-mail (decisão de 17/11/2026): email_enviado_em fica sempre null.
 @Service
 public class NotificacaoService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(NotificacaoService.class);
+    // o nome de cada estado como a pessoa lê na tela
+    private static final Map<String, String> ROTULOS_ESTADO = Map.ofEntries(
+            Map.entry("ENVIADA", "enviada"), Map.entry("ELEGIVEL", "elegível"),
+            Map.entry("NAO_ELEGIVEL", "não elegível"), Map.entry("EM_ANALISE", "em análise"),
+            Map.entry("AJUSTE", "com ajuste pedido"), Map.entry("PERDA_DE_PRAZO", "com o prazo do ajuste perdido"),
+            Map.entry("APROVADA", "aprovada"), Map.entry("REPROVADA", "reprovada"),
+            Map.entry("HOMOLOGADA", "homologada"), Map.entry("LISTA_DE_ESPERA", "na lista de espera"),
+            Map.entry("EM_ACOMPANHAMENTO", "em acompanhamento"), Map.entry("DESISTENTE", "desistente"),
+            Map.entry("NAO_CONVOCADA", "não convocada"), Map.entry("DESCLASSIFICADA", "desclassificada"),
+            Map.entry("DESCARTADA", "descartada"), Map.entry("CONCLUIDA", "concluída"));
 
     private final NotificacaoRepository repository;
-    private final PessoaRepository pessoaRepository;
     private final OportunidadeRepository oportunidadeRepository;
-    private final EnvioEmail envioEmail;
+    private final VinculoRepository vinculoRepository;
 
     public NotificacaoService(NotificacaoRepository repository,
-                              PessoaRepository pessoaRepository,
                               OportunidadeRepository oportunidadeRepository,
-                              EnvioEmail envioEmail) {
+                              VinculoRepository vinculoRepository) {
         this.repository = repository;
-        this.pessoaRepository = pessoaRepository;
         this.oportunidadeRepository = oportunidadeRepository;
-        this.envioEmail = envioEmail;
+        this.vinculoRepository = vinculoRepository;
     }
 
-    // chamado pelos gatilhos. Só a PEDE_ACAO manda e-mail; se o e-mail falhar, a notificação fica salva
+    // ---------- criar (chamado pelos gatilhos, dentro da transação de quem chamou)
+
     @Transactional
     public void criar(Long pessoaId, Long oportunidadeId, String titulo, String mensagem, String tipo) {
         if (!Notificacao.PEDE_ACAO.equals(tipo) && !Notificacao.INFORMATIVA.equals(tipo)) {
             throw new IllegalArgumentException("Tipo de notificação inválido: " + tipo);
         }
-        Notificacao notificacao = repository.save(new Notificacao(pessoaId, oportunidadeId, titulo, mensagem, tipo));
-        if (Notificacao.PEDE_ACAO.equals(tipo)) {
-            enviarEmail(notificacao);
+        if (pessoaId == null) {
+            return;
         }
+        repository.save(new Notificacao(pessoaId, oportunidadeId, titulo, mensagem, tipo));
     }
 
-    private void enviarEmail(Notificacao notificacao) {
-        try {
-            String email = pessoaRepository.findById(notificacao.getPessoaId()).orElseThrow().getEmail();
-            envioEmail.enviar(email, notificacao.getTitulo(),
-                    notificacao.getMensagem() == null ? notificacao.getTitulo() : notificacao.getMensagem());
-            notificacao.marcarEmailEnviado(OffsetDateTime.now());
-            repository.save(notificacao);
-        } catch (RuntimeException e) {
-            LOG.warn("E-mail da notificação {} não foi enviado: {}", notificacao.getId(), e.getMessage());
+    // candidatura mudou de estado: informa quem criou a candidatura.
+    // Fica de fora o que o próprio candidato fez e o AJUSTE, que já tem um aviso PEDE_ACAO só dele.
+    @Transactional
+    public void avisarMudancaDeEstado(Candidatura candidatura, Oportunidade oportunidade, Ator ator) {
+        String estado = candidatura.getEstado();
+        if (ator == Ator.CANDIDATO || "AJUSTE".equals(estado)) {
+            return;
         }
+        String rotulo = ROTULOS_ESTADO.getOrDefault(estado, estado);
+        criar(candidatura.getCriadaPor(), oportunidade.getId(),
+                "Sua candidatura está " + rotulo,
+                "A candidatura \"" + candidatura.getTituloProposta() + "\" em " + oportunidade.getTitulo()
+                        + " agora está " + rotulo + ".",
+                Notificacao.INFORMATIVA);
     }
+
+    // novo pedido de provedor: pede ação de todas as pessoas da gestão
+    @Transactional
+    public void avisarGestao(String titulo, String mensagem) {
+        vinculoRepository.findByPapelAndEncerradoEmIsNull("GESTAO").stream()
+                .map(v -> v.getPessoa().getId()).distinct()
+                .forEach(pessoaId -> criar(pessoaId, null, titulo, mensagem, Notificacao.PEDE_ACAO));
+    }
+
+    // o aviso de prazo já saiu para este prazo? (evita repetir a cada volta do agendador)
+    @Transactional(readOnly = true)
+    public boolean jaAvisou(Long pessoaId, Long oportunidadeId, String titulo, OffsetDateTime desde) {
+        return repository.existsByPessoaIdAndOportunidadeIdAndTituloAndCriadaEmAfter(pessoaId, oportunidadeId, titulo, desde);
+    }
+
+    // ---------- consultas da pessoa logada
 
     @Transactional(readOnly = true)
     public List<NotificacaoResponse> listar(Long pessoaId, boolean somenteNaoLidas) {
         List<Notificacao> lista = somenteNaoLidas
-                ? repository.findByPessoaIdAndLidaEmIsNullOrderByCriadaEmDescIdDesc(pessoaId)
-                : repository.findByPessoaIdOrderByCriadaEmDescIdDesc(pessoaId);
-        return lista.stream().map(this::resposta).toList();
+                ? repository.findTop50ByPessoaIdAndLidaEmIsNullOrderByCriadaEmDescIdDesc(pessoaId)
+                : repository.findTop50ByPessoaIdOrderByCriadaEmDescIdDesc(pessoaId);
+        return comTitulos(lista);
     }
 
     @Transactional(readOnly = true)
@@ -73,16 +105,17 @@ public class NotificacaoService {
         return new QuantidadeResponse(repository.countByPessoaIdAndLidaEmIsNull(pessoaId));
     }
 
-    // 404 se não existe, 403 se é de outra pessoa
+    // 404 tanto se não existe quanto se é de outra pessoa (não revela que a notificação existe)
     @Transactional
     public NotificacaoResponse marcarLida(Long id, Long pessoaId) {
         Notificacao notificacao = repository.findById(id)
+                .filter(n -> n.getPessoaId().equals(pessoaId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Notificação não encontrada"));
-        if (!notificacao.getPessoaId().equals(pessoaId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Esta notificação é de outra pessoa");
+        if (notificacao.getLidaEm() == null) {
+            notificacao.marcarLida(OffsetDateTime.now());
+            notificacao = repository.save(notificacao);
         }
-        notificacao.marcarLida(OffsetDateTime.now());
-        return resposta(repository.save(notificacao));
+        return comTitulos(List.of(notificacao)).get(0);
     }
 
     @Transactional
@@ -90,9 +123,11 @@ public class NotificacaoService {
         return new QuantidadeResponse(repository.marcarTodasLidas(pessoaId));
     }
 
-    private NotificacaoResponse resposta(Notificacao n) {
-        String titulo = n.getOportunidadeId() == null ? null
-                : oportunidadeRepository.findById(n.getOportunidadeId()).map(Oportunidade::getTitulo).orElse(null);
-        return NotificacaoResponse.de(n, titulo);
+    // busca o título das oportunidades de uma vez (uma consulta, não uma por notificação)
+    private List<NotificacaoResponse> comTitulos(List<Notificacao> lista) {
+        List<Long> ids = lista.stream().map(Notificacao::getOportunidadeId).filter(Objects::nonNull).distinct().toList();
+        Map<Long, String> titulos = oportunidadeRepository.findAllById(ids).stream()
+                .collect(Collectors.toMap(Oportunidade::getId, Oportunidade::getTitulo));
+        return lista.stream().map(n -> NotificacaoResponse.de(n, titulos.get(n.getOportunidadeId()))).toList();
     }
 }

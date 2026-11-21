@@ -137,7 +137,7 @@ public class AlocacaoService {
         }
         AlocacaoMentor alocacao = alocacaoRepository.save(new AlocacaoMentor(vinculo.getId(), candidaturaId, horas,
                 dados.prazoResposta(), pessoaId, OffsetDateTime.now()));
-        // convite de mentor: pede ação do mentor (manda e-mail)
+        // convite de mentor: pede ação do mentor
         notificacaoService.criar(vinculo.getPessoa().getId(), candidatura.getOportunidadeId(),
                 "Convite para ser mentor",
                 "Você foi convidado(a) para mentorar a candidatura \"" + candidatura.getTituloProposta()

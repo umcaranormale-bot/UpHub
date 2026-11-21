@@ -128,7 +128,7 @@ public class AvaliacaoService {
         }
         Avaliacao avaliacao = avaliacaoRepository.save(new Avaliacao(candidaturaId, candidatura.getOportunidadeId(),
                 vinculo.getId(), pessoaId, OffsetDateTime.now(), rodada));
-        // avaliação atribuída: pede ação do avaliador (manda e-mail)
+        // avaliação atribuída: pede ação do avaliador
         notificacaoService.criar(avaliadorId, candidatura.getOportunidadeId(),
                 "Nova avaliação para você",
                 "Você recebeu a candidatura \"" + candidatura.getTituloProposta() + "\" para avaliar (rodada " + rodada + ").",
@@ -243,7 +243,7 @@ public class AvaliacaoService {
         if (daRodada.stream().anyMatch(a -> "AJUSTE".equals(a.getDecisao()))) {
             pedidoAjusteService.iniciarPrazo(candidatura.getId());
             Candidatura movida = candidaturaService.moverComoAvaliador(candidatura, "AJUSTE");
-            // pedido de ajuste: pede ação do candidato (manda e-mail)
+            // pedido de ajuste: pede ação do candidato
             notificacaoService.criar(movida.getCriadaPor(), movida.getOportunidadeId(),
                     "Ajuste solicitado na sua candidatura",
                     "A candidatura \"" + movida.getTituloProposta() + "\" precisa de ajustes. Responda dentro do prazo.",
