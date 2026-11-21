@@ -40,6 +40,7 @@ public class AlocacaoService {
     private final OrganizacaoRepository organizacaoRepository;
     private final CandidaturaService candidaturaService;
     private final Acesso acesso;
+    private final AuditoriaService auditoria;
 
     public AlocacaoService(AlocacaoMentorRepository alocacaoRepository,
                            VinculoRepository vinculoRepository,
@@ -47,7 +48,8 @@ public class AlocacaoService {
                            OportunidadeRepository oportunidadeRepository,
                            OrganizacaoRepository organizacaoRepository,
                            CandidaturaService candidaturaService,
-                           Acesso acesso) {
+                           Acesso acesso,
+                           AuditoriaService auditoria) {
         this.alocacaoRepository = alocacaoRepository;
         this.vinculoRepository = vinculoRepository;
         this.candidaturaRepository = candidaturaRepository;
@@ -55,6 +57,7 @@ public class AlocacaoService {
         this.organizacaoRepository = organizacaoRepository;
         this.candidaturaService = candidaturaService;
         this.acesso = acesso;
+        this.auditoria = auditoria;
     }
 
     // ---------- área e disponibilidade do mentor
@@ -194,6 +197,12 @@ public class AlocacaoService {
         for (AlocacaoMentor a : alocacaoRepository.findBySituacaoAndPrazoRespostaBefore("PENDENTE", LocalDate.now())) {
             a.expirar();
             alocacaoRepository.save(a);
+            Long oportunidadeId = candidaturaRepository.findById(a.getCandidaturaId())
+                    .map(Candidatura::getOportunidadeId).orElse(null);
+            auditoria.registrar(null, AuditoriaService.AGENDADOR, "SISTEMA",
+                    "CONVITE_MENTOR_EXPIRADO", "ALOCACAO_MENTOR", a.getId(),
+                    oportunidadeId, a.getCandidaturaId(), null,
+                    "PENDENTE", "EXPIRADA", null);
         }
     }
 
