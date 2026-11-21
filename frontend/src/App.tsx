@@ -87,6 +87,7 @@ function App() {
 
             <Route path="/entrar" element={<Login />} />
             <Route path="/convite" element={<InvitePage />} />
+            <Route path="/selecionar-vinculo" element={<InvitePage />} />
             <Route path="/recuperar-senha" element={<RecoveryPasswordPage />} />
             <Route path="/confirmar-email" element={<ConfirmEmailPage />} />
 
