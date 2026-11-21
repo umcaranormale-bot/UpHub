@@ -12,7 +12,9 @@ public interface NotificacaoRepository extends JpaRepository<Notificacao, Long> 
 
     List<Notificacao> findByPessoaIdAndLidaEmIsNullOrderByCriadaEmDescIdDesc(Long pessoaId);
 
-    @Modifying
+    long countByPessoaIdAndLidaEmIsNull(Long pessoaId);
+
+    @Modifying(clearAutomatically = true)
     @Query("update Notificacao n set n.lidaEm = CURRENT_TIMESTAMP where n.pessoaId = :pessoaId and n.lidaEm is null")
     int marcarTodasLidas(Long pessoaId);
 }
