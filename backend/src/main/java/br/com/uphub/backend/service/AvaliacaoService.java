@@ -64,6 +64,7 @@ public class AvaliacaoService {
     private final PedidoAjusteService pedidoAjusteService;
     private final ItemAjusteService itemAjusteService;
     private final Acesso acesso;
+    private final AuditoriaService auditoria;
 
     public AvaliacaoService(AvaliacaoRepository avaliacaoRepository,
                             AvaliadorOportunidadeRepository designacaoRepository,
@@ -77,7 +78,8 @@ public class AvaliacaoService {
                             CandidaturaService candidaturaService,
                             PedidoAjusteService pedidoAjusteService,
                             ItemAjusteService itemAjusteService,
-                            Acesso acesso) {
+                            Acesso acesso,
+                            AuditoriaService auditoria) {
         this.avaliacaoRepository = avaliacaoRepository;
         this.designacaoRepository = designacaoRepository;
         this.candidaturaRepository = candidaturaRepository;
@@ -91,6 +93,7 @@ public class AvaliacaoService {
         this.pedidoAjusteService = pedidoAjusteService;
         this.itemAjusteService = itemAjusteService;
         this.acesso = acesso;
+        this.auditoria = auditoria;
     }
 
     // ---------- provedor
@@ -218,22 +221,27 @@ public class AvaliacaoService {
         if (ajuste) {
             pedidoAjusteService.abrirOuUsar(avaliacao, itens);
         }
-        candidatura = consolidar(candidatura, avaliacao.getRodada());
+        candidatura = consolidar(candidatura, avaliacao.getRodada(), pessoaId);
         return resposta(avaliacao, candidatura, true);
     }
 
     // ---------- regras da rodada
 
     // fechada a rodada: um pedido de ajuste já leva para AJUSTE; senão, maioria de aprovações aprova,
-    // e empate ou maioria de reprovações reprova
-    private Candidatura consolidar(Candidatura candidatura, short rodada) {
+    // e empate ou maioria de reprovações reprova.
+    // O autor do evento é o avaliador que assinou por último e fechou a rodada.
+    private Candidatura consolidar(Candidatura candidatura, short rodada, Long pessoaId) {
         List<Avaliacao> daRodada = avaliacaoRepository.findByCandidaturaIdAndRodada(candidatura.getId(), rodada);
         if (daRodada.stream().anyMatch(a -> !a.assinada())) {
             return candidatura;
         }
+        String estadoAntes = candidatura.getEstado();
         if (daRodada.stream().anyMatch(a -> "AJUSTE".equals(a.getDecisao()))) {
             pedidoAjusteService.iniciarPrazo(candidatura.getId());
-            return candidaturaService.moverComoAvaliador(candidatura, "AJUSTE");
+            Candidatura movida = candidaturaService.moverComoAvaliador(candidatura, "AJUSTE");
+            auditoria.registrarTransicaoCandidatura(movida, pessoaId, null, "AVALIADOR",
+                    estadoAntes, "AJUSTE", null);
+            return movida;
         }
         long aprovadas = daRodada.stream().filter(a -> "APROVADA".equals(a.getDecisao())).count();
         long reprovadas = daRodada.stream().filter(a -> "REPROVADA".equals(a.getDecisao())).count();
@@ -241,7 +249,10 @@ public class AvaliacaoService {
         if ("REPROVADA".equals(resultado)) {
             candidatura.moverNoFunil(null);
         }
-        return candidaturaService.moverComoAvaliador(candidatura, resultado);
+        Candidatura movida = candidaturaService.moverComoAvaliador(candidatura, resultado);
+        auditoria.registrarTransicaoCandidatura(movida, pessoaId, null, "AVALIADOR",
+                estadoAntes, resultado, null);
+        return movida;
     }
 
     // nota final de 0 a 100: a média ponderada pelos pesos, com cada nota levada para a mesma escala.

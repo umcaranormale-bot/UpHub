@@ -24,13 +24,16 @@ public class AutodeclaracaoService {
     private final AutodeclaracaoReservaRepository autodeclaracaoRepository;
     private final ReservaVagasRepository reservaRepository;
     private final CandidaturaService candidaturaService;
+    private final AuditoriaService auditoria;
 
     public AutodeclaracaoService(AutodeclaracaoReservaRepository autodeclaracaoRepository,
                                  ReservaVagasRepository reservaRepository,
-                                 CandidaturaService candidaturaService) {
+                                 CandidaturaService candidaturaService,
+                                 AuditoriaService auditoria) {
         this.autodeclaracaoRepository = autodeclaracaoRepository;
         this.reservaRepository = reservaRepository;
         this.candidaturaService = candidaturaService;
+        this.auditoria = auditoria;
     }
 
     // a candidata se declara num critério de reserva da versão publicada
@@ -96,7 +99,10 @@ public class AutodeclaracaoService {
             autodeclaracao.confirmar(pessoaId, agora);
         } else {
             autodeclaracao.recusar(pessoaId, agora, motivo);
+            String estadoAntes = candidatura.getEstado();
             candidatura = candidaturaService.moverComoProvedor(candidatura, "DESCLASSIFICADA");
+            auditoria.registrarTransicaoCandidatura(candidatura, pessoaId, null, "PROVEDOR",
+                    estadoAntes, "DESCLASSIFICADA", motivo);
         }
         autodeclaracaoRepository.saveAndFlush(autodeclaracao);
         return AutodeclaracaoResponse.de(autodeclaracao, candidatura.getEstado());

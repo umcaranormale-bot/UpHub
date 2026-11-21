@@ -40,6 +40,7 @@ public class ResultadoService {
     private final OportunidadeRepository oportunidadeRepository;
     private final CandidaturaService candidaturaService;
     private final Acesso acesso;
+    private final AuditoriaService auditoria;
 
     public ResultadoService(CandidaturaRepository candidaturaRepository,
                             VersaoOportunidadeRepository versaoRepository,
@@ -47,7 +48,8 @@ public class ResultadoService {
                             AutodeclaracaoReservaRepository autodeclaracaoRepository,
                             OportunidadeRepository oportunidadeRepository,
                             CandidaturaService candidaturaService,
-                            Acesso acesso) {
+                            Acesso acesso,
+                            AuditoriaService auditoria) {
         this.candidaturaRepository = candidaturaRepository;
         this.versaoRepository = versaoRepository;
         this.reservaRepository = reservaRepository;
@@ -55,6 +57,7 @@ public class ResultadoService {
         this.oportunidadeRepository = oportunidadeRepository;
         this.candidaturaService = candidaturaService;
         this.acesso = acesso;
+        this.auditoria = auditoria;
     }
 
     // ---------- provedor
@@ -68,7 +71,7 @@ public class ResultadoService {
         if (semVaga != null) {
             throw erro(HttpStatus.CONFLICT, semVaga + ". Use a lista de espera");
         }
-        return CandidaturaResponse.de(candidaturaService.moverPor(candidatura, "HOMOLOGADA", Ator.PROVEDOR));
+        return CandidaturaResponse.de(moverERegistrar(candidatura, "HOMOLOGADA", Ator.PROVEDOR, pessoaId));
     }
 
     // a aprovada sem vaga entra no fim da lista
@@ -79,7 +82,7 @@ public class ResultadoService {
         short ultima = candidaturaRepository.findByOportunidadeIdAndEstadoOrderByPosicaoLista(candidatura.getOportunidadeId(), "LISTA_DE_ESPERA")
                 .stream().map(Candidatura::getPosicaoLista).max(Short::compare).orElse((short) 0);
         candidatura.entrarNaLista((short) (ultima + 1));
-        return CandidaturaResponse.de(candidaturaService.moverPor(candidatura, "LISTA_DE_ESPERA", Ator.PROVEDOR));
+        return CandidaturaResponse.de(moverERegistrar(candidatura, "LISTA_DE_ESPERA", Ator.PROVEDOR, pessoaId));
     }
 
     // convoca da lista: vale a ordem, entre as que cabem nas vagas que abriram
@@ -101,7 +104,7 @@ public class ResultadoService {
                     + " (posição " + primeira.getPosicaoLista() + ")");
         }
         candidatura.sairDaLista();
-        return CandidaturaResponse.de(candidaturaService.moverPor(candidatura, "HOMOLOGADA", Ator.PROVEDOR));
+        return CandidaturaResponse.de(moverERegistrar(candidatura, "HOMOLOGADA", Ator.PROVEDOR, pessoaId));
     }
 
     @Transactional
@@ -109,19 +112,19 @@ public class ResultadoService {
         Candidatura candidatura = candidaturaService.comoProvedor(candidaturaId, pessoaId);
         exigirEstado(candidatura, "LISTA_DE_ESPERA", "Só sai da lista quem está nela");
         candidatura.sairDaLista();
-        return CandidaturaResponse.de(candidaturaService.moverPor(candidatura, "NAO_CONVOCADA", Ator.PROVEDOR));
+        return CandidaturaResponse.de(moverERegistrar(candidatura, "NAO_CONVOCADA", Ator.PROVEDOR, pessoaId));
     }
 
     @Transactional
     public CandidaturaResponse iniciarAcompanhamento(Long candidaturaId, Long pessoaId) {
         Candidatura candidatura = candidaturaService.comoProvedor(candidaturaId, pessoaId);
-        return CandidaturaResponse.de(candidaturaService.moverPor(candidatura, "EM_ACOMPANHAMENTO", Ator.PROVEDOR));
+        return CandidaturaResponse.de(moverERegistrar(candidatura, "EM_ACOMPANHAMENTO", Ator.PROVEDOR, pessoaId));
     }
 
     @Transactional
     public CandidaturaResponse concluir(Long candidaturaId, Long pessoaId) {
         Candidatura candidatura = candidaturaService.comoProvedor(candidaturaId, pessoaId);
-        return CandidaturaResponse.de(candidaturaService.moverPor(candidatura, "CONCLUIDA", Ator.PROVEDOR));
+        return CandidaturaResponse.de(moverERegistrar(candidatura, "CONCLUIDA", Ator.PROVEDOR, pessoaId));
     }
 
     // ---------- organização candidata
@@ -130,7 +133,7 @@ public class ResultadoService {
     public CandidaturaResponse desistir(Long candidaturaId, Long pessoaId) {
         Candidatura candidatura = candidaturaService.paraLeitura(candidaturaId, pessoaId);
         acesso.exigir(pessoaId, candidatura.getOrganizacaoId(), Permissao.CANDIDATAR);
-        return CandidaturaResponse.de(candidaturaService.moverPor(candidatura, "DESISTENTE", Ator.CANDIDATO));
+        return CandidaturaResponse.de(moverERegistrar(candidatura, "DESISTENTE", Ator.CANDIDATO, pessoaId));
     }
 
     // ---------- leitura
@@ -154,6 +157,16 @@ public class ResultadoService {
                 vagas.reservas.stream().map(r -> new VagasResponse.Reserva(r.getCriterio(), r.getQuantidade(),
                         vagas.ocupadasNaReserva.getOrDefault(r.getId(), 0))).toList(),
                 lista);
+    }
+
+    // ---------- auditoria
+
+    // muda o estado pela máquina e registra quem fez, de qual estado e para qual
+    private Candidatura moverERegistrar(Candidatura candidatura, String para, Ator ator, Long pessoaId) {
+        String estadoAntes = candidatura.getEstado();
+        Candidatura movida = candidaturaService.moverPor(candidatura, para, ator);
+        auditoria.registrarTransicaoCandidatura(movida, pessoaId, null, ator.name(), estadoAntes, para, null);
+        return movida;
     }
 
     // ---------- contas das vagas
