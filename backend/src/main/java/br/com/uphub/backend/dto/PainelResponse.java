@@ -16,7 +16,7 @@ public record PainelResponse(
         Residencias residencias,
         Avaliacao avaliacao,
         Mentoria mentoria,
-        String gargalos
+        List<ResumoGargalo> gargalos
 ) {
     // taxaDeConexao: das candidaturas enviadas, quantas chegaram à aprovação (em %)
     public record Trilha(String trilhaCodigo, long oportunidadesAtivas, long oportunidadesPausadas,
@@ -28,6 +28,10 @@ public record PainelResponse(
     }
 
     public record Avaliacao(long aguardandoAssinatura, long assinadas, long pedidosDeAjusteAbertos) {
+    }
+
+    // o resumo de cada etapa; os itens parados vêm de GET /api/gargalos
+    public record ResumoGargalo(String etapa, int limiteDiasUteis, int acimaDoLimite, Integer maisAntigoDiasUteis) {
     }
 
     public record Mentoria(long alocacoesAceitas, BigDecimal horasPrevistasMes, BigDecimal horasRealizadasMes,

@@ -30,10 +30,12 @@ public class PainelService {
 
     private final EntityManager em;
     private final Acesso acesso;
+    private final GargaloService gargaloService;
 
-    public PainelService(EntityManager em, Acesso acesso) {
+    public PainelService(EntityManager em, Acesso acesso, GargaloService gargaloService) {
         this.em = em;
         this.acesso = acesso;
+        this.gargaloService = gargaloService;
     }
 
     @Transactional(readOnly = true)
@@ -119,8 +121,10 @@ public class PainelService {
                 BigDecimal.valueOf(minutos).divide(BigDecimal.valueOf(60), 1, RoundingMode.HALF_UP), ((Number) sessoes[0]).longValue());
 
         return new PainelResponse(OffsetDateTime.now(), total, trilhas, porEstado, funil, organizacoes, residencias,
-                avaliacao, mentoria,
-                "Os gargalos (tempo parado em cada etapa) entram com o histórico de ações (V34) e os parâmetros de gargalo (V36).");
+                avaliacao, mentoria, gargaloService.todasAsEtapas().stream()
+                        .map(g -> new PainelResponse.ResumoGargalo(g.etapa(), g.limiteDiasUteis(), g.acimaDoLimite(),
+                                g.maisAntigoDiasUteis()))
+                        .toList());
     }
 
     private long contar(String jpql) {
