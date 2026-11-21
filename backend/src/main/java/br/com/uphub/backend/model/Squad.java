@@ -28,6 +28,10 @@ public class Squad {
     @Column(name = "codigo_coordenacao", length = 40)
     private String codigoCoordenacao;
 
+    // V44: a residência em que a squad entrou, pelo código
+    @Column(name = "residencia_id")
+    private Long residenciaId;
+
     protected Squad() {
     }
 
@@ -51,5 +55,14 @@ public class Squad {
 
     public String getCodigoCoordenacao() {
         return codigoCoordenacao;
+    }
+
+    public Long getResidenciaId() {
+        return residenciaId;
+    }
+
+    public void entrarNaResidencia(Long residenciaId, String codigo) {
+        this.residenciaId = residenciaId;
+        this.codigoCoordenacao = codigo;
     }
 }

@@ -10,6 +10,7 @@ import br.com.uphub.backend.repository.PessoaRepository;
 import br.com.uphub.backend.repository.VinculoRepository;
 import java.util.List;
 import java.util.Locale;
+import br.com.uphub.backend.seguranca.Acesso;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,17 +25,20 @@ public class VinculoService {
     private final VinculoRepository vinculoRepository;
     private final PessoaRepository pessoaRepository;
     private final OrganizacaoRepository organizacaoRepository;
+    private final Acesso acesso;
 
     public VinculoService(VinculoRepository vinculoRepository,
                           PessoaRepository pessoaRepository,
-                          OrganizacaoRepository organizacaoRepository) {
+                          OrganizacaoRepository organizacaoRepository,
+                          Acesso acesso) {
         this.vinculoRepository = vinculoRepository;
         this.pessoaRepository = pessoaRepository;
         this.organizacaoRepository = organizacaoRepository;
+        this.acesso = acesso;
     }
 
     @Transactional
-    public VinculoResponse cadastrar(VinculoCadastroRequest dados) {
+    public VinculoResponse cadastrar(VinculoCadastroRequest dados, Long pessoaLogadaId) {
         if (dados.pessoaId() == null) {
             throw erro(HttpStatus.BAD_REQUEST, "O campo pessoaId é obrigatório");
         }
@@ -53,6 +57,7 @@ public class VinculoService {
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Pessoa não encontrada"));
         Organizacao organizacao = organizacaoRepository.findById(dados.organizacaoId())
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Organização não encontrada"));
+        acesso.exigirRepresentante(pessoaLogadaId, organizacao.getId(), "adicionar pessoas à organização");
 
         boolean organizacaoDeGestao = "GESTAO".equals(organizacao.getTipo());
         if (organizacaoDeGestao != "GESTAO".equals(papel)) {
@@ -75,9 +80,13 @@ public class VinculoService {
     }
 
     @Transactional(readOnly = true)
-    public List<VinculoResponse> listar(Long pessoaId, Long organizacaoId) {
-        if ((pessoaId == null) == (organizacaoId == null)) {
+    public List<VinculoResponse> listar(Long pessoaId, Long organizacaoId, Long pessoaLogadaId) {
+        if (pessoaId != null && organizacaoId != null) {
             throw erro(HttpStatus.BAD_REQUEST, "Informe pessoaId ou organizacaoId, um dos dois");
+        }
+        // sem filtro: os vínculos de quem está logado
+        if (pessoaId == null && organizacaoId == null) {
+            pessoaId = pessoaLogadaId;
         }
 
         List<Vinculo> vinculos;
@@ -85,11 +94,15 @@ public class VinculoService {
             if (!pessoaRepository.existsById(pessoaId)) {
                 throw erro(HttpStatus.NOT_FOUND, "Pessoa não encontrada");
             }
+            if (!pessoaId.equals(pessoaLogadaId) && !acesso.ehGestao(pessoaLogadaId)) {
+                throw erro(HttpStatus.FORBIDDEN, "Você só pode ver os seus próprios vínculos");
+            }
             vinculos = vinculoRepository.listarPorPessoa(pessoaId);
         } else {
             if (!organizacaoRepository.existsById(organizacaoId)) {
                 throw erro(HttpStatus.NOT_FOUND, "Organização não encontrada");
             }
+            acesso.exigirAcesso(pessoaLogadaId, organizacaoId);
             vinculos = vinculoRepository.listarPorOrganizacao(organizacaoId);
         }
         return vinculos.stream().map(VinculoResponse::de).toList();
