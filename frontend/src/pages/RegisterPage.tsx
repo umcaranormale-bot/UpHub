@@ -1,43 +1,64 @@
 
-import { useState } from "react";
-import RegisterCard from "../components/RegisterCard";
-import AccountTypeSelector from "../components/AccountTypeSelector";
-import { CustomButton } from "../components/CustomButton";
-import { mensagemDeErro } from "../api/erros";
-import { cadastrarPessoa } from "../api/pessoas";
+import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import RegisterCard from "../components/RegisterCard";
+import AccountTypeSelector, { type AccountTypeOption } from "../components/AccountTypeSelector";
+import { CustomButton } from "../components/CustomButton";
+import { cadastrarPessoa } from "../api/pessoas";
+import { ErroApi } from "../api/cliente";
 
-const accountTypes = [
+const accountTypeOptions: AccountTypeOption[] = [
     {
-        value: "candidato",
-        label: "Candidato",
-        description:
-            "Pessoa que busca vagas, residências e oportunidades em nome próprio",
-    },
-    {
-        value: "empresa",
+        value: "company",
         label: "Empresa",
-        description:
-            "Empresa ou startup que busca editais e investimento",
+        description: "Empresa estabelecida que concorre a editais de Fomento.",
+        group: "candidate",
     },
     {
-        value: "estudante",
-        label: "Estudante de Squad",
-        description:
-            "Time de estudantes que concorre a desafios de formação",
+        value: "startup",
+        label: "Startup",
+        description: "Concorre a Fomento e a Investimento. Tem descrição de deck.",
+        group: "candidate",
     },
     {
-        value: "provedor",
-        label: "Provedor",
-        description:
-            "Publica editais, programas e desafios",
+        value: "squad",
+        label: "Squad",
+        description: "Time de residência que concorre aos desafios de Formação.",
+        group: "candidate",
+    },
+    {
+        value: "fomento",
+        label: "Órgão de fomento",
+        description: "Publica editais com recurso público.",
+        group: "provider",
+        requiresApproval: true,
+    },
+    {
+        value: "investor",
+        label: "Investidor",
+        description: "Publica rodadas, com tese de investimento.",
+        group: "provider",
+        requiresApproval: true,
+    },
+    {
+        value: "accelerator",
+        label: "Aceleradora",
+        description: "Publica programas de aceleração.",
+        group: "provider",
+        requiresApproval: true,
+    },
+    {
+        value: "partner",
+        label: "Empresa parceira",
+        description: "Propõe desafios de Formação na residência.",
+        group: "provider",
         requiresApproval: true,
     },
 ];
 
 function RegisterPage() {
     const navigate = useNavigate();
-    
+
     const [formData, setFormData] = useState({
         nome: "",
         email: "",
@@ -46,13 +67,22 @@ function RegisterPage() {
     });
 
     const [accountType, setAccountType] = useState("");
-    const [error, setError] = useState("");
+    const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
 
-    async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        setError("");
 
-        if (formData.senha !== formData.confirmarSenha) {
+        const form = new FormData(event.currentTarget);
+
+        const nome = String(form.get("nome") ?? "");
+        const email = String(form.get("email") ?? "");
+        const senha = String(form.get("senha") ?? "");
+        const confirmarSenha = String(form.get("confirmarSenha") ?? "");
+
+        setError(null);
+
+        if (senha !== confirmarSenha) {
             setError("As senhas não coincidem.");
             return;
         }
@@ -62,15 +92,27 @@ function RegisterPage() {
             return;
         }
 
+        setLoading(true);
+
         try {
-            await cadastrarPessoa({
-                nome: formData.nome,
-                email: formData.email,
-                senha: formData.senha,
+            const pessoa = await cadastrarPessoa({
+                nome,
+                email,
+                senha,
             });
-            navigate('/confirmar-email', { state: { email: formData.email } });
+
+            navigate("/confirmar-email", {
+                state: { email: pessoa.email },
+            });
+
         } catch (e) {
-            setError(mensagemDeErro(e));
+            if (e instanceof ErroApi) {
+                setError(e.message);
+            } else {
+                setError("Não foi possível falar com o servidor. Tente novamente.");
+            }
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -81,13 +123,16 @@ function RegisterPage() {
             senha: "",
             confirmarSenha: "",
         });
+
         setAccountType("");
-        setError("");
+        setError(null);
     }
 
     return (
         <main className="min-h-screen bg-page p-4 md:p-8">
             <div className="mx-auto max-w-7xl">
+
+                {/* Cabeçalho */}
                 <div className="mb-5">
                     <h1 className="text-h1 font-bold text-titulo">
                         Criar conta
@@ -110,7 +155,7 @@ function RegisterPage() {
                             />
 
                             <AccountTypeSelector
-                                options={accountTypes}
+                                options={accountTypeOptions}
                                 value={accountType}
                                 onChange={setAccountType}
                             />
@@ -129,9 +174,11 @@ function RegisterPage() {
                                     é conta interna. Os três acessam só pela tela de entrar.
                                 </p>
 
-
-                                {/*Definir rota para a tela de convite*/}
-                                <CustomButton variant="aprovar" size="grande" to="/convite">
+                                <CustomButton
+                                    variant="aprovar"
+                                    size="grande"
+                                    to="/convite"
+                                >
                                     Recebi um convite
                                 </CustomButton>
                             </div>
@@ -151,33 +198,38 @@ function RegisterPage() {
                         </aside>
                     </div>
 
+                    {/* Mensagem de erro */}
+                    {error && (
+                        <p
+                            className="mt-3 text-sm font-medium text-red-600"
+                            role="alert"
+                        >
+                            {error}
+                        </p>
+                    )}
+
                     {/* Ações */}
                     <div className="mt-4 flex flex-wrap items-center gap-3">
                         <CustomButton
                             type="submit"
                             variant="aprovar"
                             size="medio"
+                            disabled={loading}
                         >
-                            Cadastrar
+                            {loading ? "Enviando..." : "Cadastrar"}
                         </CustomButton>
 
                         <CustomButton
-
                             to="/"
                             type="button"
                             variant="neutro"
                             size="medio"
                             onClick={handleCancel}
+                            disabled={loading}
                         >
                             Cancelar
                         </CustomButton>
                     </div>
-
-                    {error && (
-                        <p className="mt-3 text-sm font-medium text-red-600" role="alert">
-                            {error}
-                        </p>
-                    )}
                 </form>
             </div>
         </main>

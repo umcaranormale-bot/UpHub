@@ -41,6 +41,7 @@ public class AlocacaoService {
     private final OrganizacaoRepository organizacaoRepository;
     private final CandidaturaService candidaturaService;
     private final Acesso acesso;
+    private final AuditoriaService auditoria;
     private final NotificacaoService notificacaoService;
 
     public AlocacaoService(AlocacaoMentorRepository alocacaoRepository,
@@ -50,6 +51,7 @@ public class AlocacaoService {
                            OrganizacaoRepository organizacaoRepository,
                            CandidaturaService candidaturaService,
                            Acesso acesso,
+                           AuditoriaService auditoria,
                            NotificacaoService notificacaoService) {
         this.alocacaoRepository = alocacaoRepository;
         this.vinculoRepository = vinculoRepository;
@@ -58,6 +60,7 @@ public class AlocacaoService {
         this.organizacaoRepository = organizacaoRepository;
         this.candidaturaService = candidaturaService;
         this.acesso = acesso;
+        this.auditoria = auditoria;
         this.notificacaoService = notificacaoService;
     }
 
@@ -205,6 +208,12 @@ public class AlocacaoService {
         for (AlocacaoMentor a : alocacaoRepository.findBySituacaoAndPrazoRespostaBefore("PENDENTE", LocalDate.now())) {
             a.expirar();
             alocacaoRepository.save(a);
+            Long oportunidadeId = candidaturaRepository.findById(a.getCandidaturaId())
+                    .map(Candidatura::getOportunidadeId).orElse(null);
+            auditoria.registrar(null, AuditoriaService.AGENDADOR, null,
+                    "CONVITE_EXPIRADO", "ALOCACAO_MENTOR", a.getId(),
+                    oportunidadeId, a.getCandidaturaId(), null,
+                    "PENDENTE", "EXPIRADA", null);
         }
     }
 

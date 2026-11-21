@@ -45,6 +45,7 @@ public class PedidoAjusteService {
     private final ItemAjusteService itemService;
     private final Acesso acesso;
     private final TransactionTemplate transacao;
+    private final AuditoriaService auditoria;
 
     private final NotificacaoService notificacaoService;
 
@@ -56,6 +57,7 @@ public class PedidoAjusteService {
                                ItemAjusteService itemService,
                                Acesso acesso,
                                TransactionTemplate transacao,
+                               AuditoriaService auditoria,
                                NotificacaoService notificacaoService) {
         this.pedidoRepository = pedidoRepository;
         this.avaliacaoRepository = avaliacaoRepository;
@@ -65,6 +67,7 @@ public class PedidoAjusteService {
         this.itemService = itemService;
         this.acesso = acesso;
         this.transacao = transacao;
+        this.auditoria = auditoria;
         this.notificacaoService = notificacaoService;
     }
 
@@ -121,6 +124,8 @@ public class PedidoAjusteService {
         pedido.reenviar(resposta, pessoaId, agora);
         pedidoRepository.saveAndFlush(pedido);
         candidatura = candidaturaService.moverPor(candidatura, "EM_ANALISE", Ator.CANDIDATO);
+        auditoria.registrarTransicaoCandidatura(candidatura, pessoaId, null, "CANDIDATO",
+                "AJUSTE", "EM_ANALISE", resposta);
 
         // a nova rodada volta para os mesmos avaliadores
         short novaRodada = (short) (rodadaQueFechou + 1);
@@ -146,6 +151,8 @@ public class PedidoAjusteService {
         pedido.reabrir(pessoaId, agora, agora.plusDays(prazoDias(candidaturaId)));
         pedidoRepository.saveAndFlush(pedido);
         candidatura = candidaturaService.moverPor(candidatura, "AJUSTE", Ator.PROVEDOR);
+        auditoria.registrarTransicaoCandidatura(candidatura, pessoaId, null, "PROVEDOR",
+                "PERDA_DE_PRAZO", "AJUSTE", null);
         notificacaoService.criar(candidatura.getCriadaPor(), candidatura.getOportunidadeId(),
                 "Prazo do ajuste reaberto",
                 "A candidatura \"" + candidatura.getTituloProposta() + "\" ganhou um novo prazo para o ajuste, até "
@@ -212,6 +219,8 @@ public class PedidoAjusteService {
         pedido.perderPrazo(OffsetDateTime.now());
         pedidoRepository.saveAndFlush(pedido);
         candidaturaService.moverPor(candidatura, "PERDA_DE_PRAZO", Ator.SISTEMA);
+        auditoria.registrarTransicaoCandidatura(candidatura, null, AuditoriaService.AGENDADOR, null,
+                "AJUSTE", "PERDA_DE_PRAZO", null);
     }
 
     // ---------- apoio
