@@ -9,11 +9,15 @@ public record OportunidadeResponse(
         String trilhaCodigo,
         String titulo,
         String resumo,
+        String area,
+        String tese,
+        Long residenciaId,
         String estado,
         Long criadaPor,
         OffsetDateTime criadaEm,
         OffsetDateTime publicadaEm,
-        OffsetDateTime encerradaEm
+        OffsetDateTime encerradaEm,
+        OffsetDateTime suspensaEm
 ) {
 
     public static OportunidadeResponse de(Oportunidade oportunidade) {
@@ -23,11 +27,15 @@ public record OportunidadeResponse(
                 oportunidade.getTrilhaCodigo(),
                 oportunidade.getTitulo(),
                 oportunidade.getResumo(),
+                oportunidade.getArea(),
+                oportunidade.getTese(),
+                oportunidade.getResidenciaId(),
                 oportunidade.getEstado(),
                 oportunidade.getCriadaPor(),
                 oportunidade.getCriadaEm(),
                 oportunidade.getPublicadaEm(),
-                oportunidade.getEncerradaEm()
+                oportunidade.getEncerradaEm(),
+                oportunidade.getSuspensaEm()
         );
     }
 }

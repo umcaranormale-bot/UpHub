@@ -11,6 +11,7 @@ import br.com.uphub.backend.repository.OrganizacaoRepository;
 import br.com.uphub.backend.repository.TrilhaRepository;
 import java.util.List;
 import java.util.Locale;
+import br.com.uphub.backend.seguranca.Acesso;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,17 +23,20 @@ public class OrganizacaoTrilhaService {
     private final OrganizacaoTrilhaRepository organizacaoTrilhaRepository;
     private final OrganizacaoRepository organizacaoRepository;
     private final TrilhaRepository trilhaRepository;
+    private final Acesso acesso;
 
     public OrganizacaoTrilhaService(OrganizacaoTrilhaRepository organizacaoTrilhaRepository,
                                     OrganizacaoRepository organizacaoRepository,
-                                    TrilhaRepository trilhaRepository) {
+                                    TrilhaRepository trilhaRepository,
+                                    Acesso acesso) {
         this.organizacaoTrilhaRepository = organizacaoTrilhaRepository;
         this.organizacaoRepository = organizacaoRepository;
         this.trilhaRepository = trilhaRepository;
+        this.acesso = acesso;
     }
 
     @Transactional
-    public OrganizacaoTrilhaResponse cadastrar(OrganizacaoTrilhaCadastroRequest dados) {
+    public OrganizacaoTrilhaResponse cadastrar(OrganizacaoTrilhaCadastroRequest dados, Long pessoaId) {
         if (dados.organizacaoId() == null) {
             throw erro(HttpStatus.BAD_REQUEST, "O campo organizacaoId é obrigatório");
         }
@@ -41,6 +45,7 @@ public class OrganizacaoTrilhaService {
 
         Organizacao organizacao = organizacaoRepository.findById(dados.organizacaoId())
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Organização não encontrada"));
+        acesso.exigirRepresentante(pessoaId, organizacao.getId(), "escolher as trilhas da organização");
         Trilha trilha = trilhaRepository.findById(trilhaCodigo)
                 .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Trilha não encontrada"));
 
@@ -53,8 +58,20 @@ public class OrganizacaoTrilhaService {
     }
 
     @Transactional(readOnly = true)
-    public List<OrganizacaoTrilhaResponse> listar() {
-        return organizacaoTrilhaRepository.listarTodas().stream()
+    public List<OrganizacaoTrilhaResponse> listar(Long organizacaoId, Long pessoaId) {
+        List<OrganizacaoTrilha> trilhas;
+        if (organizacaoId != null) {
+            if (!organizacaoRepository.existsById(organizacaoId)) {
+                throw erro(HttpStatus.NOT_FOUND, "Organização não encontrada");
+            }
+            acesso.exigirAcesso(pessoaId, organizacaoId);
+            trilhas = organizacaoTrilhaRepository.listarPorOrganizacoes(List.of(organizacaoId));
+        } else if (acesso.ehGestao(pessoaId)) {
+            trilhas = organizacaoTrilhaRepository.listarTodas();
+        } else {
+            trilhas = organizacaoTrilhaRepository.listarPorOrganizacoes(acesso.organizacoesDa(pessoaId));
+        }
+        return trilhas.stream()
                 .map(OrganizacaoTrilhaResponse::de)
                 .toList();
     }

@@ -45,6 +45,20 @@ public class Oportunidade {
     @Column(name = "encerrada_em")
     private OffsetDateTime encerradaEm;
 
+    @Column(name = "suspensa_em")
+    private OffsetDateTime suspensaEm;
+
+    // V43: área de atuação (para o matching) e tese de investimento (só na trilha INVESTIMENTO)
+    @Column(name = "area", length = 80)
+    private String area;
+
+    @Column(name = "tese")
+    private String tese;
+
+    // V44: a residência do desafio (só na trilha FORMACAO)
+    @Column(name = "residencia_id")
+    private Long residenciaId;
+
     protected Oportunidade() {
     }
 
@@ -80,4 +94,38 @@ public class Oportunidade {
 
     public OffsetDateTime getEncerradaEm() { return encerradaEm; }
     public void setEncerradaEm(OffsetDateTime encerradaEm) { this.encerradaEm = encerradaEm; }
+
+    public OffsetDateTime getSuspensaEm() { return suspensaEm; }
+
+    public boolean suspensa() { return suspensaEm != null; }
+
+    // revogação da permissão do provedor: a oportunidade para (nenhuma etapa anda, nenhum prazo vence)
+    public void suspender(OffsetDateTime quando) { this.suspensaEm = quando; }
+
+    // nova aprovação do provedor: a oportunidade volta a andar
+    public void retomar() { this.suspensaEm = null; }
+
+    public String getArea() { return area; }
+
+    public String getTese() { return tese; }
+
+    // só enquanto é rascunho; campo null = "não alterar", texto vazio = "apagar"
+    public void editar(String titulo, String resumo, String area, String tese) {
+        if (titulo != null) {
+            this.titulo = titulo;
+        }
+        if (resumo != null) {
+            this.resumo = resumo.isBlank() ? null : resumo;
+        }
+        if (area != null) {
+            this.area = area.isBlank() ? null : area;
+        }
+        if (tese != null) {
+            this.tese = tese.isBlank() ? null : tese;
+        }
+    }
+
+    public Long getResidenciaId() { return residenciaId; }
+
+    public void ligarResidencia(Long residenciaId) { this.residenciaId = residenciaId; }
 }
