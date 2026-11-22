@@ -12,12 +12,10 @@ import br.com.uphub.backend.model.Criterio;
 import br.com.uphub.backend.model.Notificacao;
 import br.com.uphub.backend.model.NotaCriterio;
 import br.com.uphub.backend.model.RetificacaoParecer;
-import br.com.uphub.backend.model.CandidaturaParticipanteId;
 import br.com.uphub.backend.model.Oportunidade;
 import br.com.uphub.backend.model.Vinculo;
 import br.com.uphub.backend.repository.AvaliacaoRepository;
 import br.com.uphub.backend.repository.AvaliadorOportunidadeRepository;
-import br.com.uphub.backend.repository.CandidaturaParticipanteRepository;
 import br.com.uphub.backend.repository.CandidaturaRepository;
 import br.com.uphub.backend.repository.CriterioRepository;
 import br.com.uphub.backend.repository.NotaCriterioRepository;
@@ -55,7 +53,6 @@ public class AvaliacaoService {
     private final AvaliacaoRepository avaliacaoRepository;
     private final AvaliadorOportunidadeRepository designacaoRepository;
     private final CandidaturaRepository candidaturaRepository;
-    private final CandidaturaParticipanteRepository participanteRepository;
     private final OportunidadeRepository oportunidadeRepository;
     private final VinculoRepository vinculoRepository;
     private final CriterioRepository criterioRepository;
@@ -71,7 +68,6 @@ public class AvaliacaoService {
     public AvaliacaoService(AvaliacaoRepository avaliacaoRepository,
                             AvaliadorOportunidadeRepository designacaoRepository,
                             CandidaturaRepository candidaturaRepository,
-                            CandidaturaParticipanteRepository participanteRepository,
                             OportunidadeRepository oportunidadeRepository,
                             VinculoRepository vinculoRepository,
                             CriterioRepository criterioRepository,
@@ -86,7 +82,6 @@ public class AvaliacaoService {
         this.avaliacaoRepository = avaliacaoRepository;
         this.designacaoRepository = designacaoRepository;
         this.candidaturaRepository = candidaturaRepository;
-        this.participanteRepository = participanteRepository;
         this.oportunidadeRepository = oportunidadeRepository;
         this.vinculoRepository = vinculoRepository;
         this.criterioRepository = criterioRepository;
@@ -120,11 +115,8 @@ public class AvaliacaoService {
         if (vinculo.getEncerradoEm() != null) {
             throw erro(HttpStatus.BAD_REQUEST, "O vínculo deste avaliador foi encerrado");
         }
+        // quem é da organização candidata também pode avaliar (decisão dos mentores, 22/11/2026)
         Long avaliadorId = vinculo.getPessoa().getId();
-        if (acesso.ehMembro(avaliadorId, candidatura.getOrganizacaoId())
-                || participanteRepository.existsById(new CandidaturaParticipanteId(candidatura.getId(), avaliadorId))) {
-            throw erro(HttpStatus.CONFLICT, "Conflito de interesse: o avaliador faz parte da organização candidata");
-        }
         short rodada = rodadaAtual(candidatura);
         if (avaliacaoRepository.existsByCandidaturaIdAndVinculoIdAndRodada(candidaturaId, vinculo.getId(), rodada)) {
             throw erro(HttpStatus.CONFLICT, "Este avaliador já recebeu esta candidatura nesta rodada");
