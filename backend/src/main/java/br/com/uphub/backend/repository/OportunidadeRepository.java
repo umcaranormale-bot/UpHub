@@ -9,6 +9,10 @@ public interface OportunidadeRepository extends JpaRepository<Oportunidade, Long
 
     List<Oportunidade> findByOrganizacaoId(Long organizacaoId);
 
+    List<Oportunidade> findByEstadoOrderByPublicadaEmDesc(String estado);
+
+    List<Oportunidade> findByEstadoAndTrilhaCodigoOrderByPublicadaEmDesc(String estado, String trilhaCodigo);
+
     List<Oportunidade> findByOrganizacaoIdAndEstado(Long organizacaoId, String estado);
 
     List<Oportunidade> findByOrganizacaoIdAndEstadoNot(Long organizacaoId, String estado);
