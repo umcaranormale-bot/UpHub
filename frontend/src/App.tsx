@@ -28,6 +28,7 @@ import ContaMentor from './pages/ContaMentor'
 import ContaAvaliador from './pages/ContaAvaliador'
 import ContaGestao from './pages/ContaGestao'
 import ConfirmEmailPage from './pages/ConfirmEmailPage'
+import NewOrganizationPage from './pages/NewOrganizationPage'
 
 /**
  * Índice das telas do site.
@@ -84,6 +85,7 @@ function App() {
             <Route path="/mentor/conta" element={<ContaMentor />} />
             <Route path="/avaliador/conta" element={<ContaAvaliador />} />
             <Route path="/gestao/conta" element={<ContaGestao />} />
+            <Route path="/organizacoes/nova" element={<NewOrganizationPage/>}/>
 
             <Route path="/entrar" element={<Login />} />
             <Route path="/convite" element={<InvitePage />} />
