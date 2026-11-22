@@ -96,6 +96,16 @@ public class OportunidadeService {
                 .toList();
     }
 
+    // a busca do candidato: todas as publicadas (pausadas inclusive, com suspensaEm), da mais nova para a mais antiga
+    @Transactional(readOnly = true)
+    public List<OportunidadeResponse> listarPublicadas(String trilhaCodigo) {
+        List<Oportunidade> oportunidades = trilhaCodigo == null || trilhaCodigo.isBlank()
+                ? oportunidadeRepository.findByEstadoOrderByPublicadaEmDesc("PUBLICADA")
+                : oportunidadeRepository.findByEstadoAndTrilhaCodigoOrderByPublicadaEmDesc("PUBLICADA",
+                        trilhaCodigo.trim().toUpperCase(java.util.Locale.ROOT));
+        return oportunidades.stream().map(OportunidadeResponse::de).toList();
+    }
+
     @Transactional(readOnly = true)
     public OportunidadeResponse buscarPorId(Long id, Long pessoaId) {
         Oportunidade oportunidade = oportunidadeRepository.findById(id)
