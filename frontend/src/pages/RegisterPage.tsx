@@ -2,59 +2,9 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import RegisterCard from "../components/RegisterCard";
-import AccountTypeSelector, { type AccountTypeOption } from "../components/AccountTypeSelector";
 import { CustomButton } from "../components/CustomButton";
 import { cadastrarPessoa } from "../api/pessoas";
 import { ErroApi } from "../api/cliente";
-
-const accountTypeOptions: AccountTypeOption[] = [
-    {
-        value: "company",
-        label: "Empresa",
-        description: "Empresa estabelecida que concorre a editais de Fomento.",
-        group: "candidate",
-    },
-    {
-        value: "startup",
-        label: "Startup",
-        description: "Concorre a Fomento e a Investimento. Tem descrição de deck.",
-        group: "candidate",
-    },
-    {
-        value: "squad",
-        label: "Squad",
-        description: "Time de residência que concorre aos desafios de Formação.",
-        group: "candidate",
-    },
-    {
-        value: "fomento",
-        label: "Órgão de fomento",
-        description: "Publica editais com recurso público.",
-        group: "provider",
-        requiresApproval: true,
-    },
-    {
-        value: "investor",
-        label: "Investidor",
-        description: "Publica rodadas, com tese de investimento.",
-        group: "provider",
-        requiresApproval: true,
-    },
-    {
-        value: "accelerator",
-        label: "Aceleradora",
-        description: "Publica programas de aceleração.",
-        group: "provider",
-        requiresApproval: true,
-    },
-    {
-        value: "partner",
-        label: "Empresa parceira",
-        description: "Propõe desafios de Formação na residência.",
-        group: "provider",
-        requiresApproval: true,
-    },
-];
 
 function RegisterPage() {
     const navigate = useNavigate();
@@ -154,11 +104,39 @@ function RegisterPage() {
                                 onChange={setFormData}
                             />
 
-                            <AccountTypeSelector
-                                options={accountTypeOptions}
-                                value={accountType}
-                                onChange={setAccountType}
-                            />
+                            {/* Mensagem de erro */}
+                            {error && (
+                                <p
+                                    className="mt-3 text-sm font-medium text-red-600"
+                                    role="alert"
+                                >
+                                    {error}
+                                </p>
+                            )}
+
+                            {/* Ações */}
+                            <div className="mt-0 flex flex-wrap items-center gap-3">
+                                <CustomButton
+                                    type="submit"
+                                    variant="aprovar"
+                                    size="medio"
+                                    disabled={loading}
+                                >
+                                    {loading ? "Enviando..." : "Cadastrar"}
+                                </CustomButton>
+
+                                <CustomButton
+                                    to="/"
+                                    type="button"
+                                    variant="neutro"
+                                    size="medio"
+                                    onClick={handleCancel}
+                                    disabled={loading}
+                                >
+                                    Cancelar
+                                </CustomButton>
+                            </div>
+
                         </div>
 
                         {/* Barra lateral */}
@@ -196,39 +174,6 @@ function RegisterPage() {
                                 </p>
                             </div>
                         </aside>
-                    </div>
-
-                    {/* Mensagem de erro */}
-                    {error && (
-                        <p
-                            className="mt-3 text-sm font-medium text-red-600"
-                            role="alert"
-                        >
-                            {error}
-                        </p>
-                    )}
-
-                    {/* Ações */}
-                    <div className="mt-4 flex flex-wrap items-center gap-3">
-                        <CustomButton
-                            type="submit"
-                            variant="aprovar"
-                            size="medio"
-                            disabled={loading}
-                        >
-                            {loading ? "Enviando..." : "Cadastrar"}
-                        </CustomButton>
-
-                        <CustomButton
-                            to="/"
-                            type="button"
-                            variant="neutro"
-                            size="medio"
-                            onClick={handleCancel}
-                            disabled={loading}
-                        >
-                            Cancelar
-                        </CustomButton>
                     </div>
                 </form>
             </div>
