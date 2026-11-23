@@ -39,7 +39,12 @@ public class OportunidadeController {
     @GetMapping
     public List<OportunidadeResponse> listar(
             @RequestParam(name = "organizacaoId", required = false) Long organizacaoId,
+            @RequestParam(name = "trilhaCodigo", required = false) String trilhaCodigo,
             @PessoaLogada Long pessoaId) {
+        // sem organização: as publicadas de todo o ecossistema (a busca do candidato)
+        if (organizacaoId == null) {
+            return oportunidadeService.listarPublicadas(trilhaCodigo);
+        }
         return oportunidadeService.listarPorOrganizacao(organizacaoId, pessoaId);
     }
 

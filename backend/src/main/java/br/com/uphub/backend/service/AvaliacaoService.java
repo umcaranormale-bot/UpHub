@@ -9,14 +9,13 @@ import br.com.uphub.backend.model.AvaliadorOportunidadeId;
 import br.com.uphub.backend.model.Avaliacao;
 import br.com.uphub.backend.model.Candidatura;
 import br.com.uphub.backend.model.Criterio;
+import br.com.uphub.backend.model.Notificacao;
 import br.com.uphub.backend.model.NotaCriterio;
 import br.com.uphub.backend.model.RetificacaoParecer;
-import br.com.uphub.backend.model.CandidaturaParticipanteId;
 import br.com.uphub.backend.model.Oportunidade;
 import br.com.uphub.backend.model.Vinculo;
 import br.com.uphub.backend.repository.AvaliacaoRepository;
 import br.com.uphub.backend.repository.AvaliadorOportunidadeRepository;
-import br.com.uphub.backend.repository.CandidaturaParticipanteRepository;
 import br.com.uphub.backend.repository.CandidaturaRepository;
 import br.com.uphub.backend.repository.CriterioRepository;
 import br.com.uphub.backend.repository.NotaCriterioRepository;
@@ -54,7 +53,6 @@ public class AvaliacaoService {
     private final AvaliacaoRepository avaliacaoRepository;
     private final AvaliadorOportunidadeRepository designacaoRepository;
     private final CandidaturaRepository candidaturaRepository;
-    private final CandidaturaParticipanteRepository participanteRepository;
     private final OportunidadeRepository oportunidadeRepository;
     private final VinculoRepository vinculoRepository;
     private final CriterioRepository criterioRepository;
@@ -64,11 +62,12 @@ public class AvaliacaoService {
     private final PedidoAjusteService pedidoAjusteService;
     private final ItemAjusteService itemAjusteService;
     private final Acesso acesso;
+    private final AuditoriaService auditoria;
+    private final NotificacaoService notificacaoService;
 
     public AvaliacaoService(AvaliacaoRepository avaliacaoRepository,
                             AvaliadorOportunidadeRepository designacaoRepository,
                             CandidaturaRepository candidaturaRepository,
-                            CandidaturaParticipanteRepository participanteRepository,
                             OportunidadeRepository oportunidadeRepository,
                             VinculoRepository vinculoRepository,
                             CriterioRepository criterioRepository,
@@ -77,11 +76,12 @@ public class AvaliacaoService {
                             CandidaturaService candidaturaService,
                             PedidoAjusteService pedidoAjusteService,
                             ItemAjusteService itemAjusteService,
-                            Acesso acesso) {
+                            Acesso acesso,
+                            AuditoriaService auditoria,
+                            NotificacaoService notificacaoService) {
         this.avaliacaoRepository = avaliacaoRepository;
         this.designacaoRepository = designacaoRepository;
         this.candidaturaRepository = candidaturaRepository;
-        this.participanteRepository = participanteRepository;
         this.oportunidadeRepository = oportunidadeRepository;
         this.vinculoRepository = vinculoRepository;
         this.criterioRepository = criterioRepository;
@@ -91,6 +91,8 @@ public class AvaliacaoService {
         this.pedidoAjusteService = pedidoAjusteService;
         this.itemAjusteService = itemAjusteService;
         this.acesso = acesso;
+        this.auditoria = auditoria;
+        this.notificacaoService = notificacaoService;
     }
 
     // ---------- provedor
@@ -113,17 +115,19 @@ public class AvaliacaoService {
         if (vinculo.getEncerradoEm() != null) {
             throw erro(HttpStatus.BAD_REQUEST, "O vínculo deste avaliador foi encerrado");
         }
+        // quem é da organização candidata também pode avaliar (decisão dos mentores, 22/11/2026)
         Long avaliadorId = vinculo.getPessoa().getId();
-        if (acesso.ehMembro(avaliadorId, candidatura.getOrganizacaoId())
-                || participanteRepository.existsById(new CandidaturaParticipanteId(candidatura.getId(), avaliadorId))) {
-            throw erro(HttpStatus.CONFLICT, "Conflito de interesse: o avaliador faz parte da organização candidata");
-        }
         short rodada = rodadaAtual(candidatura);
         if (avaliacaoRepository.existsByCandidaturaIdAndVinculoIdAndRodada(candidaturaId, vinculo.getId(), rodada)) {
             throw erro(HttpStatus.CONFLICT, "Este avaliador já recebeu esta candidatura nesta rodada");
         }
         Avaliacao avaliacao = avaliacaoRepository.save(new Avaliacao(candidaturaId, candidatura.getOportunidadeId(),
                 vinculo.getId(), pessoaId, OffsetDateTime.now(), rodada));
+        // avaliação atribuída: pede ação do avaliador
+        notificacaoService.criar(avaliadorId, candidatura.getOportunidadeId(),
+                "Nova avaliação para você",
+                "Você recebeu a candidatura \"" + candidatura.getTituloProposta() + "\" para avaliar (rodada " + rodada + ").",
+                Notificacao.PEDE_ACAO);
         return resposta(avaliacao, candidatura, true);
     }
 
@@ -218,22 +222,35 @@ public class AvaliacaoService {
         if (ajuste) {
             pedidoAjusteService.abrirOuUsar(avaliacao, itens);
         }
-        candidatura = consolidar(candidatura, avaliacao.getRodada());
+        candidatura = consolidar(candidatura, avaliacao.getRodada(), pessoaId);
         return resposta(avaliacao, candidatura, true);
     }
 
     // ---------- regras da rodada
 
     // fechada a rodada: um pedido de ajuste já leva para AJUSTE; senão, maioria de aprovações aprova,
-    // e empate ou maioria de reprovações reprova
-    private Candidatura consolidar(Candidatura candidatura, short rodada) {
+    // e empate ou maioria de reprovações reprova.
+    // O autor do evento é o avaliador que assinou por último e fechou a rodada.
+    private Candidatura consolidar(Candidatura candidatura, short rodada, Long pessoaId) {
         List<Avaliacao> daRodada = avaliacaoRepository.findByCandidaturaIdAndRodada(candidatura.getId(), rodada);
         if (daRodada.stream().anyMatch(a -> !a.assinada())) {
             return candidatura;
         }
+        String estadoAntes = candidatura.getEstado();
         if (daRodada.stream().anyMatch(a -> "AJUSTE".equals(a.getDecisao()))) {
             pedidoAjusteService.iniciarPrazo(candidatura.getId());
-            return candidaturaService.moverComoAvaliador(candidatura, "AJUSTE");
+            Candidatura movida = candidaturaService.moverComoAvaliador(candidatura, "AJUSTE");
+            String motivoDoAjuste = daRodada.stream().filter(a -> "AJUSTE".equals(a.getDecisao()))
+                    .map(Avaliacao::getParecer).filter(p -> p != null && !p.isBlank())
+                    .collect(Collectors.joining("\n\n"));
+            auditoria.registrarTransicaoCandidatura(movida, pessoaId, null, "AVALIADOR",
+                    estadoAntes, "AJUSTE", motivoDoAjuste.isEmpty() ? null : motivoDoAjuste);
+            // pedido de ajuste: pede ação do candidato
+            notificacaoService.criar(movida.getCriadaPor(), movida.getOportunidadeId(),
+                    "Ajuste solicitado na sua candidatura",
+                    "A candidatura \"" + movida.getTituloProposta() + "\" precisa de ajustes. Responda dentro do prazo.",
+                    Notificacao.PEDE_ACAO);
+            return movida;
         }
         long aprovadas = daRodada.stream().filter(a -> "APROVADA".equals(a.getDecisao())).count();
         long reprovadas = daRodada.stream().filter(a -> "REPROVADA".equals(a.getDecisao())).count();
@@ -241,7 +258,10 @@ public class AvaliacaoService {
         if ("REPROVADA".equals(resultado)) {
             candidatura.moverNoFunil(null);
         }
-        return candidaturaService.moverComoAvaliador(candidatura, resultado);
+        Candidatura movida = candidaturaService.moverComoAvaliador(candidatura, resultado);
+        auditoria.registrarTransicaoCandidatura(movida, pessoaId, null, "AVALIADOR",
+                estadoAntes, resultado, null);
+        return movida;
     }
 
     // nota final de 0 a 100: a média ponderada pelos pesos, com cada nota levada para a mesma escala.

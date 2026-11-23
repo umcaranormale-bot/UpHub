@@ -6,6 +6,7 @@ import br.com.uphub.backend.dto.MentorResponse;
 import br.com.uphub.backend.dto.MentoriaRequest;
 import br.com.uphub.backend.model.AlocacaoMentor;
 import br.com.uphub.backend.model.Candidatura;
+import br.com.uphub.backend.model.Notificacao;
 import br.com.uphub.backend.model.Oportunidade;
 import br.com.uphub.backend.model.Vinculo;
 import br.com.uphub.backend.repository.AlocacaoMentorRepository;
@@ -40,6 +41,8 @@ public class AlocacaoService {
     private final OrganizacaoRepository organizacaoRepository;
     private final CandidaturaService candidaturaService;
     private final Acesso acesso;
+    private final AuditoriaService auditoria;
+    private final NotificacaoService notificacaoService;
 
     public AlocacaoService(AlocacaoMentorRepository alocacaoRepository,
                            VinculoRepository vinculoRepository,
@@ -47,7 +50,9 @@ public class AlocacaoService {
                            OportunidadeRepository oportunidadeRepository,
                            OrganizacaoRepository organizacaoRepository,
                            CandidaturaService candidaturaService,
-                           Acesso acesso) {
+                           Acesso acesso,
+                           AuditoriaService auditoria,
+                           NotificacaoService notificacaoService) {
         this.alocacaoRepository = alocacaoRepository;
         this.vinculoRepository = vinculoRepository;
         this.candidaturaRepository = candidaturaRepository;
@@ -55,6 +60,8 @@ public class AlocacaoService {
         this.organizacaoRepository = organizacaoRepository;
         this.candidaturaService = candidaturaService;
         this.acesso = acesso;
+        this.auditoria = auditoria;
+        this.notificacaoService = notificacaoService;
     }
 
     // ---------- área e disponibilidade do mentor
@@ -133,6 +140,13 @@ public class AlocacaoService {
         }
         AlocacaoMentor alocacao = alocacaoRepository.save(new AlocacaoMentor(vinculo.getId(), candidaturaId, horas,
                 dados.prazoResposta(), pessoaId, OffsetDateTime.now()));
+        // convite de mentor: pede ação do mentor
+        notificacaoService.criar(vinculo.getPessoa().getId(), candidatura.getOportunidadeId(),
+                "Convite para ser mentor",
+                "Você foi convidado(a) para mentorar a candidatura \"" + candidatura.getTituloProposta()
+                        + "\" (" + horas.stripTrailingZeros().toPlainString() + " h/mês). Responda até "
+                        + dados.prazoResposta() + ".",
+                Notificacao.PEDE_ACAO);
         return resposta(alocacao, candidatura, vinculo);
     }
 
@@ -194,6 +208,12 @@ public class AlocacaoService {
         for (AlocacaoMentor a : alocacaoRepository.findBySituacaoAndPrazoRespostaBefore("PENDENTE", LocalDate.now())) {
             a.expirar();
             alocacaoRepository.save(a);
+            Long oportunidadeId = candidaturaRepository.findById(a.getCandidaturaId())
+                    .map(Candidatura::getOportunidadeId).orElse(null);
+            auditoria.registrar(null, AuditoriaService.AGENDADOR, null,
+                    "CONVITE_EXPIRADO", "ALOCACAO_MENTOR", a.getId(),
+                    oportunidadeId, a.getCandidaturaId(), null,
+                    "PENDENTE", "EXPIRADA", null);
         }
     }
 

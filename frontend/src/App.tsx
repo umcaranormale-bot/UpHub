@@ -31,6 +31,7 @@ import ConfirmEmailPage from './pages/ConfirmEmailPage'
 import { AuthProvider } from './contexts/AuthContext'
 import LinkPage from './pages/LinkPage'
 import PrivateRoute from './routes/PrivateRoute'
+import NewOrganizationPage from './pages/NewOrganizationPage'
 
 /**
  * Índice das telas do site.
@@ -84,6 +85,7 @@ function App() {
                     <Route path="/mentor/convites" element={<ConvitesMentor />} />
                     <Route path="/mentor/acompanhados" element={<AcompanhadoMentor />} />
                     <Route path="/mentor/horas" element={<RegistrarSessao />} />
+            <Route path="/organizacoes/nova" element={<NewOrganizationPage/>}/>
 
                     <Route path="/gestao/provedores" element={<AprovacaoProvedores />} />
                     <Route path="/gestao/alocacao" element={<AlocacaoMentores />} />

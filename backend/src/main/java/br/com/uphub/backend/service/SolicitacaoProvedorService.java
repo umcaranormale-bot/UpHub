@@ -4,6 +4,7 @@ import br.com.uphub.backend.dto.DecisaoSolicitacaoRequest;
 import br.com.uphub.backend.dto.SolicitacaoProvedorCadastroRequest;
 import br.com.uphub.backend.dto.SolicitacaoProvedorResponse;
 import br.com.uphub.backend.model.Documento;
+import br.com.uphub.backend.model.Notificacao;
 import br.com.uphub.backend.model.Oportunidade;
 import br.com.uphub.backend.model.Organizacao;
 import br.com.uphub.backend.model.Pessoa;
@@ -31,19 +32,25 @@ public class SolicitacaoProvedorService {
     private final DocumentoRepository documentoRepository;
     private final OportunidadeRepository oportunidadeRepository;
     private final Acesso acesso;
+    private final AuditoriaService auditoria;
+    private final NotificacaoService notificacaoService;
 
     public SolicitacaoProvedorService(SolicitacaoProvedorRepository solicitacaoRepository,
                                       OrganizacaoRepository organizacaoRepository,
                                       PessoaRepository pessoaRepository,
                                       DocumentoRepository documentoRepository,
                                       OportunidadeRepository oportunidadeRepository,
-                                      Acesso acesso) {
+                                      Acesso acesso,
+                                      AuditoriaService auditoria,
+                                      NotificacaoService notificacaoService) {
         this.solicitacaoRepository = solicitacaoRepository;
         this.organizacaoRepository = organizacaoRepository;
         this.pessoaRepository = pessoaRepository;
         this.documentoRepository = documentoRepository;
         this.oportunidadeRepository = oportunidadeRepository;
         this.acesso = acesso;
+        this.auditoria = auditoria;
+        this.notificacaoService = notificacaoService;
     }
 
     @Transactional
@@ -115,7 +122,10 @@ public class SolicitacaoProvedorService {
                 anteriorId,
                 respostaRecusa);
 
-        return SolicitacaoProvedorResponse.de(solicitacaoRepository.save(solicitacao));
+        SolicitacaoProvedor salva = solicitacaoRepository.save(solicitacao);
+        notificacaoService.avisarGestao("Novo pedido de provedor",
+                organizacao.getNome() + " pediu permissão para publicar oportunidades.");
+        return SolicitacaoProvedorResponse.de(salva);
     }
 
     @Transactional(readOnly = true)
@@ -166,6 +176,9 @@ public class SolicitacaoProvedorService {
                 .findByOrganizacaoIdAndSuspensaEmIsNotNull(solicitacao.getOrganizacao().getId())) {
             oportunidade.retomar();
         }
+        registrarDecisao(solicitacao, pessoaId, "PROVEDOR_APROVADO", "AGUARDANDO", null);
+        avisarProvedor(solicitacao, "Pedido de provedor aprovado",
+                "A organização " + solicitacao.getOrganizacao().getNome() + " já pode publicar oportunidades.");
         return SolicitacaoProvedorResponse.de(solicitacao);
     }
 
@@ -179,6 +192,9 @@ public class SolicitacaoProvedorService {
         }
         boolean porDocumento = Boolean.TRUE.equals(dados.recusaPorDocumento());
         solicitacao.recusar(gestao(pessoaId), OffsetDateTime.now(), motivo, porDocumento);
+        registrarDecisao(solicitacao, pessoaId, "PROVEDOR_RECUSADO", "AGUARDANDO", motivo);
+        avisarProvedor(solicitacao, "Pedido de provedor recusado", "Motivo: " + motivo
+                + ". Você pode responder ao motivo e pedir de novo.");
         return SolicitacaoProvedorResponse.de(solicitacao);
     }
 
@@ -198,7 +214,25 @@ public class SolicitacaoProvedorService {
                 solicitacao.getOrganizacao().getId(), List.of("PUBLICADA", "EM_AVALIACAO"))) {
             oportunidade.suspender(agora);
         }
+        registrarDecisao(solicitacao, pessoaId, "PROVEDOR_REVOGADO", "APROVADA", motivo);
+        avisarProvedor(solicitacao, "Permissão de provedor revogada", "Motivo: " + motivo
+                + ". As oportunidades publicadas ficam pausadas até uma nova aprovação.");
         return SolicitacaoProvedorResponse.de(solicitacao);
+    }
+
+    // a decisão da gestão sobre o pedido entra no histórico da organização
+    private void registrarDecisao(SolicitacaoProvedor solicitacao, Long pessoaId, String acao,
+                                  String situacaoAntes, String motivo) {
+        auditoria.registrar(pessoaId, null, "GESTAO",
+                acao, "SOLICITACAO_PROVEDOR", solicitacao.getId(),
+                null, null, null,
+                situacaoAntes, solicitacao.getSituacao(), motivo);
+    }
+
+    // a decisão da gestão: informa quem fez o pedido
+    private void avisarProvedor(SolicitacaoProvedor solicitacao, String titulo, String mensagem) {
+        notificacaoService.criar(solicitacao.getSolicitante().getId(), null, titulo, mensagem,
+                Notificacao.INFORMATIVA);
     }
 
     private SolicitacaoProvedor buscar(Long id) {

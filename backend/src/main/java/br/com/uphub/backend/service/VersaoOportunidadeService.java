@@ -31,17 +31,20 @@ public class VersaoOportunidadeService {
     private final SolicitacaoProvedorRepository solicitacaoRepository;
     private final ReservaVagasRepository reservaRepository;
     private final Acesso acesso;
+    private final AuditoriaService auditoria;
 
     public VersaoOportunidadeService(VersaoOportunidadeRepository versaoRepository,
                                      OportunidadeRepository oportunidadeRepository,
                                      SolicitacaoProvedorRepository solicitacaoRepository,
                                      ReservaVagasRepository reservaRepository,
-                                     Acesso acesso) {
+                                     Acesso acesso,
+                                     AuditoriaService auditoria) {
         this.versaoRepository = versaoRepository;
         this.oportunidadeRepository = oportunidadeRepository;
         this.solicitacaoRepository = solicitacaoRepository;
         this.reservaRepository = reservaRepository;
         this.acesso = acesso;
+        this.auditoria = auditoria;
     }
 
     @Transactional
@@ -190,6 +193,7 @@ public class VersaoOportunidadeService {
         }
 
         // conferência 4: a oportunidade passa a PUBLICADA
+        String estadoAntes = oportunidade.getEstado();
         OffsetDateTime agora = OffsetDateTime.now();
         versao.setPublicadaEm(agora);
         if ("RASCUNHO".equals(oportunidade.getEstado())) {
@@ -198,7 +202,14 @@ public class VersaoOportunidadeService {
             oportunidadeRepository.save(oportunidade);
         }
 
-        return VersaoOportunidadeResponse.de(versaoRepository.save(versao));
+        VersaoOportunidade salva = versaoRepository.save(versao);
+        // a primeira publicação abre a oportunidade; as seguintes são novas versões
+        String acao = "RASCUNHO".equals(estadoAntes) ? "OPORTUNIDADE_PUBLICADA" : "VERSAO_PUBLICADA";
+        auditoria.registrar(pessoaId, null, "PROVEDOR",
+                acao, "VERSAO_OPORTUNIDADE", salva.getId(),
+                oportunidadeId, null, salva.getId(),
+                estadoAntes, oportunidade.getEstado(), null);
+        return VersaoOportunidadeResponse.de(salva);
     }
 
     private Oportunidade buscarOportunidade(Long oportunidadeId) {
