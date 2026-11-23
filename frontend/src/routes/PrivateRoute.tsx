@@ -6,7 +6,6 @@ export default function PrivateRoute() {
     const {
         sessao,
         carregando,
-        sessaoVerificada,
         verificarSessao,
     } = useAuth();
 
