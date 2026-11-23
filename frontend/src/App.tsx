@@ -28,6 +28,9 @@ import ContaMentor from './pages/ContaMentor'
 import ContaAvaliador from './pages/ContaAvaliador'
 import ContaGestao from './pages/ContaGestao'
 import ConfirmEmailPage from './pages/ConfirmEmailPage'
+import { AuthProvider } from './contexts/AuthContext'
+import LinkPage from './pages/LinkPage'
+import PrivateRoute from './routes/PrivateRoute'
 import NewOrganizationPage from './pages/NewOrganizationPage'
 
 /**
@@ -45,56 +48,59 @@ import NewOrganizationPage from './pages/NewOrganizationPage'
  */
 function App() {
     return (
-        <Routes>
-            <Route element={<MainLayout />}>
-                {/* Quem abrir a raiz do site cai na landing-page. */}
-                <Route path="/" element={<LandingPage />} />
-                {/* Acrescentem as rotas de vocês aqui. */}
-                <Route path="/cadastro" element={<RegisterPage />} />
-                <Route path="/privacidade" element={<PrivacidadePage />} /> { }
+        <AuthProvider>
+            <Routes>
 
-                {/* Endereço que não existe: manda de volta para a landing-page. */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-
-                {/* As telas que ficam dentro do HomeLayout são as que aparecem depois do login. */}
-                <Route element={<HomeLayout />}>
-                    <Route path="/inicio" element={<CandidateHome />} />
-                    <Route path="/provedor" element={<ProviderHome />} />
+                {/* ROTAS PÚBLICAS */}
+                <Route element={<MainLayout />}>
+                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/cadastro" element={<RegisterPage />} />
+                    <Route path="/privacidade" element={<PrivacidadePage />} />
                 </Route>
-            </Route>
 
-            {/* Telas com casca propria por papel: trazem o proprio topo e menu,
-                por isso ficam fora do HomeLayout. */}
-            <Route path="/squad" element={<InicioSquad />} />
-            <Route path="/avaliador" element={<FilaAvaliacao />} />
-            <Route path="/mentor" element={<InicioMentor />} />
-            <Route path="/gestao" element={<PainelEcossistema />} />
+                <Route path="/entrar" element={<Login />} />
+                <Route path="/convite" element={<InvitePage />} />
+                <Route path="/recuperar-senha" element={<RecoveryPasswordPage />} />
+                <Route path="/confirmar-email" element={<ConfirmEmailPage />} />
+                <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
 
-            {/* Destinos dos menus laterais de cada papel. */}
-            <Route path="/squad/oportunidades" element={<OportunidadesSquad />} />
-            <Route path="/squad/candidaturas" element={<CandidaturasSquad />} />
-            <Route path="/squad/perfil" element={<PerfilDaSquad />} />
-            <Route path="/mentor/convites" element={<ConvitesMentor />} />
-            <Route path="/mentor/acompanhados" element={<AcompanhadoMentor />} />
-            <Route path="/mentor/horas" element={<RegistrarSessao />} />
-            <Route path="/gestao/provedores" element={<AprovacaoProvedores />} />
-            <Route path="/gestao/alocacao" element={<AlocacaoMentores />} />
+                {/* ROTAS PRIVADAS */}
+                <Route element={<PrivateRoute />}>
+                    <Route path="/entrar-vinculo" element={<LinkPage />} />
 
-            {/* Conta tem uma tela por papel (57, 59, 60 e 61 no Figma). */}
-            <Route path="/squad/conta" element={<ContaSquad />} />
-            <Route path="/mentor/conta" element={<ContaMentor />} />
-            <Route path="/avaliador/conta" element={<ContaAvaliador />} />
-            <Route path="/gestao/conta" element={<ContaGestao />} />
+                    <Route element={<HomeLayout />}>
+                        <Route path="/inicio" element={<CandidateHome />} />
+                        <Route path="/provedor" element={<ProviderHome />} />
+                    </Route>
+
+                    <Route path="/squad" element={<InicioSquad />} />
+                    <Route path="/avaliador" element={<FilaAvaliacao />} />
+                    <Route path="/mentor" element={<InicioMentor />} />
+                    <Route path="/gestao" element={<PainelEcossistema />} />
+
+                    <Route path="/squad/oportunidades" element={<OportunidadesSquad />} />
+                    <Route path="/squad/candidaturas" element={<CandidaturasSquad />} />
+                    <Route path="/squad/perfil" element={<PerfilDaSquad />} />
+
+                    <Route path="/mentor/convites" element={<ConvitesMentor />} />
+                    <Route path="/mentor/acompanhados" element={<AcompanhadoMentor />} />
+                    <Route path="/mentor/horas" element={<RegistrarSessao />} />
             <Route path="/organizacoes/nova" element={<NewOrganizationPage/>}/>
 
-            <Route path="/entrar" element={<Login />} />
-            <Route path="/convite" element={<InvitePage />} />
-            <Route path="/recuperar-senha" element={<RecoveryPasswordPage />} />
-            <Route path="/confirmar-email" element={<ConfirmEmailPage />} />
+                    <Route path="/gestao/provedores" element={<AprovacaoProvedores />} />
+                    <Route path="/gestao/alocacao" element={<AlocacaoMentores />} />
 
-            {/* A tela de redefinir senha é acessada a partir do link que o usuário recebe por e-mail.*/}
-            <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
-        </Routes>
+                    <Route path="/squad/conta" element={<ContaSquad />} />
+                    <Route path="/mentor/conta" element={<ContaMentor />} />
+                    <Route path="/avaliador/conta" element={<ContaAvaliador />} />
+                    <Route path="/gestao/conta" element={<ContaGestao />} />
+                </Route>
+
+                {/* ROTA INEXISTENTE */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+
+            </Routes>
+        </AuthProvider>
     )
 }
 
