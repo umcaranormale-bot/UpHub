@@ -1,18 +1,22 @@
+
 import {
     createContext,
     useContext,
-    useEffect,
     useState,
+    useCallback,
+    useRef,
     type ReactNode,
-} from 'react';
+} from "react";
 
-import { entrar, buscarSessao, sair } from '../api/auth';
-import type { Sessao, LoginResposta } from '../api/auth';
+import { entrar, sair, buscarSessao } from "../api/auth";
+import type { Sessao, LoginResposta } from "../api/auth";
 
 interface AuthContextData {
     sessao: Sessao | null;
     autenticado: boolean;
     carregando: boolean;
+    sessaoVerificada: boolean;
+    verificarSessao: () => Promise<Sessao | null>;
     login: (email: string, senha: string) => Promise<LoginResposta>;
     logout: () => void;
 }
@@ -21,37 +25,61 @@ const AuthContext = createContext<AuthContextData | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [sessao, setSessao] = useState<Sessao | null>(null);
-    const [carregando, setCarregando] = useState(true);
+    const [carregando, setCarregando] = useState(false);
+    const [sessaoVerificada, setSessaoVerificada] = useState(false);
 
-    useEffect(() => {
-        async function carregarSessao() {
-            try {
-                const dados = await buscarSessao();
-                setSessao(dados);
-            } catch {
-                setSessao(null);
-            } finally {
-                setCarregando(false);
-            }
-        }
-
-        carregarSessao();
-    }, []);
+    // Evita fazer várias requisições simultâneas para verificar a sessão.
+    const verificacaoRef = useRef<Promise<Sessao | null> | null>(null);
 
     async function login(email: string, senha: string) {
         const resposta = await entrar(email, senha);
 
-        setSessao({
+        const novaSessao: Sessao = {
             pessoa: resposta.pessoa,
             vinculos: resposta.vinculos,
-        });
+        };
+
+        setSessao(novaSessao);
+        setSessaoVerificada(true);
 
         return resposta;
     }
 
+    const verificarSessao = useCallback((): Promise<Sessao | null> => {
+        if (sessaoVerificada) {
+            return Promise.resolve(sessao);
+        }
+
+        if (verificacaoRef.current) {
+            return verificacaoRef.current;
+        }
+
+        setCarregando(true);
+
+        const requisicao = (async () => {
+            try {
+                const dados = await buscarSessao();
+                setSessao(dados);
+                return dados;
+            } catch {
+                setSessao(null);
+                return null;
+            } finally {
+                setSessaoVerificada(true);
+                setCarregando(false);
+                verificacaoRef.current = null;
+            }
+        })();
+
+        verificacaoRef.current = requisicao;
+
+        return requisicao;
+    }, [sessao, sessaoVerificada]);
+
     function logout() {
-        sair();
+        void sair();
         setSessao(null);
+        setSessaoVerificada(true);
     }
 
     return (
@@ -60,6 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 sessao,
                 autenticado: sessao !== null,
                 carregando,
+                sessaoVerificada,
+                verificarSessao,
                 login,
                 logout,
             }}
@@ -74,7 +104,7 @@ export function useAuth() {
 
     if (!contexto) {
         throw new Error(
-            'useAuth deve ser utilizado dentro de AuthProvider'
+            "useAuth deve ser utilizado dentro de AuthProvider"
         );
     }
 

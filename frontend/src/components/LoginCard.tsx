@@ -49,7 +49,7 @@ export default function LoginCard() {
             }
 
             // Mais de um vínculo: abre a tela de seleção
-            navigate("/selecionar-vinculo", { replace: true });
+            navigate("/entrar-vinculo", { replace: true });
 
         } catch (e) {
             if (e instanceof ErroApi && e.status === 403) {
