@@ -1,7 +1,6 @@
 
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
-
+import { useLocation, useNavigate } from "react-router-dom";
 import { CustomButton } from "./CustomButton";
 import { useAuth } from "../contexts/AuthContext";
 import { ErroApi } from "../api/cliente";
@@ -9,6 +8,9 @@ import { mensagemDeErro } from "../api/erros";
 import { routeByPaper } from "../utils/RoutesByLink";
 
 export default function LoginCard() {
+    const location = useLocation();
+    const aviso = (location.state as { aviso?: string } | null)?.aviso;
+
     const navigate = useNavigate();
     const { login } = useAuth();
 
@@ -111,9 +113,13 @@ export default function LoginCard() {
                     />
                 </div>
 
-                {erro && (
+                {erro ? (
                     <p role="alert" className="text-sm text-red-600">
                         {erro}
+                    </p>
+                ) : aviso && (
+                    <p role="status" className="text-sm text-green-700">
+                        {aviso}
                     </p>
                 )}
 
