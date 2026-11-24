@@ -3,6 +3,10 @@ import { useNavigate } from "react-router-dom";
 import AccountTypeSelector, {
   type AccountTypeOption,
 } from "../components/AccountTypeSelector";
+import { cadastrarOrganizacao, type TipoOrganizacao } from "../api/organizacoes";
+import { mensagemDeErro } from "../api/erros";
+
+const TIPOS_PROVEDOR: TipoOrganizacao[] = ["ORGAO_FOMENTO", "INVESTIDOR", "ACELERADORA", "EMPRESA_PARCEIRA"];
 
 type OrganizationForm = {
   name: string;
@@ -13,46 +17,46 @@ type OrganizationForm = {
 
 const organizationOptions: AccountTypeOption[] = [
   {
-    value: "empresa",
+    value: "EMPRESA",
     label: "Empresa",
     description: "Empresa estabelecida que concorre a editais de fomento.",
     group: "candidate",
   },
   {
-    value: "startup",
+    value: "STARTUP",
     label: "Startup",
     description: "Concorre a fomento e investimento. Tem descrição de deck.",
     group: "candidate",
   },
   {
-    value: "squad",
+    value: "SQUAD",
     label: "Squad",
     description: "Time da residência que concorre aos desafios de formação.",
     group: "candidate",
   },
   {
-    value: "orgao-fomento",
+    value: "ORGAO_FOMENTO",
     label: "Órgão de fomento",
     description: "Publica editais com recurso público.",
     group: "provider",
     requiresApproval: true,
   },
   {
-    value: "investidor",
+    value: "INVESTIDOR",
     label: "Investidor",
     description: "Publica oportunidades com tese de investimento.",
     group: "provider",
     requiresApproval: true,
   },
   {
-    value: "aceleradora",
+    value: "ACELERADORA",
     label: "Aceleradora",
     description: "Publica programas de aceleração.",
     group: "provider",
     requiresApproval: true,
   },
   {
-    value: "empresa-parceira",
+    value: "EMPRESA_PARCEIRA",
     label: "Empresa parceira",
     description: "Propõe desafios na residência.",
     group: "provider",
@@ -63,7 +67,9 @@ const organizationOptions: AccountTypeOption[] = [
 export default function NewOrganizationPage() {
   const navigate = useNavigate();
 
-  const [organizationType, setOrganizationType] = useState("startup");
+  const [organizationType, setOrganizationType] = useState("STARTUP");
+  const [erro, setErro] = useState<string | null>(null);
+  const [enviando, setEnviando] = useState(false);
 
   const [form, setForm] = useState<OrganizationForm>({
     name: "",
@@ -82,15 +88,31 @@ export default function NewOrganizationPage() {
     }));
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setErro(null);
+    setEnviando(true);
 
-    const organization = {
-      type: organizationType,
-      ...form,
-    };
+    const tipo = organizationType as TipoOrganizacao;
 
-    console.log("Nova organização:", organization);
+    try {
+      await cadastrarOrganizacao({
+        tipo,
+        nome: form.name.trim(),
+        cnpj: form.cnpj.trim() || undefined,
+        setor: form.sector.trim() || undefined,
+        descricao: form.description.trim() || undefined,
+      });
+
+      // o vínculo novo só aparece na sessão depois de recarregar, por isso a página é recarregada
+      const destino = TIPOS_PROVEDOR.includes(tipo)
+        ? "/provedor"
+        : tipo === "SQUAD" ? "/squad" : "/inicio";
+      window.location.assign(destino);
+    } catch (e) {
+      setErro(mensagemDeErro(e));
+      setEnviando(false);
+    }
   };
 
   return (
@@ -119,12 +141,19 @@ export default function NewOrganizationPage() {
 
             <button
               type="submit"
-              className="rounded-md bg-acento px-4 py-2.5 text-xs font-medium text-white transition-colors hover:opacity-90"
+              disabled={enviando}
+              className="rounded-md bg-acento px-4 py-2.5 text-xs font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60"
             >
-              Criar organização
+              {enviando ? "Criando..." : "Criar organização"}
             </button>
           </div>
         </div>
+
+        {erro && (
+          <p role="alert" className="mb-4 text-sm font-medium text-red-600">
+            {erro}
+          </p>
+        )}
 
         {/* Tipo da organização */}
         <AccountTypeSelector
