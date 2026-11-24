@@ -1,3 +1,4 @@
+import type { Papel } from '../api/vinculos'
 import type { ItemDeMenu } from '../components/MenuLateral'
 
 /**
@@ -56,4 +57,31 @@ export const MENU_HOME: ItemDeMenu[] = [
     { rotulo: 'Notificações e prazos' },
     { rotulo: 'Histórico de auditoria' },
     { rotulo: 'Conta' },
+]
+/**
+ * Área do provedor: as telas ainda não existem. Os rótulos vêm do comentário
+ * acima (Oportunidades, Candidaturas e Conta também existem no provedor).
+ * Sem "para", aparecem no menu mas não deixam clicar.
+ */
+export const MENU_PROVEDOR: ItemDeMenu[] = [
+    { rotulo: 'Oportunidades' },
+    { rotulo: 'Candidaturas' },
+    { rotulo: 'Conta' },
+]
+
+/** Menu de cada papel, usado pelo AppLayout. */
+export const MENUS_POR_PAPEL: Record<Papel, ItemDeMenu[]> = {
+    PROVEDOR: MENU_PROVEDOR,
+    CANDIDATO: MENU_SQUAD,
+    AVALIADOR: MENU_AVALIADOR,
+    MENTOR: MENU_MENTOR,
+    GESTAO: MENU_GESTAO,
+}
+/**
+ * Menu de quem ainda não tem vínculo (ex.: /organizacoes/nova, logo depois
+ * do primeiro login). Só mostra o que não depende de organização nem papel.
+ */
+export const MENU_SEM_VINCULO: ItemDeMenu[] = [
+    { rotulo: 'Nova organização', para: '/organizacoes/nova'},
+    { rotulo: 'Conta', para: '/conta' },
 ]

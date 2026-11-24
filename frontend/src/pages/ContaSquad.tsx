@@ -1,18 +1,9 @@
-import CascaDoApp from '../components/CascaDoApp'
 import PaginaDeConta, { BlocoDoPapel } from '../components/PaginaDeConta'
-import { MENU_SQUAD } from '../navegacao/menus'
 
 /** 57 · Candidato squad — conta (Sua Chen Letícia) · rota /conta/squad */
 function ContaSquad() {
     return (
-        <CascaDoApp
-            organizacao="Squad 3 · FICR"
-            papel="Candidato · squad"
-            iniciais="SC"
-            nome="Sua Chen Letícia"
-            itens={MENU_SQUAD}
-            voltarPara="/squad"
-        >
+        <div>
             <PaginaDeConta
                 pessoa={{
                     iniciais: 'SC',
@@ -51,7 +42,7 @@ function ContaSquad() {
                     acao="Ver acompanhamento"
                 />
             </PaginaDeConta>
-        </CascaDoApp>
+        </div>
     )
 }
 

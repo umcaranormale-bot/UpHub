@@ -16,7 +16,6 @@ function RegisterPage() {
         confirmarSenha: "",
     });
 
-    const [accountType, setAccountType] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -34,11 +33,6 @@ function RegisterPage() {
 
         if (senha !== confirmarSenha) {
             setError("As senhas não coincidem.");
-            return;
-        }
-
-        if (!accountType) {
-            setError("Selecione o seu perfil.");
             return;
         }
 
@@ -74,7 +68,6 @@ function RegisterPage() {
             confirmarSenha: "",
         });
 
-        setAccountType("");
         setError(null);
     }
 

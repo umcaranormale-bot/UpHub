@@ -1,80 +1,81 @@
-import React, { useState } from 'react';
+import { Link } from 'react-router-dom'
 
-export const Navbar: React.FC = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+import Logo from './Logo'
+import { CustomButton } from './CustomButton'
+import { ANEL_FOCO, TRANSICAO_COR } from '../estilos/classes'
 
-  return (
-    <header className="bg-slate-900 text-white shadow-md sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          
-          {/* LOGO */}
-          <div className="flex-shrink-0 flex items-center gap-2">
-            <span className="font-bold text-xl tracking-wide text-blue-400">
-              UpHub
-            </span>
-          </div>
+/**
+ * Navbar — topo das telas públicas (landing, privacidade, cadastro).
+ *
+ * Segue a mesma moldura do topo do AppLayout (fundo de card, borda sutil,
+ * logo pervinca), para o site e a área logada parecerem o mesmo produto.
+ *
+ * Duas variantes, como no protótipo:
+ *   - "site":     links das seções da landing + "Entrar" e "Criar conta"
+ *   - "cadastro": "‹ Voltar" + "Já tem conta?" e "Entrar"
+ */
 
-          {/* LINKS DE NAVEGAÇÃO - DESKTOP */}
-          <nav className="hidden md:flex space-x-8">
-            <a href="#" className="hover:text-blue-400 transition-colors duration-200">
-              Início
-            </a>
-            <a href="#" className="hover:text-blue-400 transition-colors duration-200">
-              Sobre
-            </a>
-            <a href="#" className="hover:text-blue-400 transition-colors duration-200">
-              Serviços
-            </a>
-            <a href="#" className="hover:text-blue-400 transition-colors duration-200">
-              Contato
-            </a>
-          </nav>
+export type VarianteDaNavbar = 'site' | 'cadastro'
 
-          {/* BOTÃO MOBILE (Hambúrguer) */}
-          <div className="md:hidden flex items-center">
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              type="button"
-              className="text-gray-300 hover:text-white focus:outline-none"
-              aria-label="Abrir Menu"
-            >
-              <svg className="h-6 w-6 fill-current" viewBox="0 0 24 24">
-                {isMenuOpen ? (
-                  <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M18.364 18.364a1 1 0 000-1.414L13.414 12l4.95-4.95a1 1 0 00-1.414-1.414L12 10.586l-4.95-4.95a1 1 0 00-1.414 1.414L10.586 12l-4.95 4.95a1 1 0 001.414 1.414L12 13.414l4.95 4.95a1 1 0 001.414 0z"
-                  />
-                ) : (
-                  <path
-                    fillRule="evenodd"
-                    d="M4 5h16a1 1 0 010 2H4a1 1 0 110-2zm0 6h16a1 1 0 010 2H4a1 1 0 010-2zm0 6h16a1 1 0 010 2H4a1 1 0 010-2z"
-                  />
-                )}
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
+const LINK_DE_SECAO = `rounded-card text-apoio text-secundario ${TRANSICAO_COR} hover:text-titulo ${ANEL_FOCO}`
 
-      {/* MENU MOBILE EXPANSÍVEL */}
-      {isMenuOpen && (
-        <div className="md:hidden bg-slate-800 px-2 pt-2 pb-4 space-y-1 sm:px-3">
-          <a href="#" className="block px-3 py-2 rounded-md hover:bg-slate-700">
-            Início
-          </a>
-          <a href="#" className="block px-3 py-2 rounded-md hover:bg-slate-700">
-            Sobre
-          </a>
-          <a href="#" className="block px-3 py-2 rounded-md hover:bg-slate-700">
-            Serviços
-          </a>
-          <a href="#" className="block px-3 py-2 rounded-md hover:bg-slate-700">
-            Contato
-          </a>
-        </div>
-      )}
-    </header>
-  );
-};
+/**
+ * Seções da landing. O "/" antes do "#" faz o link funcionar também a partir
+ * de outras páginas públicas (ex.: /privacidade): volta para a landing e rola
+ * até a seção. Cada âncora precisa de um id igual na seção da LandingPage.
+ */
+const SECOES_DO_SITE = [
+    { rotulo: 'Como funciona', href: '/#como-funciona' },
+    { rotulo: 'Trilhas', href: '/#trilhas' },
+    { rotulo: 'Para quem publica', href: '/#para-quem-publica' },
+]
+
+interface NavbarProps {
+    variante?: VarianteDaNavbar
+}
+
+export function Navbar({ variante = 'site' }: NavbarProps) {
+    return (
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-6 border-b border-sutil bg-card px-10 shadow-card">
+            <Link to="/" aria-label="UpHub, página inicial" className={`rounded-card ${ANEL_FOCO}`}>
+                <Logo variante="pervinca" altura={28} />
+            </Link>
+
+            {variante === 'site' ? (
+                <>
+                    <nav aria-label="Seções do site" className="hidden items-center gap-6 md:flex">
+                        {SECOES_DO_SITE.map((secao) => (
+                            <a key={secao.href} href={secao.href} className={LINK_DE_SECAO}>
+                                {secao.rotulo}
+                            </a>
+                        ))}
+                    </nav>
+
+                    <div className="ml-auto flex items-center gap-3">
+                        <CustomButton to="/entrar" variant="neutro" size="auto" className="px-4">
+                            Entrar
+                        </CustomButton>
+                        <CustomButton to="/cadastro" variant="aprovar" size="auto" className="px-4">
+                            Criar conta
+                        </CustomButton>
+                    </div>
+                </>
+            ) : (
+                <>
+                    <CustomButton to="/" variant="neutro" size="auto" className="px-4">
+                        ‹ Voltar
+                    </CustomButton>
+
+                    <div className="ml-auto flex items-center gap-3">
+                        <span className="text-apoio text-secundario">Já tem conta?</span>
+                        <CustomButton to="/entrar" variant="neutro" size="auto" className="px-4">
+                            Entrar
+                        </CustomButton>
+                    </div>
+                </>
+            )}
+        </header>
+    )
+}
+
+export default Navbar

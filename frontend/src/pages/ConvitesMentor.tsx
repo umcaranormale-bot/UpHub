@@ -1,9 +1,7 @@
 import { useState } from 'react'
 
 import { CustomButton } from '../components/CustomButton'
-import CascaDoApp from '../components/CascaDoApp'
 import SeloStatus, { type Status } from '../components/SeloStatus'
-import { MENU_MENTOR } from '../navegacao/menus'
 import SeloDeTrilha, { type Trilha } from '../components/SeloDeTrilha'
 import AbasDeFiltro, { type Aba } from '../components/AbasDeFiltro'
 
@@ -84,14 +82,7 @@ function ConvitesMentor() {
     ]
 
     return (
-        <CascaDoApp
-            organizacao="Movetech"
-            papel="Mentor"
-            iniciais="PT"
-            nome="Paulo Tavares"
-            itens={MENU_MENTOR}
-            voltarPara="/mentor"
-        >
+        <div>
             <h1 className="font-display text-tela text-titulo">Convites de alocação</h1>
             <p className="mt-2 text-apoio text-secundario">
                 HU-15 · cada convite traz organização, desafio, horas previstas e prazo de
@@ -144,7 +135,7 @@ function ConvitesMentor() {
                     </li>
                 ))}
             </ul>
-        </CascaDoApp>
+        </div>
     )
 }
 

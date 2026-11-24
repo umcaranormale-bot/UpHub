@@ -1,6 +1,4 @@
 import { CustomButton } from '../components/CustomButton'
-import CascaDoApp from '../components/CascaDoApp'
-import { MENU_GESTAO } from '../navegacao/menus'
 import Indicadores, { type Indicador } from '../components/Indicadores'
 
 /**
@@ -117,13 +115,7 @@ function corDaTaxa(taxa: number) {
 
 function PainelEcossistema() {
     return (
-        <CascaDoApp
-            organizacao="Porto Digital"
-            papel="Gestão do PD"
-            iniciais="MV"
-            nome="Marcos Vilela"
-            itens={MENU_GESTAO}
-        >
+        <div>
             <h1 className="font-display text-tela text-titulo">Painel do ecossistema</h1>
             <p className="mt-2 text-apoio text-secundario">
                 Marcos Vilela · setembro de 2026 · nada aqui é digitado à mão: todo
@@ -274,7 +266,7 @@ function PainelEcossistema() {
                     </section>
                 </aside>
             </div>
-        </CascaDoApp>
+        </div>
     )
 }
 

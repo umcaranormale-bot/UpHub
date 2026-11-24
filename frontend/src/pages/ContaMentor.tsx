@@ -1,18 +1,9 @@
-import CascaDoApp from '../components/CascaDoApp'
 import PaginaDeConta, { BlocoDoPapel } from '../components/PaginaDeConta'
-import { MENU_MENTOR } from '../navegacao/menus'
 
 /** 59 · Mentor — conta (Paulo Tavares) · rota /conta/mentor */
 function ContaMentor() {
     return (
-        <CascaDoApp
-            organizacao="Movetech"
-            papel="Mentor"
-            iniciais="PT"
-            nome="Paulo Tavares"
-            itens={MENU_MENTOR}
-            voltarPara="/mentor"
-        >
+        <div>
             <PaginaDeConta
                 pessoa={{
                     iniciais: 'PT',
@@ -51,7 +42,7 @@ function ContaMentor() {
                     acao="Abrir histórico"
                 />
             </PaginaDeConta>
-        </CascaDoApp>
+        </div>
     )
 }
 

@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { CustomButton } from './CustomButton'
 import SeloStatus, { type Status } from './SeloStatus'
+import { useAuth } from '../contexts/AuthContext'
 import { ANEL_FOCO } from '../estilos/classes'
 
 interface BlocoDoPapelProps {
@@ -95,6 +97,15 @@ export function PaginaDeConta({
     vinculos,
     children,
 }: PaginaDeContaProps) {
+    const { logout } = useAuth()
+    const navigate = useNavigate()
+
+    function sairDaConta() {
+        // Navega primeiro: se a sessão sumisse antes, o PrivateRoute
+        // mandaria para /entrar em vez da tela inicial pública.
+        navigate('/', { replace: true })
+        logout()
+    }
     return (
         <>
             <h1 className="font-display text-tela text-titulo">Minha conta</h1>
@@ -217,6 +228,7 @@ export function PaginaDeConta({
                         </p>
                         <button
                             type="button"
+                            onClick={sairDaConta}
                             className={`mt-4 h-[45px] w-full rounded-lg bg-status-reprovada-texto font-semibold text-white transition-opacity duration-[var(--dur-rapida)] ease-padrao hover:opacity-90 ${ANEL_FOCO}`}
                         >
                             Sair da conta

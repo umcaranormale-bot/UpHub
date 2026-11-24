@@ -1,7 +1,5 @@
 import { CustomButton } from '../components/CustomButton'
-import CascaDoApp from '../components/CascaDoApp'
 import SeloStatus, { type Status } from '../components/SeloStatus'
-import { MENU_SQUAD } from '../navegacao/menus'
 import SeloDeTrilha, { type Trilha } from '../components/SeloDeTrilha'
 import CartaoDeAviso from '../components/CartaoDeAviso'
 import { ANEL_FOCO, TRANSICAO_COR } from '../estilos/classes'
@@ -94,13 +92,8 @@ const candidaturas: Candidatura[] = [
 
 function InicioSquad() {
     return (
-        <CascaDoApp
-            organizacao="Squad 3 · FICR"
-            papel="Candidato · squad"
-            iniciais="SC"
-            nome="Sua Chen Letícia"
-            itens={MENU_SQUAD}
-        >
+        <div>
+
             <h1 className="font-display text-tela text-titulo">Olá, Letícia</h1>
             <p className="mt-2 text-apoio text-secundario">
                 Squad 3 · FICR · {desafios.filter((d) => d.match >= 70).length} desafios
@@ -217,7 +210,8 @@ function InicioSquad() {
                     </section>
                 </aside>
             </div>
-        </CascaDoApp>
+
+        </div>
     )
 }
 

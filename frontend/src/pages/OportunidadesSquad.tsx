@@ -1,8 +1,6 @@
 import { useMemo, useState } from 'react'
 
 import { CustomButton } from '../components/CustomButton'
-import CascaDoApp from '../components/CascaDoApp'
-import { MENU_SQUAD } from '../navegacao/menus'
 import SeloDeTrilha, { type Trilha } from '../components/SeloDeTrilha'
 import AbasDeFiltro, { type Aba } from '../components/AbasDeFiltro'
 import { ANEL_FOCO, TRANSICAO_COR } from '../estilos/classes'
@@ -124,14 +122,7 @@ function OportunidadesSquad() {
     ]
 
     return (
-        <CascaDoApp
-            organizacao="Squad 3 · FICR"
-            papel="Candidato · squad"
-            iniciais="SC"
-            nome="Sua Chen Letícia"
-            itens={MENU_SQUAD}
-            voltarPara="/squad"
-        >
+        <div>
             <div className="flex items-start gap-6">
                 <div className="min-w-0 flex-1">
                     <h1 className="font-display text-tela text-titulo">Oportunidades</h1>
@@ -189,11 +180,10 @@ function OportunidadesSquad() {
                 {FILTROS.map((filtro) => (
                     <span
                         key={filtro.rotulo}
-                        className={`rounded-card border px-4 py-2 text-apoio ${
-                            filtro.ativo
+                        className={`rounded-card border px-4 py-2 text-apoio ${filtro.ativo
                                 ? 'border-acento bg-acento-suave text-titulo'
                                 : 'border-sutil bg-card text-secundario'
-                        }`}
+                            }`}
                     >
                         {filtro.rotulo}: <span className="text-titulo">{filtro.valor}</span> ▾
                     </span>
@@ -260,7 +250,7 @@ function OportunidadesSquad() {
                     ))}
                 </ul>
             )}
-        </CascaDoApp>
+        </div>
     )
 }
 

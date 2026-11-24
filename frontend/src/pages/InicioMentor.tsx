@@ -1,7 +1,5 @@
 import { CustomButton } from '../components/CustomButton'
-import CascaDoApp from '../components/CascaDoApp'
 import SeloStatus, { type Status } from '../components/SeloStatus'
-import { MENU_MENTOR } from '../navegacao/menus'
 import SeloDeTrilha, { type Trilha } from '../components/SeloDeTrilha'
 import CartaoDeAviso from '../components/CartaoDeAviso'
 import { ANEL_FOCO, TRANSICAO_COR } from '../estilos/classes'
@@ -124,13 +122,7 @@ function InicioMentor() {
     const acompanhando = itens.length - pendentes
 
     return (
-        <CascaDoApp
-            organizacao="Movetech"
-            papel="Mentor"
-            iniciais="PT"
-            nome="Paulo Tavares"
-            itens={MENU_MENTOR}
-        >
+        <div>
             <h1 className="font-display text-tela text-titulo">Olá, Paulo</h1>
             <p className="mt-2 text-apoio text-secundario">
                 Movetech · mentor voluntário · {acompanhando} squad acompanhada e{' '}
@@ -242,7 +234,7 @@ function InicioMentor() {
                     </section>
                 </aside>
             </div>
-        </CascaDoApp>
+        </div>
     )
 }
 

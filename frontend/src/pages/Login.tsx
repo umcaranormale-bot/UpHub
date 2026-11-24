@@ -3,8 +3,6 @@ import AuthLayout from '../layouts/AuthLayout';
 /**
  * Entrar — rota /entrar
  *
- * Esta é a casca da tela. Monte o layout dentro do <main>.
- *
  * Nesta semana:
  *   - sem fetch e sem VITE_API_URL: nada de chamar o backend ainda
  *   - os dados que aparecerem na tela ficam escritos aqui mesmo

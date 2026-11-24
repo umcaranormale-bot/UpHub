@@ -3,11 +3,7 @@ import { ANEL_FOCO, TRANSICAO_COR } from '../estilos/classes'
 
 /**
  * MenuLateral — o menu lateral do sistema, um só para o projeto inteiro.
- *
- * Antes existiam dois: o SideMenu, com a lista fixa, usado pelo HomeLayout, e
- * o menu de dentro da CascaDoApp, montado por papel. Este substitui os dois:
- * os itens entram por propriedade, então serve tanto a lista fixa de antes
- * quanto os menus por papel.
+
  */
 
 export interface ItemDeMenu {
