@@ -1,7 +1,12 @@
 
 import { useState, type FormEvent } from "react";
 import { CustomButton } from "./CustomButton";
-import {aceitarConvite,type ConviteRecebido} from "../api/convites";
+import { aceitarConvite, type ConviteRecebido } from "../api/convites";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { routeByPaper } from "../utils/RoutesByLink";
+import { mensagemDeErro } from "../api/erros";
+import { ErroApi } from "../api/cliente";
 
 interface InviteLoginCardProps {
     convite: ConviteRecebido;
@@ -12,6 +17,9 @@ export default function InviteLoginCard({
     convite,
     codigo
 }: InviteLoginCardProps) {
+    const navigate = useNavigate();
+    const { login } = useAuth();
+
     const [nome, setNome] = useState("");
     const [senha, setSenha] = useState("");
     const [carregando, setCarregando] = useState(false);
@@ -21,28 +29,39 @@ export default function InviteLoginCard({
         event.preventDefault();
 
         try {
-            setCarregando(true);
-            setErro("");
-
             await aceitarConvite(
                 codigo,
                 senha,
                 convite.contaExistente ? undefined : nome
             );
-
-            // O token já foi salvo por aceitarConvite.
-            window.location.href = "/";
-
         } catch (error) {
             console.error("Erro ao aceitar convite:", error);
-
-            setErro(
-                error instanceof Error
-                    ? error.message
-                    : "Não foi possível aceitar o convite."
-            );
-        } finally {
+            setErro(mensagemDeErro(error));
             setCarregando(false);
+            return;
+        }
+
+        // 2. Logar: o convite já foi aceito, então nunca prende a pessoa aqui
+        try {
+            await login(convite.email, senha);
+            navigate(routeByPaper(convite.papel), { replace: true });
+        } catch (error) {
+            console.error("Convite aceito, mas o login falhou:", error);
+
+            if (error instanceof ErroApi && error.status === 403) {
+                navigate("/confirmar-email", {
+                    replace: true,
+                    state: { email: convite.email },
+                });
+                return;
+            }
+
+            navigate("/entrar", {
+                replace: true,
+                state: {
+                    aviso: "Seu convite foi aceito! Entre com seu e-mail e senha para continuar.",
+                },
+            });
         }
     }
 

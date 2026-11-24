@@ -32,6 +32,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import LinkPage from './pages/LinkPage'
 import PrivateRoute from './routes/PrivateRoute'
 import NewOrganizationPage from './pages/NewOrganizationPage'
+import PublicOnlyRoute from './routes/PublicOnlyRoute'
 
 /**
  * Índice das telas do site.
@@ -54,15 +55,21 @@ function App() {
                 {/* ROTAS PÚBLICAS */}
                 <Route element={<MainLayout />}>
                     <Route path="/" element={<LandingPage />} />
-                    <Route path="/cadastro" element={<RegisterPage />} />
                     <Route path="/privacidade" element={<PrivacidadePage />} />
                 </Route>
 
-                <Route path="/entrar" element={<Login />} />
                 <Route path="/convite" element={<InvitePage />} />
-                <Route path="/recuperar-senha" element={<RecoveryPasswordPage />} />
                 <Route path="/confirmar-email" element={<ConfirmEmailPage />} />
                 <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
+
+                {/* SÓ PARA QUEM NÃO ESTÁ LOGADO */}
+                <Route element={<PublicOnlyRoute />}>
+                    <Route element={<MainLayout />}>
+                        <Route path="/cadastro" element={<RegisterPage />} />
+                    </Route>
+                    <Route path="/entrar" element={<Login />} />
+                    <Route path="/recuperar-senha" element={<RecoveryPasswordPage />} />
+                </Route>
 
                 {/* ROTAS PRIVADAS */}
                 <Route element={<PrivateRoute />}>
@@ -85,7 +92,7 @@ function App() {
                     <Route path="/mentor/convites" element={<ConvitesMentor />} />
                     <Route path="/mentor/acompanhados" element={<AcompanhadoMentor />} />
                     <Route path="/mentor/horas" element={<RegistrarSessao />} />
-            <Route path="/organizacoes/nova" element={<NewOrganizationPage/>}/>
+                    <Route path="/organizacoes/nova" element={<NewOrganizationPage />} />
 
                     <Route path="/gestao/provedores" element={<AprovacaoProvedores />} />
                     <Route path="/gestao/alocacao" element={<AlocacaoMentores />} />

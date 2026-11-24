@@ -6,16 +6,17 @@ export default function PrivateRoute() {
     const {
         sessao,
         carregando,
+        sessaoVerificada,
         verificarSessao,
     } = useAuth();
 
     useEffect(() => {
-        if (!sessao) {
+        if (!sessao && !sessaoVerificada) {
             verificarSessao();
         }
-    }, [sessao, verificarSessao]);
+    }, [sessao, sessaoVerificada, verificarSessao]);
 
-    if (carregando) {
+    if (carregando || !sessaoVerificada) {
         return null;
     }
 

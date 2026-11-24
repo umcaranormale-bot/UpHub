@@ -1,27 +1,43 @@
 import { useState, type FormEvent } from "react";
 import { CustomButton } from "./CustomButton";
 import { validarConvite, type ConviteRecebido } from "../api/convites";
+import { useSearchParams } from "react-router-dom";
 
 interface InviteCardProps {
     onValidate: (convite: ConviteRecebido, codigo: string) => void;
 }
 
 export default function InviteCard({ onValidate }: InviteCardProps) {
-    const [codigo, setCodigo] = useState("");
+    const [searchParams, setSearchParams] = useSearchParams();
+    const codigo = searchParams.get("codigo") ?? "";
+
     const [carregando, setCarregando] = useState(false);
     const [erro, setErro] = useState("");
 
+    function setCodigo(valor: string) {
+        setSearchParams(
+            (prev) => {
+                const params = new URLSearchParams(prev);
+                if (valor) params.set("codigo", valor);
+                else params.delete("codigo");
+                return params;
+            },
+            { replace: true }
+        );
+    }
+
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
+
+        const codigoLimpo = codigo.trim();
 
         try {
             setCarregando(true);
             setErro("");
 
-            const resposta = await validarConvite(codigo.trim());
+            const resposta = await validarConvite(codigoLimpo);
 
-            onValidate(resposta, codigo.trim());
-
+            onValidate(resposta, codigoLimpo);
         } catch (error) {
             console.error(error);
 
