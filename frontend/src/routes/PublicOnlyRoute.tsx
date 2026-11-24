@@ -17,8 +17,7 @@ export default function PublicOnlyRoute() {
     }
 
     if (sessao) {
-        const destino = initialRoute(sessao);
-        if (destino) return <Navigate to={destino} replace />;
+        return <Navigate to={initialRoute(sessao)} replace />;
     }
 
     return <Outlet />;

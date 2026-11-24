@@ -5,7 +5,7 @@ import { CustomButton } from "./CustomButton";
 import { useAuth } from "../contexts/AuthContext";
 import { ErroApi } from "../api/cliente";
 import { mensagemDeErro } from "../api/erros";
-import { routeByPaper } from "../utils/RoutesByLink";
+import { initialRoute } from "../utils/InitialRoute";
 
 export default function LoginCard() {
     const location = useLocation();
@@ -30,28 +30,8 @@ export default function LoginCard() {
             // Realiza login e atualiza o AuthContext
             const resposta = await login(email, senha);
 
-            // Considera somente vínculos ativos
-            const vinculosAtivos = resposta.vinculos.filter(
-                vinculo => vinculo.encerradoEm === null
-            );
-
-            // Conta sem vínculos ativos
-            if (vinculosAtivos.length === 0) {
-                setErro("Sua conta não possui vínculos ativos.");
-                return;
-            }
-
-            // Apenas um vínculo: redireciona diretamente
-            if (vinculosAtivos.length === 1) {
-                navigate(
-                    routeByPaper(vinculosAtivos[0].papel),
-                    { replace: true }
-                );
-                return;
-            }
-
-            // Mais de um vínculo: abre a tela de seleção
-            navigate("/entrar-vinculo", { replace: true });
+            // 0 vínculos: cria a organização; 1: área do papel; mais de 1: escolhe o vínculo
+            navigate(initialRoute(resposta), { replace: true });
 
         } catch (e) {
             if (e instanceof ErroApi && e.status === 403) {
