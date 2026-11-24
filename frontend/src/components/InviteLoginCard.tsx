@@ -28,6 +28,9 @@ export default function InviteLoginCard({
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
+        setCarregando(true);
+        setErro("");
+
         try {
             await aceitarConvite(
                 codigo,
