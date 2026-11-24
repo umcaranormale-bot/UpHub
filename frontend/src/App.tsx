@@ -4,6 +4,7 @@ import Login from './pages/Login'
 import LandingPage from './pages/Landing-Page'
 import MainLayout from './layouts/MainLayout'
 import HomeLayout from './layouts/HomeLayout'
+import AppLayout from './layouts/AppLayout'
 import RegisterPage from './pages/RegisterPage'
 import RecoveryPasswordPage from './pages/RecoverPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
@@ -45,6 +46,11 @@ import PublicOnlyRoute from './routes/PublicOnlyRoute'
  *   2) a rota, aqui embaixo, dentro do <Routes>:
  *        <Route path="/cadastro" element={<Cadastro />} />
  *
+ * Telas de um papel (squad, mentor, avaliador, gestão, provedor) entram
+ * dentro do <Route> do AppLayout daquele papel, com caminho relativo:
+ *        <Route path="nova-tela" element={<NovaTela />} />   →  /mentor/nova-tela
+ * O topo e o menu lateral vêm do AppLayout; a tela só traz o próprio conteúdo.
+ *
  * O arquivo da tela fica em src/pages, com o mesmo nome do componente.
  */
 function App() {
@@ -64,7 +70,7 @@ function App() {
 
                 {/* SÓ PARA QUEM NÃO ESTÁ LOGADO */}
                 <Route element={<PublicOnlyRoute />}>
-                    <Route element={<MainLayout />}>
+                    <Route element={<MainLayout variante="cadastro" />}>
                         <Route path="/cadastro" element={<RegisterPage />} />
                     </Route>
                     <Route path="/entrar" element={<Login />} />
@@ -73,34 +79,47 @@ function App() {
 
                 {/* ROTAS PRIVADAS */}
                 <Route element={<PrivateRoute />}>
+
+                    {/* Telas sem papel definido: a pessoa pode ainda não ter vínculo. */}
                     <Route path="/entrar-vinculo" element={<LinkPage />} />
+                    <Route path="/organizacoes/nova" element={<NewOrganizationPage />} />
 
                     <Route element={<HomeLayout />}>
                         <Route path="/inicio" element={<CandidateHome />} />
-                        <Route path="/provedor" element={<ProviderHome />} />
                     </Route>
 
-                    <Route path="/squad" element={<InicioSquad />} />
-                    <Route path="/avaliador" element={<FilaAvaliacao />} />
-                    <Route path="/mentor" element={<InicioMentor />} />
-                    <Route path="/gestao" element={<PainelEcossistema />} />
+                    {/* ÁREAS POR PAPEL */}
+                    <Route path="/squad" element={<AppLayout papel="CANDIDATO" />}>
+                        <Route index element={<InicioSquad />} />
+                        <Route path="oportunidades" element={<OportunidadesSquad />} />
+                        <Route path="candidaturas" element={<CandidaturasSquad />} />
+                        <Route path="perfil" element={<PerfilDaSquad />} />
+                        <Route path="conta" element={<ContaSquad />} />
+                    </Route>
 
-                    <Route path="/squad/oportunidades" element={<OportunidadesSquad />} />
-                    <Route path="/squad/candidaturas" element={<CandidaturasSquad />} />
-                    <Route path="/squad/perfil" element={<PerfilDaSquad />} />
+                    <Route path="/mentor" element={<AppLayout papel="MENTOR" />}>
+                        <Route index element={<InicioMentor />} />
+                        <Route path="convites" element={<ConvitesMentor />} />
+                        <Route path="acompanhados" element={<AcompanhadoMentor />} />
+                        <Route path="horas" element={<RegistrarSessao />} />
+                        <Route path="conta" element={<ContaMentor />} />
+                    </Route>
 
-                    <Route path="/mentor/convites" element={<ConvitesMentor />} />
-                    <Route path="/mentor/acompanhados" element={<AcompanhadoMentor />} />
-                    <Route path="/mentor/horas" element={<RegistrarSessao />} />
-                    <Route path="/organizacoes/nova" element={<NewOrganizationPage />} />
+                    <Route path="/avaliador" element={<AppLayout papel="AVALIADOR" />}>
+                        <Route index element={<FilaAvaliacao />} />
+                        <Route path="conta" element={<ContaAvaliador />} />
+                    </Route>
 
-                    <Route path="/gestao/provedores" element={<AprovacaoProvedores />} />
-                    <Route path="/gestao/alocacao" element={<AlocacaoMentores />} />
+                    <Route path="/gestao" element={<AppLayout papel="GESTAO" />}>
+                        <Route index element={<PainelEcossistema />} />
+                        <Route path="provedores" element={<AprovacaoProvedores />} />
+                        <Route path="alocacao" element={<AlocacaoMentores />} />
+                        <Route path="conta" element={<ContaGestao />} />
+                    </Route>
 
-                    <Route path="/squad/conta" element={<ContaSquad />} />
-                    <Route path="/mentor/conta" element={<ContaMentor />} />
-                    <Route path="/avaliador/conta" element={<ContaAvaliador />} />
-                    <Route path="/gestao/conta" element={<ContaGestao />} />
+                    <Route path="/provedor" element={<AppLayout papel="PROVEDOR" />}>
+                        <Route index element={<ProviderHome />} />
+                    </Route>
                 </Route>
 
                 {/* ROTA INEXISTENTE */}

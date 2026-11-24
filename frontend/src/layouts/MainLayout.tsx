@@ -1,16 +1,16 @@
 import { Outlet } from "react-router-dom";
-import { Navbar } from "../components/Navbar";
+import { Navbar, type VarianteDaNavbar } from "../components/Navbar";
 
-function MainLayout() {
+function MainLayout({ variante = 'site' }: { variante?: VarianteDaNavbar }) {
   return (
-    <>
-      <Navbar />
+    <div className="min-h-screen bg-page">
+      <Navbar variante={variante} />
 
-      <main>
+      <main id="conteudo">
         <Outlet />
       </main>
-    </>
-  );
+    </div>
+  )
 }
 
 export default MainLayout;
