@@ -77,3 +77,11 @@ export const MENUS_POR_PAPEL: Record<Papel, ItemDeMenu[]> = {
     MENTOR: MENU_MENTOR,
     GESTAO: MENU_GESTAO,
 }
+/**
+ * Menu de quem ainda não tem vínculo (ex.: /organizacoes/nova, logo depois
+ * do primeiro login). Só mostra o que não depende de organização nem papel.
+ */
+export const MENU_SEM_VINCULO: ItemDeMenu[] = [
+    { rotulo: 'Nova organização', para: '/organizacoes/nova'},
+    { rotulo: 'Conta', para: '/conta' },
+]

@@ -28,6 +28,7 @@ import ContaSquad from './pages/ContaSquad'
 import ContaMentor from './pages/ContaMentor'
 import ContaAvaliador from './pages/ContaAvaliador'
 import ContaGestao from './pages/ContaGestao'
+import ContaPage from './pages/ContaPage'
 import ConfirmEmailPage from './pages/ConfirmEmailPage'
 import { AuthProvider } from './contexts/AuthContext'
 import LinkPage from './pages/LinkPage'
@@ -80,9 +81,13 @@ function App() {
                 {/* ROTAS PRIVADAS */}
                 <Route element={<PrivateRoute />}>
 
-                    {/* Telas sem papel definido: a pessoa pode ainda não ter vínculo. */}
                     <Route path="/entrar-vinculo" element={<LinkPage />} />
-                    <Route path="/organizacoes/nova" element={<NewOrganizationPage />} />
+
+                    {/* TELAS DA CONTA: valem para quem ainda não tem vínculo. */}
+                    <Route element={<AppLayout />}>
+                        <Route path="/organizacoes/nova" element={<NewOrganizationPage />} />
+                        <Route path="/conta" element={<ContaPage />} />
+                    </Route>
 
                     <Route element={<HomeLayout />}>
                         <Route path="/inicio" element={<CandidateHome />} />
