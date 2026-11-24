@@ -1,171 +1,185 @@
+import { useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 
-import { useState, type FormEvent } from "react";
-import { CustomButton } from "./CustomButton";
-import { aceitarConvite, type ConviteRecebido } from "../api/convites";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
-import { routeByPaper } from "../utils/RoutesByLink";
-import { mensagemDeErro } from "../api/erros";
-import { ErroApi } from "../api/cliente";
+import { aceitarConvite, recusarConvite, type ConviteRecebido } from '../api/convites'
+import { mensagemDeErro } from '../api/erros'
+import { formatarData } from '../estilos/formatos'
+import { ROTULO_DA_AREA } from '../navegacao/areas'
+import { useEntrarNoPerfilNovo } from './acesso/useEntrarNoPerfilNovo'
+import { CustomButton } from './CustomButton'
+import { Campo } from './ui/Campo'
+import { Aviso } from './ui/Estados'
+import Modal from './ui/Modal'
 
+/**
+ * 45 e 62 · O convite encontrado: quem convidou, para qual papel e em qual
+ * organização. Sem conta, a pessoa cria o acesso com nome e senha (tela 62);
+ * com conta, confirma com a senha que já tem. O aceite já confirma o e-mail e
+ * entra logado: a tela leva direto para o início do papel novo.
+ */
 interface InviteLoginCardProps {
-    convite: ConviteRecebido;
-    codigo: string;
+    codigo: string
+    convite: ConviteRecebido
+    /** O convite foi recusado. */
+    aoRecusar: () => void
 }
 
-export default function InviteLoginCard({
-    convite,
-    codigo
-}: InviteLoginCardProps) {
-    const navigate = useNavigate();
-    const { login } = useAuth();
+export default function InviteLoginCard({ codigo, convite, aoRecusar }: InviteLoginCardProps) {
+    const navigate = useNavigate()
+    const [nome, setNome] = useState('')
+    const [senha, setSenha] = useState('')
+    const [confirmar, setConfirmar] = useState('')
+    const [erro, setErro] = useState<string | null>(null)
+    const [enviando, setEnviando] = useState(false)
+    const [recusando, setRecusando] = useState(false)
+    const [erroRecusa, setErroRecusa] = useState<string | null>(null)
+    const [confirmarRecusa, setConfirmarRecusa] = useState(false)
 
-    const [nome, setNome] = useState("");
-    const [senha, setSenha] = useState("");
-    const [carregando, setCarregando] = useState(false);
-    const [erro, setErro] = useState("");
+    const novo = !convite.contaExistente
+    const papel = ROTULO_DA_AREA[convite.papel === 'AVALIADOR' ? 'avaliador' : 'mentor']
 
-    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
+    // se a sessão não abrir o perfil novo, o convite já foi aceito: basta entrar
+    const entrarNoPerfilNovo = useEntrarNoPerfilNovo(() =>
+        navigate('/entrar', {
+            replace: true,
+            state: { email: convite.email, aviso: 'Convite aceito. Entre com a sua senha para começar.' },
+        }),
+    )
 
-        setCarregando(true);
-        setErro("");
-
-        try {
-            await aceitarConvite(
-                codigo,
-                senha,
-                convite.contaExistente ? undefined : nome
-            );
-        } catch (error) {
-            console.error("Erro ao aceitar convite:", error);
-            setErro(mensagemDeErro(error));
-            setCarregando(false);
-            return;
+    async function aceitar(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault()
+        setErro(null)
+        if (novo && senha !== confirmar) {
+            setErro('As senhas não coincidem.')
+            return
         }
-
-        // 2. Logar: o convite já foi aceito, então nunca prende a pessoa aqui
+        setEnviando(true)
         try {
-            await login(convite.email, senha);
-            navigate(routeByPaper(convite.papel), { replace: true });
-        } catch (error) {
-            console.error("Convite aceito, mas o login falhou:", error);
+            const resposta = await aceitarConvite(codigo, senha, novo ? nome.trim() : undefined)
+            // o vínculo novo é o mais recente com o papel e a organização do convite
+            const doConvite = resposta.vinculos
+                .filter((v) => v.papel === convite.papel && v.organizacaoNome === convite.organizacaoNome)
+                .sort((a, b) => b.id - a.id)[0]
+            await entrarNoPerfilNovo((p) =>
+                doConvite
+                    ? p.vinculo.id === doConvite.id
+                    : p.vinculo.papel === convite.papel && p.vinculo.organizacaoNome === convite.organizacaoNome,
+            )
+        } catch (e) {
+            setErro(mensagemDeErro(e))
+            setEnviando(false)
+        }
+    }
 
-            if (error instanceof ErroApi && error.status === 403) {
-                navigate("/confirmar-email", {
-                    replace: true,
-                    state: { email: convite.email },
-                });
-                return;
-            }
-
-            navigate("/entrar", {
-                replace: true,
-                state: {
-                    aviso: "Seu convite foi aceito! Entre com seu e-mail e senha para continuar.",
-                },
-            });
+    async function recusar() {
+        setErroRecusa(null)
+        setRecusando(true)
+        try {
+            await recusarConvite(codigo)
+            setConfirmarRecusa(false)
+            aoRecusar()
+        } catch (e) {
+            setErroRecusa(mensagemDeErro(e))
+        } finally {
+            setRecusando(false)
         }
     }
 
     return (
-        <div className="w-full max-w-md rounded-xl border border-sutil bg-white p-8">
-            <h2 className="mb-2 text-2xl font-bold">
-                Convite encontrado
-            </h2>
+        <section className="w-full max-w-md rounded-modal border border-sutil bg-card p-8 shadow-card">
+            <h1 className="text-h3 font-bold text-titulo">{novo ? 'Criar seu acesso' : 'Aceitar convite'}</h1>
+            <p className="mt-2 text-apoio text-secundario">
+                {novo
+                    ? 'Defina seu nome e uma senha para entrar no Up Hub com o papel abaixo. Seu e-mail já fica confirmado.'
+                    : 'Este e-mail já tem conta no Up Hub. Confirme com a sua senha para ganhar o papel abaixo.'}
+            </p>
 
-            <span className="mt-3 text-corpo text-secundario">
-                {convite.contaExistente
-                    ? "Entre com sua senha para aceitar o convite."
-                    : "Crie sua senha para entrar no UpHub com o papel abaixo."
-                }
-            </span>
-
-            <div className="my-3 flex w-full items-center justify-between rounded-lg border-2 border-acento bg-violet-100 p-5">
-                <div className="gap-2">
-                    <h2 className="text-rotulo font-base">
-                        {convite.organizacaoNome}
-                    </h2>
-
-                    <p className="block text-legenda font-medium text-secundario">
-                        {convite.email}
-                    </p>
+            <div className="my-4 flex items-center justify-between gap-3 rounded-card border-2 border-acento bg-acento-suave px-4 py-3">
+                <div className="min-w-0">
+                    <p className="text-item text-titulo">{convite.organizacaoNome}</p>
+                    <p className="truncate text-legenda text-secundario">{convite.email}</p>
                 </div>
-
-                <span className="font-bold text-legenda text-acento">
-                    {convite.papel === "AVALIADOR"
-                        ? "Avaliador"
-                        : "Mentor"}
-                </span>
+                <span className="shrink-0 text-selo text-acento">{papel}</span>
             </div>
+            <p className="mb-4 text-legenda text-secundario">
+                {convite.convidadoPor ? `Convite de ${convite.convidadoPor}. ` : ''}Vale até{' '}
+                {formatarData(convite.expiraEm)}.
+            </p>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-
-                {!convite.contaExistente && (
-                    <div>
-                        <label
-                            htmlFor="nome"
-                            className="mb-1 block text-sm font-medium text-secundario"
-                        >
-                            Nome completo
-                        </label>
-
-                        <input
-                            id="nome"
-                            type="text"
-                            placeholder="Digite seu nome"
-                            value={nome}
-                            onChange={(e) => setNome(e.target.value)}
-                            required
-                            disabled={carregando}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                        />
-                    </div>
-                )}
-
-                <div>
-                    <label
-                        htmlFor="senha"
-                        className="mb-1 block text-sm font-medium text-secundario"
-                    >
-                        {convite.contaExistente
-                            ? "Sua senha"
-                            : "Crie uma senha"}
-                    </label>
-
-                    <input
-                        id="senha"
-                        type="password"
-                        placeholder="Digite sua senha"
-                        value={senha}
-                        onChange={(e) => setSenha(e.target.value)}
+            <form onSubmit={(e) => void aceitar(e)} className="flex flex-col gap-4">
+                {novo && (
+                    <Campo
+                        rotulo="Nome completo"
+                        value={nome}
+                        onChange={(e) => setNome(e.target.value)}
+                        placeholder="Digite seu nome"
+                        autoComplete="name"
+                        maxLength={160}
                         required
-                        disabled={carregando}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
                     />
-                </div>
-
-                {erro && (
-                    <p className="text-sm text-red-600">
-                        {erro}
-                    </p>
+                )}
+                <Campo
+                    rotulo={novo ? 'Senha' : 'Senha da sua conta'}
+                    type="password"
+                    value={senha}
+                    onChange={(e) => setSenha(e.target.value)}
+                    autoComplete={novo ? 'new-password' : 'current-password'}
+                    minLength={novo ? 8 : undefined}
+                    maxLength={72}
+                    required
+                />
+                {novo && (
+                    <Campo
+                        rotulo="Confirme a senha"
+                        type="password"
+                        value={confirmar}
+                        onChange={(e) => setConfirmar(e.target.value)}
+                        autoComplete="new-password"
+                        maxLength={72}
+                        required
+                        ajuda="A senha precisa ter pelo menos 8 caracteres."
+                    />
                 )}
 
-                <CustomButton
-                    type="submit"
-                    variant="aprovar"
-                    size="grande"
-                    disabled={carregando}
-                    className="mt-2 w-full"
-                >
-                    {carregando
-                        ? "Processando..."
-                        : convite.contaExistente
-                            ? "Entrar e aceitar convite"
-                            : "Criar senha e entrar"}
-                </CustomButton>
+                {erro && <Aviso tipo="erro">{erro}</Aviso>}
 
+                <CustomButton type="submit" variant="aprovar" size="grande" disabled={enviando}>
+                    {enviando ? 'Entrando…' : novo ? 'Criar acesso e entrar' : 'Aceitar e entrar'}
+                </CustomButton>
             </form>
-        </div>
-    );
+
+            <button
+                type="button"
+                onClick={() => setConfirmarRecusa(true)}
+                className="mt-4 block w-full text-center text-corpo font-medium text-status-reprovada-texto hover:underline"
+            >
+                Recusar convite
+            </button>
+
+            <Modal
+                aberto={confirmarRecusa}
+                titulo="Recusar convite"
+                descricao={`Você não vai ser ${papel.toLowerCase()} da ${convite.organizacaoNome}. Para mudar de ideia depois, é preciso pedir um convite novo.`}
+                aoFechar={() => setConfirmarRecusa(false)}
+                acoes={
+                    <>
+                        <CustomButton type="button" variant="neutro" size="medio" onClick={() => setConfirmarRecusa(false)}>
+                            Voltar
+                        </CustomButton>
+                        <CustomButton
+                            type="button"
+                            variant="reprovar"
+                            size="medio"
+                            disabled={recusando}
+                            onClick={() => void recusar()}
+                        >
+                            {recusando ? 'Recusando…' : 'Recusar'}
+                        </CustomButton>
+                    </>
+                }
+            >
+                {erroRecusa && <Aviso tipo="erro">{erroRecusa}</Aviso>}
+            </Modal>
+        </section>
+    )
 }

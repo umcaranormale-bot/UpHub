@@ -40,18 +40,23 @@ export function atribuirAvaliacao(candidaturaId: number, vinculoId: number) {
 export function listarAvaliacoesDaCandidatura(candidaturaId: number) {
     return requisicao<Avaliacao[]>(`/api/candidaturas/${candidaturaId}/avaliacoes`);
 }
+
 export function minhaFila() {
     return requisicao<Avaliacao[]>('/api/avaliacoes');
 }
+
 export function buscarAvaliacao(id: number) {
     return requisicao<Avaliacao>(`/api/avaliacoes/${id}`);
 }
+
 export function salvarAvaliacao(id: number, dados: RascunhoAvaliacao) {
     return requisicao<Avaliacao>(`/api/avaliacoes/${id}`, { metodo: 'PUT', corpo: dados });
 }
+
 export function assinarAvaliacao(id: number, itens?: ItemAjusteCadastro[]) {
     return requisicao<Avaliacao>(`/api/avaliacoes/${id}/assinar`, { metodo: 'POST', corpo: itens ? { itens } : {} });
 }
+
 export function removerAvaliacao(id: number) {
     return requisicao<void>(`/api/avaliacoes/${id}`, { metodo: 'DELETE' });
 }

@@ -48,6 +48,7 @@ export function buscarVersao(oportunidadeId: number, versaoId: number) {
 export function editarVersao(oportunidadeId: number, versaoId: number, dados: VersaoEdicao) {
     return requisicao<Versao>(`${base(oportunidadeId)}/${versaoId}`, { metodo: 'PUT', corpo: dados });
 }
+
 export function publicarVersao(oportunidadeId: number, versaoId: number) {
     return requisicao<Versao>(`${base(oportunidadeId)}/${versaoId}/publicar`, { metodo: 'POST' });
 }
