@@ -25,17 +25,21 @@ interface MenuLateralProps {
      * As telas que trazem a própria casca não precisam disso.
      */
     grudento?: boolean
+    /** Chamado ao clicar num item. No celular, fecha o menu aberto por cima da tela. */
+    aoNavegar?: () => void
+    /** Classes extras do aside (o menu do celular ocupa a altura toda). */
+    className?: string
 }
 
 const ITEM_BASE = `block rounded-card px-4 py-3 text-apoio ${TRANSICAO_COR}`
 
 
-export function MenuLateral({ itens, rotulo, grudento = false }: MenuLateralProps) {
+export function MenuLateral({ itens, rotulo, grudento = false, aoNavegar, className = '' }: MenuLateralProps) {
     return (
         <aside
-            className={`w-[260px] shrink-0 border-r border-sutil bg-card px-4 py-6 ${
+            className={`w-[260px] max-w-[85vw] shrink-0 overflow-y-auto border-r border-sutil bg-card px-4 py-6 ${
                 grudento ? 'sticky top-16 h-[calc(100vh-4rem)]' : ''
-            }`}
+            } ${className}`}
         >
             <nav aria-label={rotulo}>
                 <ul className="flex flex-col gap-1">
@@ -45,6 +49,7 @@ export function MenuLateral({ itens, rotulo, grudento = false }: MenuLateralProp
                                 <NavLink
                                     to={item.para}
                                     end
+                                    onClick={aoNavegar}
                                     className={({ isActive }) =>
                                         [
                                             ITEM_BASE,

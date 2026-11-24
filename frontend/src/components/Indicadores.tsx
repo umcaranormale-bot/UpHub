@@ -25,7 +25,7 @@ interface IndicadoresProps {
 
 export function Indicadores({ itens, rotulo = 'Indicadores' }: IndicadoresProps) {
     return (
-        <ul aria-label={rotulo} className="grid grid-cols-4 gap-5">
+        <ul aria-label={rotulo} className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
             {itens.map((item) => (
                 <li key={item.id} className={CARTAO_COM_RESPIRO}>
                     <p className="text-item text-secundario">{item.rotulo}</p>

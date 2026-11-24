@@ -129,7 +129,7 @@ function InicioMentor() {
                 {pendentes} convites pendentes
             </p>
 
-            <div className="mt-6 flex items-start gap-6">
+            <div className="mt-6 flex flex-col gap-6 xl:flex-row xl:items-start">
                 <div className="flex min-w-0 flex-1 flex-col gap-4">
                     {avisos.map((aviso) => (
                         <CartaoDeAviso
@@ -163,7 +163,7 @@ function InicioMentor() {
                                         {item.titulo}
                                     </h3>
 
-                                    <div className="mt-2 flex items-end gap-5">
+                                    <div className="mt-2 flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:gap-5">
                                         <p className="min-w-0 flex-1 text-apoio text-secundario">
                                             {item.apoio}
                                         </p>
@@ -177,7 +177,7 @@ function InicioMentor() {
                     </ul>
                 </div>
 
-                <aside className="flex w-[344px] shrink-0 flex-col gap-4">
+                <aside className="flex w-full shrink-0 xl:w-[344px] flex-col gap-4">
                     <section
                         aria-labelledby="titulo-acompanhados"
                         className="rounded-bloco border border-sutil bg-card shadow-card"

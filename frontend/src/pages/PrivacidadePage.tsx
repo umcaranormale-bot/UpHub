@@ -51,7 +51,7 @@ export default function PrivacidadePage() {
         <section className="bg-page px-6 py-16">
             <div className="mx-auto max-w-3xl">
                 <span className="text-sm font-semibold text-acento">Up Hub</span>
-                <h1 className="mt-2 text-4xl font-bold tracking-tight text-titulo">
+                <h1 className="mt-2 text-3xl font-bold tracking-tight text-titulo sm:text-4xl">
                     Política de privacidade
                 </h1>
                 <p className="mt-2 text-sm text-secundario">Atualizada em {ATUALIZADA_EM}</p>

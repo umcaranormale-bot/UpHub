@@ -20,7 +20,7 @@ export default function AlertCard({
                     {status} ⋅ {description}
                 </p>
 
-                <h3 className="w-120 text-base font-bold text-alerta">
+                <h3 className="max-w-120 text-base font-bold text-alerta">
                     {title}
                 </h3>
 

@@ -186,7 +186,7 @@ function AprovacaoProvedores() {
                 aria-label={`Conferência de ${provedor.organizacao}`}
                 className="mt-6 rounded-bloco border border-sutil bg-card p-card shadow-card"
             >
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                     <h2 className="font-display text-h3 text-titulo">
                         {provedor.organizacao}
                     </h2>
@@ -214,7 +214,7 @@ function AprovacaoProvedores() {
                     </div>
                 )}
 
-                <div className="mt-6 flex items-center gap-4 border-t border-sutil pt-5">
+                <div className="mt-6 flex flex-wrap items-center gap-4 border-t border-sutil pt-5">
                     <CustomButton variant="aprovar" size="auto">
                         Aprovar e liberar publicação
                     </CustomButton>

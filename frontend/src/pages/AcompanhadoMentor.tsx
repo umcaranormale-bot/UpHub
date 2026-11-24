@@ -51,7 +51,7 @@ const corDaLinha: Record<EstadoDaSprint, string> = {
 function AcompanhadoMentor() {
     return (
         <div>
-            <div className="flex items-start gap-5">
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:gap-5">
                 <div className="min-w-0 flex-1">
                     <h1 className="font-display text-tela text-titulo">Squad 3 · FICR</h1>
                     <p className="mt-2 text-apoio text-secundario">
@@ -69,7 +69,8 @@ function AcompanhadoMentor() {
                     Sprints do desafio
                 </h2>
 
-                <ol className="mt-6 flex items-start">
+                <div className="mt-6 overflow-x-auto">
+                <ol className="flex min-w-[520px] items-start">
                     {sprints.map((sprint, indice) => (
                         <li key={sprint.id} className="min-w-0 flex-1">
                             <div className="flex items-center">
@@ -93,9 +94,10 @@ function AcompanhadoMentor() {
                         </li>
                     ))}
                 </ol>
+                </div>
             </section>
 
-            <div className="mt-5 grid grid-cols-2 gap-5">
+            <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
                 <section
                     aria-labelledby="titulo-resumo"
                     className="rounded-bloco border border-sutil bg-card p-card shadow-card"

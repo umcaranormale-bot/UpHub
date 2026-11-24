@@ -116,7 +116,7 @@ export default function NewOrganizationPage() {
   };
 
   return (
-    <main className="min-w-0 flex-1 bg-page p-5 lg:p-7">
+    <main className="min-w-0 flex-1 bg-page lg:p-7">
       <form onSubmit={handleSubmit} className="mx-auto max-w-275">
         {/* Cabeçalho */}
         <div className="mb-5 flex flex-wrap items-center justify-between gap-4">

@@ -27,14 +27,14 @@ function LandingPage() {
     <main className="flex min-h-screen flex-col bg-page">
 
       {/* Conteúdo principal */}
-      <section className="grid flex-1 grid-cols-[1.5fr_1fr] items-center gap-12 py-16 px-[8%]">
+      <section className="grid flex-1 grid-cols-1 items-center gap-8 px-4 py-10 sm:px-[8%] lg:grid-cols-[1.5fr_1fr] lg:gap-12 lg:py-16">
         {/* Texto à esquerda */}
         <div className="max-w-2xl">
           <span className="mb-5 inline-block text-sm font-semibold text-acento">
             Porto Digital ⋅ Recife
           </span>
 
-          <h1 className="mb-6 text-5xl text-titulo leading-tight font-bold tracking-tight">
+          <h1 className="mb-6 text-3xl text-titulo leading-tight font-bold tracking-tight sm:text-5xl">
             Todas as oportunidades do ecossistema em um só lugar.
           </h1>
 
@@ -55,7 +55,7 @@ function LandingPage() {
           </div>
 
           {/* Indicadores */}
-          <div className="mt-12 grid grid-cols-4 gap-4 pt-6">
+          <div className="mt-12 grid grid-cols-2 gap-4 pt-6 sm:grid-cols-4">
             <div>
               <h1 className="text-3xl font-bold text-indigo-600">12</h1>
               <p className="mt-1 text-sm text-slate-500">

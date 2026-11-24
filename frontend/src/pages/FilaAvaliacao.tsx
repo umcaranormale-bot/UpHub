@@ -74,7 +74,7 @@ function FilaAvaliacao() {
 
     return (
         <div>
-            <div className="flex items-start justify-between gap-6">
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-6">
                 <div>
                     <h1 className="font-display text-tela text-titulo">
                         Ficha da candidatura · {candidatura.nome}
@@ -86,11 +86,11 @@ function FilaAvaliacao() {
                 <SeloStatus status="avaliacao" />
             </div>
 
-            <div className="mt-8 flex gap-6">
+            <div className="mt-8 flex flex-col gap-6 xl:flex-row">
                 {/* Coluna da fila */}
                 <section
                     aria-labelledby="titulo-fila"
-                    className="w-[300px] shrink-0"
+                    className="w-full shrink-0 xl:w-[300px]"
                 >
                     <h2
                         id="titulo-fila"
@@ -167,7 +167,7 @@ function FilaAvaliacao() {
                             >
                                 <label
                                     htmlFor={`nota-${criterio.id}`}
-                                    className="flex-1 text-corpo text-titulo"
+                                    className="min-w-0 flex-1 text-corpo text-titulo"
                                 >
                                     {criterio.titulo}
                                 </label>

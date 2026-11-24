@@ -4,7 +4,7 @@ export default function PageHeader() {
     return (
         <header className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-                <h1 className="text-h1 font-bold text-titulo">
+                <h1 className="text-tela font-bold text-titulo sm:text-h1">
                     Minhas oportunidades
                 </h1>
                 <p className="max-w-xl mt-1 text-corpo text-secundario">

@@ -36,7 +36,7 @@ interface NavbarProps {
 
 export function Navbar({ variante = 'site' }: NavbarProps) {
     return (
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-6 border-b border-sutil bg-card px-10 shadow-card">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-sutil bg-card px-4 shadow-card sm:gap-6 sm:px-6 lg:px-10">
             <Link to="/" aria-label="UpHub, página inicial" className={`rounded-card ${ANEL_FOCO}`}>
                 <Logo variante="pervinca" altura={28} />
             </Link>
@@ -51,7 +51,7 @@ export function Navbar({ variante = 'site' }: NavbarProps) {
                         ))}
                     </nav>
 
-                    <div className="ml-auto flex items-center gap-3">
+                    <div className="ml-auto flex items-center gap-2 sm:gap-3">
                         <CustomButton to="/entrar" variant="neutro" size="auto" className="px-4">
                             Entrar
                         </CustomButton>
@@ -67,7 +67,7 @@ export function Navbar({ variante = 'site' }: NavbarProps) {
                     </CustomButton>
 
                     <div className="ml-auto flex items-center gap-3">
-                        <span className="text-apoio text-secundario">Já tem conta?</span>
+                        <span className="hidden text-apoio text-secundario sm:inline">Já tem conta?</span>
                         <CustomButton to="/entrar" variant="neutro" size="auto" className="px-4">
                             Entrar
                         </CustomButton>

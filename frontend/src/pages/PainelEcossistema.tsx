@@ -124,7 +124,7 @@ function PainelEcossistema() {
 
             <section
                 aria-label="Pedido de publicação reenviado"
-                className="mt-6 flex items-center gap-5 rounded-card bg-acento-suave p-5"
+                className="mt-6 flex flex-col items-start gap-4 rounded-card bg-acento-suave p-5 sm:flex-row sm:items-center sm:gap-5"
             >
                 <div className="min-w-0 flex-1">
                     <p className="font-display text-bloco text-acento">
@@ -144,7 +144,7 @@ function PainelEcossistema() {
                 <Indicadores itens={indicadores} rotulo="Indicadores do mês" />
             </div>
 
-            <div className="mt-6 flex items-start gap-6">
+            <div className="mt-6 flex flex-col gap-6 xl:flex-row xl:items-start">
                 <section
                     aria-labelledby="titulo-funil"
                     className="min-w-0 flex-1 rounded-bloco border border-sutil bg-card p-card shadow-card"
@@ -193,7 +193,7 @@ function PainelEcossistema() {
                     })}
                 </section>
 
-                <aside className="flex w-[376px] shrink-0 flex-col gap-5">
+                <aside className="flex w-full shrink-0 xl:w-[376px] flex-col gap-5">
                     <section
                         aria-labelledby="titulo-gargalos"
                         className="rounded-bloco border border-sutil bg-card p-card shadow-card"
