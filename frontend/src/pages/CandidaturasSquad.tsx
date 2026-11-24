@@ -120,7 +120,7 @@ function CandidaturasSquad() {
                                     {candidatura.titulo}
                                 </h2>
 
-                                <div className="mt-2 flex items-end gap-5">
+                                <div className="mt-2 flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:gap-5">
                                     <p className="min-w-0 flex-1 text-apoio text-secundario">
                                         {candidatura.linhaDoTempo}
                                     </p>

@@ -18,7 +18,7 @@ interface CartoesDeDetalheProps {
 
 export function CartoesDeDetalhe({ itens }: CartoesDeDetalheProps) {
     return (
-        <ul className="grid grid-cols-4 gap-5">
+        <ul className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
             {itens.map((item) => (
                 <li key={item.rotulo} className="rounded-card bg-page p-5">
                     <p className="text-apoio text-secundario">{item.rotulo}</p>

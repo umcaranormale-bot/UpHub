@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
 import Logo from '../components/Logo'
 import MenuLateral from '../components/MenuLateral'
@@ -26,6 +27,8 @@ interface AppLayoutProps {
 
 export default function AppLayout({ papel }: AppLayoutProps) {
     const { sessao } = useAuth()
+    // No celular o menu lateral fica escondido e abre por cima da tela pelo botão ☰.
+    const [menuAberto, setMenuAberto] = useState(false)
 
     // O PrivateRoute garante a sessão; isto só serve para o TypeScript.
     if (!sessao) return <Navigate to="/entrar" replace />
@@ -42,20 +45,32 @@ export default function AppLayout({ papel }: AppLayoutProps) {
 
     return (
         <div className="min-h-screen bg-page">
-            <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-sutil bg-card px-10 shadow-card">
+            <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-sutil bg-card px-4 shadow-card sm:gap-4 lg:px-10">
+                <button
+                    type="button"
+                    onClick={() => setMenuAberto(true)}
+                    aria-label="Abrir menu"
+                    aria-expanded={menuAberto}
+                    className="grid size-9 shrink-0 place-items-center rounded-card text-titulo hover:bg-page lg:hidden"
+                >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                        <path d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+
                 <Logo variante="pervinca" altura={28} />
 
                 {vinculo && rotuloDoPapel && (
-                    <span className="flex items-center gap-3 rounded-card bg-acento-suave px-4 py-2">
-                        <span className="text-apoio text-titulo">{vinculo.organizacaoNome}</span>
-                        <span className="rounded-badge bg-acento px-2 py-1 text-selo text-white">
+                    <span className="flex min-w-0 items-center gap-2 rounded-card bg-acento-suave px-2 py-1.5 sm:gap-3 sm:px-4 sm:py-2">
+                        <span className="hidden truncate text-apoio text-titulo sm:inline">{vinculo.organizacaoNome}</span>
+                        <span className="shrink-0 rounded-badge bg-acento px-2 py-1 text-selo text-white">
                             {rotuloDoPapel}
                         </span>
                     </span>
                 )}
 
                 <span
-                    className="ml-auto grid size-9 place-items-center rounded-full bg-acento-suave text-selo text-acento"
+                    className="ml-auto grid size-9 shrink-0 place-items-center rounded-full bg-acento-suave text-selo text-acento"
                     title={sessao.pessoa.nome}
                 >
                     {iniciaisDe(sessao.pessoa.nome)}
@@ -63,13 +78,34 @@ export default function AppLayout({ papel }: AppLayoutProps) {
             </header>
 
             <div className="flex">
-                <MenuLateral
-                    itens={itens}
-                    rotulo={rotuloDoPapel ? `Menu de ${rotuloDoPapel}` : 'Menu da conta'}
-                    grudento
-                />
+                <div className="hidden lg:block">
+                    <MenuLateral
+                        itens={itens}
+                        rotulo={rotuloDoPapel ? `Menu de ${rotuloDoPapel}` : 'Menu da conta'}
+                        grudento
+                    />
+                </div>
 
-                <main id="conteudo" className="flex-1 min-w-0 px-10 py-8">
+                {menuAberto && (
+                    <div className="fixed inset-0 z-40 lg:hidden">
+                        <button
+                            type="button"
+                            aria-label="Fechar menu"
+                            onClick={() => setMenuAberto(false)}
+                            className="absolute inset-0 bg-black/40"
+                        />
+                        <div className="absolute inset-y-0 left-0 flex">
+                            <MenuLateral
+                                itens={itens}
+                                rotulo={rotuloDoPapel ? `Menu de ${rotuloDoPapel}` : 'Menu da conta'}
+                                aoNavegar={() => setMenuAberto(false)}
+                                className="h-full shadow-card"
+                            />
+                        </div>
+                    </div>
+                )}
+
+                <main id="conteudo" className="min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-10 lg:py-8">
                     <Outlet />
                 </main>
             </div>

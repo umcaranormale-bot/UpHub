@@ -105,12 +105,12 @@ function ConvitesMentor() {
                 {lista.map((convite) => (
                     <li key={convite.id}>
                         <article className="rounded-bloco border border-sutil bg-card p-card shadow-card transition-[box-shadow,border-color,transform] duration-[var(--dur-padrao)] ease-padrao hover:-translate-y-px hover:shadow-card-hover">
-                            <div className="flex items-center gap-3">
+                            <div className="flex flex-wrap items-center gap-3">
                                 <SeloDeTrilha trilha={convite.trilha} />
                                 <span className="text-apoio text-secundario">
                                     {convite.ofertante}
                                 </span>
-                                <span className="ml-auto flex items-center gap-4">
+                                <span className="ml-auto flex flex-wrap items-center gap-4">
                                     <SeloStatus
                                         status={convite.status}
                                         rotulo={convite.rotulo}

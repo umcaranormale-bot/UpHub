@@ -34,8 +34,8 @@ export function TabelaSelecionavel<L>({
     aoSelecionar,
 }: TabelaSelecionavelProps<L>) {
     return (
-        <section aria-label={rotulo} className={`overflow-hidden ${CARTAO}`}>
-            <table className="w-full border-collapse text-left">
+        <section aria-label={rotulo} className={`overflow-x-auto ${CARTAO}`}>
+            <table className="w-full min-w-[560px] border-collapse text-left">
                 <thead>
                     <tr className="border-b border-sutil bg-page">
                         {colunas.map((coluna) => (

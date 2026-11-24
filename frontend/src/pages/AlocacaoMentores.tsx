@@ -181,7 +181,7 @@ function AlocacaoMentores() {
                 aria-label={`Alocação da ${linha.squad}`}
                 className="mt-6 rounded-bloco border border-sutil bg-card p-card shadow-card"
             >
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                     <h2 className="font-display text-h3 text-titulo">{linha.squad}</h2>
                     <SeloStatus status={linha.status} rotulo={linha.rotulo} comPonto />
                     <span className="ml-auto text-apoio text-secundario">
@@ -206,7 +206,7 @@ function AlocacaoMentores() {
                     </div>
                 )}
 
-                <div className="mt-6 flex items-center gap-4 border-t border-sutil pt-5">
+                <div className="mt-6 flex flex-wrap items-center gap-4 border-t border-sutil pt-5">
                     <CustomButton
                         variant="aprovar"
                         size="auto"
@@ -221,7 +221,7 @@ function AlocacaoMentores() {
                     >
                         Escolher outro mentor
                     </CustomButton>
-                    <p className="ml-auto max-w-[360px] text-apoio text-secundario">
+                    <p className="max-w-[360px] sm:ml-auto text-apoio text-secundario">
                         O mentor responde em Mentor · convites. Se recusar ou o prazo vencer,
                         a squad volta para esta lista.
                     </p>

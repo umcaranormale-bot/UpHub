@@ -43,7 +43,7 @@ export function BlocoDoPapel({
                 </span>
             </div>
 
-            <div className="mt-4 flex items-center gap-5 rounded-card bg-page p-5">
+            <div className="mt-4 flex flex-col items-start gap-4 rounded-card bg-page p-5 sm:flex-row sm:items-center sm:gap-5">
                 <div className="min-w-0 flex-1">
                     <p className="font-display text-bloco text-titulo">{chamada}</p>
                     <p className="mt-1 text-apoio text-secundario">{contexto}</p>
@@ -110,13 +110,13 @@ export function PaginaDeConta({
         <>
             <h1 className="font-display text-tela text-titulo">Minha conta</h1>
 
-            <div className="mt-6 flex items-start gap-6">
+            <div className="mt-6 flex flex-col gap-6 xl:flex-row xl:items-start">
                 <div className="flex min-w-0 flex-1 flex-col gap-5">
                     <section
                         aria-label="Identificação"
                         className="rounded-bloco border border-sutil bg-card p-card shadow-card"
                     >
-                        <div className="flex items-center gap-5">
+                        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-5">
                             <span
                                 aria-hidden="true"
                                 className="grid size-16 shrink-0 place-items-center rounded-full border border-acento bg-acento-suave font-display text-h3 text-acento"
@@ -139,7 +139,7 @@ export function PaginaDeConta({
                             </CustomButton>
                         </div>
 
-                        <dl className="mt-5 grid grid-cols-4 gap-5 border-t border-sutil pt-5">
+                        <dl className="mt-5 grid grid-cols-2 gap-5 border-t sm:grid-cols-4 border-sutil pt-5">
                             <div>
                                 <dt className="text-apoio text-secundario">Nome completo</dt>
                                 <dd className="mt-1 text-item text-titulo">{pessoa.nome}</dd>
@@ -164,7 +164,7 @@ export function PaginaDeConta({
                     {children}
                 </div>
 
-                <aside className="flex w-[344px] shrink-0 flex-col gap-5">
+                <aside className="flex w-full shrink-0 xl:w-[344px] flex-col gap-5">
                     <section
                         aria-labelledby="titulo-destaque"
                         className="rounded-bloco border border-sutil bg-card p-card shadow-card"

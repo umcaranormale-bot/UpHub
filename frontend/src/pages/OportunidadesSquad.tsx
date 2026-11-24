@@ -123,7 +123,7 @@ function OportunidadesSquad() {
 
     return (
         <div>
-            <div className="flex items-start gap-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
                 <div className="min-w-0 flex-1">
                     <h1 className="font-display text-tela text-titulo">Oportunidades</h1>
                     <p className="mt-2 text-apoio text-secundario">
@@ -131,7 +131,7 @@ function OportunidadesSquad() {
                     </p>
                 </div>
 
-                <label className="w-[320px] shrink-0">
+                <label className="w-full shrink-0 sm:w-[320px]">
                     <span className="sr-only">Buscar oportunidade</span>
                     <input
                         type="search"
@@ -143,7 +143,7 @@ function OportunidadesSquad() {
 
             <section
                 aria-label="Recomendação para a squad"
-                className="mt-6 flex items-center gap-5 rounded-card bg-acento-suave p-5"
+                className="mt-6 flex flex-col items-start gap-4 rounded-card bg-acento-suave p-5 sm:flex-row sm:items-center sm:gap-5"
             >
                 <div className="min-w-0 flex-1">
                     <p className="font-display text-bloco text-acento">
@@ -205,7 +205,7 @@ function OportunidadesSquad() {
                     encontrá-la aqui depois.
                 </p>
             ) : (
-                <ul className="mt-6 grid grid-cols-2 gap-5">
+                <ul className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
                     {lista.map((oportunidade) => (
                         <li key={oportunidade.id}>
                             <article className="flex h-full flex-col rounded-bloco border border-sutil bg-card p-card shadow-card transition-[box-shadow,border-color,transform] duration-[var(--dur-padrao)] ease-padrao hover:-translate-y-px hover:shadow-card-hover">
@@ -226,7 +226,7 @@ function OportunidadesSquad() {
                                     {oportunidade.resumo}
                                 </p>
 
-                                <div className="mt-5 flex items-center gap-3 pt-1">
+                                <div className="mt-5 flex flex-wrap items-center gap-3 pt-1">
                                     <span
                                         className={`inline-flex items-center gap-2 text-apoio ${corDaElegibilidade[oportunidade.elegibilidade]}`}
                                     >

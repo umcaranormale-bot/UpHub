@@ -22,7 +22,7 @@ function ProviderHome() {
     }
 
     return (
-        <main className="min-h-screen bg-shell p-4 text-ink sm:px-6 sm:py-5 lg:px-8.5">
+        <main className="min-h-screen bg-shell text-ink sm:px-6 sm:py-5 lg:px-8.5">
             <div className="mx-auto w-full max-w-290">
                 <PageHeader />
                 <InfoBanner />

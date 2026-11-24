@@ -30,7 +30,7 @@ function RegistrarSessao() {
                 Registrar feedback e horas
             </h1>
 
-            <div className="mt-6 flex items-start gap-5">
+            <div className="mt-6 flex flex-col gap-5 xl:flex-row xl:items-start">
                 <section
                     aria-labelledby="titulo-feedback"
                     className="min-w-0 flex-1 rounded-bloco border border-sutil bg-card p-card shadow-card"
@@ -39,7 +39,7 @@ function RegistrarSessao() {
                         Feedback da sessão
                     </h2>
 
-                    <div className="mt-5 flex items-center gap-4">
+                    <div className="mt-5 flex flex-wrap items-center gap-4">
                         <span
                             aria-hidden="true"
                             className="grid size-14 shrink-0 place-items-center rounded-full border border-acento bg-acento-suave font-display text-h3 text-acento"
@@ -57,7 +57,7 @@ function RegistrarSessao() {
                         Sessão de 16/10/2026 · Desafio Logística Urbana
                     </p>
 
-                    <div className="mt-5 grid grid-cols-2 gap-5">
+                    <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
                         <div>
                             <label
                                 htmlFor="feedback"
@@ -123,7 +123,7 @@ function RegistrarSessao() {
                         />
                     </div>
 
-                    <div className="mt-6 flex items-center gap-4 border-t border-sutil pt-5">
+                    <div className="mt-6 flex flex-wrap items-center gap-4 border-t border-sutil pt-5">
                         <CustomButton variant="aprovar" size="auto" disabled={!podeAssinar}>
                             Salvar e assinar
                         </CustomButton>
@@ -144,7 +144,7 @@ function RegistrarSessao() {
                     </div>
                 </section>
 
-                <aside className="flex w-86 shrink-0 flex-col gap-5">
+                <aside className="flex w-full shrink-0 xl:w-86 flex-col gap-5">
                     <section
                         aria-labelledby="titulo-horas"
                         className="rounded-bloco border border-sutil bg-card p-card shadow-card"
