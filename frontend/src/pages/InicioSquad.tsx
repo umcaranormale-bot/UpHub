@@ -1,6 +1,5 @@
 import { CustomButton } from '../components/CustomButton'
 import SeloStatus, { type Status } from '../components/SeloStatus'
-import { MENU_SQUAD } from '../navegacao/menus'
 import SeloDeTrilha, { type Trilha } from '../components/SeloDeTrilha'
 import CartaoDeAviso from '../components/CartaoDeAviso'
 import { ANEL_FOCO, TRANSICAO_COR } from '../estilos/classes'

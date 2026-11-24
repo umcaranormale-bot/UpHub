@@ -2,7 +2,6 @@ import { useState } from 'react'
 
 import { CustomButton } from '../components/CustomButton'
 import SeloStatus, { type Status } from '../components/SeloStatus'
-import { MENU_SQUAD } from '../navegacao/menus'
 import SeloDeTrilha, { type Trilha } from '../components/SeloDeTrilha'
 import AbasDeFiltro, { type Aba } from '../components/AbasDeFiltro'
 
