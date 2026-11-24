@@ -1,240 +1,194 @@
+import CascaDoApp from '../components/CascaDoApp'
+import SeloStatus from '../components/SeloStatus'
+import SeloDeTrilha from '../components/SeloDeTrilha'
 import { CustomButton } from '../components/CustomButton'
-import SeloStatus, { type Status } from '../components/SeloStatus'
-import SeloDeTrilha, { type Trilha } from '../components/SeloDeTrilha'
-import CartaoDeAviso from '../components/CartaoDeAviso'
-import { ANEL_FOCO, TRANSICAO_COR } from '../estilos/classes'
+import { Carregando, ErroNaTela, Vazio } from '../components/ui/Estados'
+import { AvisoComLink, LinkDeTexto } from '../components/squad/AvisoComLink'
+import {
+    alocacoesDetalhadas,
+    formatarHoras,
+    formatarMinutos,
+    horasDasAceitas,
+    nomeDoAcompanhado,
+    nomeDoMes,
+} from '../components/mentor/dados'
+import { listarSprints, type Sprint } from '../api/sprints'
+import { useDados } from '../hooks/useDados'
+import { MENU_MENTOR } from '../navegacao/menus'
+import { useSessao } from '../sessao/contexto'
+import { CARTAO, CARTAO_COM_RESPIRO, CARTAO_INTERATIVO } from '../estilos/classes'
+import { formatarData, trilhaDoSelo } from '../estilos/formatos'
 
 /**
  * 58 · Mentor — início · rota /mentor
  *
- * Primeira tela do mentor voluntário: o que espera resposta dele hoje,
- * os convites e as squads que ele acompanha e, na coluna da direita,
- * o resumo do acompanhamento e as horas doadas no mês.
- *
- * Dados simulados nesta etapa, conforme o Bloco 4: nenhuma chamada à API.
+ * O que espera resposta do mentor hoje (convites e entregas para avaliar), os
+ * convites e acompanhamentos e, à direita, os acompanhados e as horas do mês.
  */
 
-
-interface Aviso {
-    id: string
-    contexto: string
-    chamada: string
-    acao: string
+async function carregar(vinculoId: number) {
+    const itens = await alocacoesDetalhadas(vinculoId)
+    const aceitas = itens.filter((i) => i.alocacao.situacao === 'ACEITA')
+    const [horas, entregas] = await Promise.all([
+        horasDasAceitas(itens.map((i) => i.alocacao)),
+        Promise.all(
+            aceitas
+                .filter((i) => i.candidatura?.estado === 'EM_ACOMPANHAMENTO')
+                .map(async (item) => {
+                    const sprints = await listarSprints(item.alocacao.candidaturaId).catch(() => [] as Sprint[])
+                    return sprints.filter((s) => s.estado === 'ENTREGUE').map((sprint) => ({ item, sprint }))
+                }),
+        ),
+    ])
+    return { itens, horas, entregas: entregas.flat() }
 }
-
-const avisos: Aviso[] = [
-    {
-        id: 'convites',
-        contexto: '2 convites aguardando resposta',
-        chamada:
-            'Squad Alpha (Logística Urbana) e CESAR (Saúde Conectada) · o primeiro vence em 08/11',
-        acao: 'Ver convites',
-    },
-    {
-        id: 'sessao',
-        contexto: 'Sessão sem registro',
-        chamada:
-            'Squad 3 · FICR · registre o feedback e as horas da sessão da sprint 3',
-        acao: 'Registrar sessão',
-    },
-]
-
-
-/** Na tela 58 o estado do item vira texto, e não selo: é assim no protótipo. */
-type Situacao = 'pendente' | 'acompanhando'
-
-interface Item {
-    id: number
-    trilha: Trilha
-    ofertante: string
-    situacao: Situacao
-    titulo: string
-    apoio: string
-    acao: string
-}
-
-const itens: Item[] = [
-    {
-        id: 1,
-        trilha: 'formacao',
-        ofertante: 'Movetech',
-        situacao: 'pendente',
-        titulo: 'Desafio Logística Urbana · Squad Alpha',
-        apoio:
-            '8 h/mês previstas · responder até 08/11/2026 · enviado pela Gestão do PD',
-        acao: 'Ver convite',
-    },
-    {
-        id: 2,
-        trilha: 'formacao',
-        ofertante: 'CESAR',
-        situacao: 'pendente',
-        titulo: 'Desafio Saúde Conectada',
-        apoio: '6 h/mês previstas · responder até 15/11/2026',
-        acao: 'Ver convite',
-    },
-    {
-        id: 3,
-        trilha: 'formacao',
-        ofertante: 'Movetech',
-        situacao: 'acompanhando',
-        titulo: 'Desafio Logística Urbana · Squad 3 · FICR',
-        apoio:
-            'Sprint 3 em andamento · entrega até 10/10 · 12h30min doadas em outubro',
-        acao: 'Abrir histórico',
-    },
-]
-
-
-
-const rotuloDaSituacao: Record<Situacao, string> = {
-    pendente: 'Convite pendente',
-    acompanhando: 'Em acompanhamento',
-}
-
-interface Acompanhado {
-    id: number
-    squad: string
-    quando: string
-    status: Status
-    rotulo: string
-}
-
-const acompanhados: Acompanhado[] = [
-    {
-        id: 1,
-        squad: 'Squad 3 · FICR',
-        quando: 'início 05/09',
-        status: 'aprovada',
-        rotulo: 'Em acompanhamento',
-    },
-    {
-        id: 2,
-        squad: 'Squad Alpha',
-        quando: 'convite até 08/11',
-        status: 'pendente',
-        rotulo: 'Pendente',
-    },
-]
 
 function InicioMentor() {
-    const pendentes = itens.filter((item) => item.situacao === 'pendente').length
-    const acompanhando = itens.length - pendentes
+    const { pessoa, perfilAtivo } = useSessao()
+    const vinculoId = perfilAtivo?.vinculo.id
+    const { dados, carregando, erro, recarregar } = useDados(() => carregar(vinculoId!), [vinculoId], !!vinculoId)
+
+    const pendentes = dados?.itens.filter((i) => i.alocacao.situacao === 'PENDENTE') ?? []
+    const aceitas = dados?.itens.filter((i) => i.alocacao.situacao === 'ACEITA') ?? []
+    const lista = [...pendentes, ...aceitas]
+    const primeiroNome = pessoa?.nome.trim().split(/\s+/)[0] ?? ''
 
     return (
-        <div>
-            <h1 className="font-display text-tela text-titulo">Olá, Paulo</h1>
+        <CascaDoApp itens={MENU_MENTOR}>
+            <h1 className="font-display text-tela text-titulo">Olá, {primeiroNome}</h1>
             <p className="mt-2 text-apoio text-secundario">
-                Movetech · mentor voluntário · {acompanhando} squad acompanhada e{' '}
-                {pendentes} convites pendentes
+                {perfilAtivo?.vinculo.organizacaoNome} · mentor voluntário
+                {dados &&
+                    ` · ${aceitas.length} ${aceitas.length === 1 ? 'acompanhamento' : 'acompanhamentos'} e ${pendentes.length} ${
+                        pendentes.length === 1 ? 'convite pendente' : 'convites pendentes'
+                    }`}
             </p>
 
-            <div className="mt-6 flex flex-col gap-6 xl:flex-row xl:items-start">
-                <div className="flex min-w-0 flex-1 flex-col gap-4">
-                    {avisos.map((aviso) => (
-                        <CartaoDeAviso
-                            key={aviso.id}
-                            contexto={aviso.contexto}
-                            acao={aviso.acao}
-                        >
-                            {aviso.chamada}
-                        </CartaoDeAviso>
-                    ))}
-
-                    <h2 className="mt-4 font-display text-bloco text-titulo">
-                        Convites e acompanhamentos
-                    </h2>
-
-                    <ul className="flex flex-col gap-4">
-                        {itens.map((item) => (
-                            <li key={item.id}>
-                                <article className="rounded-bloco border border-sutil bg-card p-card shadow-card transition-[box-shadow,border-color,transform] duration-[var(--dur-padrao)] ease-padrao hover:-translate-y-px hover:shadow-card-hover">
-                                    <div className="flex items-center gap-3">
-                                        <SeloDeTrilha trilha={item.trilha} />
-                                        <span className="text-apoio text-secundario">
-                                            {item.ofertante}
-                                        </span>
-                                        <span className="ml-auto text-apoio text-acento">
-                                            {rotuloDaSituacao[item.situacao]}
-                                        </span>
-                                    </div>
-
-                                    <h3 className="mt-3 font-display text-bloco text-titulo">
-                                        {item.titulo}
-                                    </h3>
-
-                                    <div className="mt-2 flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:gap-5">
-                                        <p className="min-w-0 flex-1 text-apoio text-secundario">
-                                            {item.apoio}
-                                        </p>
-                                        <CustomButton variant="neutro" size="auto">
-                                            {item.acao}
-                                        </CustomButton>
-                                    </div>
-                                </article>
-                            </li>
-                        ))}
-                    </ul>
+            {carregando && !dados && <Carregando />}
+            {erro && (
+                <div className="mt-6">
+                    <ErroNaTela mensagem={erro} tentarDeNovo={recarregar} />
                 </div>
+            )}
 
-                <aside className="flex w-full shrink-0 xl:w-[344px] flex-col gap-4">
-                    <section
-                        aria-labelledby="titulo-acompanhados"
-                        className="rounded-bloco border border-sutil bg-card shadow-card"
-                    >
-                        <header className="flex items-center justify-between gap-3 border-b border-sutil p-card">
-                            <h2
-                                id="titulo-acompanhados"
-                                className="font-display text-bloco text-titulo"
+            {dados && (
+                <div className="mt-6 flex flex-col gap-6 lg:flex-row lg:items-start">
+                    <div className="flex min-w-0 flex-1 flex-col gap-4">
+                        {pendentes.length > 0 && (
+                            <AvisoComLink
+                                contexto={`${pendentes.length} ${pendentes.length === 1 ? 'convite aguardando' : 'convites aguardando'} resposta`}
+                                acao="Ver convites"
+                                para="/mentor/convites"
                             >
-                                Acompanhados
+                                {pendentes.map((p) => nomeDoAcompanhado(p)).join(' e ')} · o primeiro vence em{' '}
+                                {formatarData([...pendentes].sort((a, b) => a.alocacao.prazoResposta.localeCompare(b.alocacao.prazoResposta))[0].alocacao.prazoResposta)}
+                            </AvisoComLink>
+                        )}
+                        {dados.entregas.map(({ item, sprint }) => (
+                            <AvisoComLink
+                                key={sprint.id}
+                                contexto="Entrega aguardando avaliação"
+                                acao="Avaliar entrega"
+                                para={`/mentor/acompanhados/${item.alocacao.id}/sprints`}
+                            >
+                                {nomeDoAcompanhado(item)} · entregou a sprint {sprint.numero} em {formatarData(sprint.entregaRegistradaEm)}
+                            </AvisoComLink>
+                        ))}
+
+                        <h2 className="mt-4 font-display text-bloco text-titulo">Convites e acompanhamentos</h2>
+
+                        {lista.length === 0 ? (
+                            <Vazio titulo="Nenhum convite ou acompanhamento agora">
+                                Quando um provedor convidar você para acompanhar uma candidatura, o convite aparece aqui.
+                            </Vazio>
+                        ) : (
+                            <ul className="flex flex-col gap-4">
+                                {lista.map((item) => {
+                                    const { alocacao, desafio, provedor } = item
+                                    const pendente = alocacao.situacao === 'PENDENTE'
+                                    const horas = dados.horas.porAlocacao.get(alocacao.id)
+                                    return (
+                                        <li key={alocacao.id}>
+                                            <article className={CARTAO_INTERATIVO}>
+                                                <div className="flex items-center gap-3">
+                                                    {desafio && <SeloDeTrilha trilha={trilhaDoSelo(desafio.trilhaCodigo)} />}
+                                                    <span className="text-apoio text-secundario">{provedor?.nome}</span>
+                                                    <span className={`ml-auto text-apoio ${pendente ? 'text-ocre' : 'text-acento'}`}>
+                                                        {pendente ? 'Convite pendente' : 'Em acompanhamento'}
+                                                    </span>
+                                                </div>
+                                                <h3 className="mt-3 font-display text-bloco text-titulo">
+                                                    {desafio ? `${desafio.titulo} · ` : ''}
+                                                    {nomeDoAcompanhado(item)}
+                                                </h3>
+                                                <div className="mt-2 flex items-end gap-5">
+                                                    <p className="min-w-0 flex-1 text-apoio text-secundario">
+                                                        {pendente
+                                                            ? `${formatarHoras(alocacao.horasPrevistasMes)}/mês previstas · responder até ${formatarData(alocacao.prazoResposta)}`
+                                                            : `aceita em ${formatarData(alocacao.respondidaEm)} · ${formatarMinutos(horas?.minutosRealizados ?? 0)} registradas em ${nomeDoMes(dados.horas.mes)}`}
+                                                    </p>
+                                                    <CustomButton
+                                                        variant="neutro"
+                                                        size="auto"
+                                                        to={pendente ? '/mentor/convites' : `/mentor/acompanhados/${alocacao.id}`}
+                                                    >
+                                                        {pendente ? 'Ver convite' : 'Abrir histórico'}
+                                                    </CustomButton>
+                                                </div>
+                                            </article>
+                                        </li>
+                                    )
+                                })}
+                            </ul>
+                        )}
+                    </div>
+
+                    <aside className="flex w-full shrink-0 lg:w-[344px] flex-col gap-4">
+                        <section aria-labelledby="titulo-acompanhados" className={CARTAO}>
+                            <header className="flex items-center justify-between gap-3 border-b border-sutil p-card">
+                                <h2 id="titulo-acompanhados" className="font-display text-bloco text-titulo">
+                                    Acompanhados
+                                </h2>
+                                <LinkDeTexto para="/mentor/acompanhados">Ver histórico</LinkDeTexto>
+                            </header>
+                            {aceitas.length === 0 ? (
+                                <p className="p-card text-apoio text-secundario">Nenhum acompanhamento ativo.</p>
+                            ) : (
+                                <ul>
+                                    {aceitas.map((item) => (
+                                        <li
+                                            key={item.alocacao.id}
+                                            className="flex items-center gap-3 border-b border-sutil px-card py-4 last:border-b-0"
+                                        >
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-item text-titulo">{nomeDoAcompanhado(item)}</p>
+                                                <p className="mt-1 text-apoio text-secundario">
+                                                    início {formatarData(item.alocacao.respondidaEm)}
+                                                </p>
+                                            </div>
+                                            <SeloStatus status="aprovada" rotulo="Em acompanhamento" comPonto />
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </section>
+
+                        <section aria-labelledby="titulo-horas" className={CARTAO_COM_RESPIRO}>
+                            <h2 id="titulo-horas" className="font-display text-bloco text-titulo">
+                                Horas doadas no mês
                             </h2>
-                            <a
-                                href="/mentor/acompanhados"
-                                className={`rounded-card px-1 text-apoio text-acento ${TRANSICAO_COR} hover:text-titulo ${ANEL_FOCO}`}
-                            >
-                                Ver histórico
-                            </a>
-                        </header>
-
-                        <ul>
-                            {acompanhados.map((acompanhado) => (
-                                <li
-                                    key={acompanhado.id}
-                                    className="flex items-center gap-3 border-b border-sutil px-card py-4 last:border-b-0"
-                                >
-                                    <div className="min-w-0 flex-1">
-                                        <p className="text-item text-titulo">
-                                            {acompanhado.squad}
-                                        </p>
-                                        <p className="mt-1 text-apoio text-secundario">
-                                            {acompanhado.quando}
-                                        </p>
-                                    </div>
-                                    <SeloStatus
-                                        status={acompanhado.status}
-                                        comPonto
-                                        rotulo={acompanhado.rotulo}
-                                    />
-                                </li>
-                            ))}
-                        </ul>
-                    </section>
-
-                    <section
-                        aria-labelledby="titulo-horas"
-                        className="rounded-bloco border border-sutil bg-card p-card shadow-card"
-                    >
-                        <h2 id="titulo-horas" className="font-display text-bloco text-titulo">
-                            Horas doadas no mês
-                        </h2>
-                        <p className="mt-3 rounded-card bg-status-aprovada-fundo px-4 py-3 text-apoio text-status-aprovada-texto">
-                            12 h 30 min em outubro · 5 sessões
-                        </p>
-                    </section>
-                </aside>
-            </div>
-        </div>
+                            <p className="mt-3 rounded-card bg-status-aprovada-fundo px-4 py-3 text-apoio text-status-aprovada-texto">
+                                {formatarMinutos(dados.horas.minutos)} em {nomeDoMes(dados.horas.mes)} · {dados.horas.sessoes}{' '}
+                                {dados.horas.sessoes === 1 ? 'sessão assinada' : 'sessões assinadas'}
+                            </p>
+                            <p className="mt-3">
+                                <LinkDeTexto para="/mentor/horas">Registrar sessão ›</LinkDeTexto>
+                            </p>
+                        </section>
+                    </aside>
+                </div>
+            )}
+        </CascaDoApp>
     )
 }
 

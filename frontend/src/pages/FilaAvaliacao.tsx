@@ -1,277 +1,209 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 
+import CascaDoApp from '../components/CascaDoApp'
 import { CustomButton } from '../components/CustomButton'
+import Indicadores, { type Indicador } from '../components/Indicadores'
 import SeloStatus from '../components/SeloStatus'
-import { ANEL_FOCO, TRANSICAO_COR, TRANSICAO_ELEVACAO } from '../estilos/classes'
+import { carregarFila, situacaoNaFila, SITUACAO_NA_FILA, type ItemDaFila } from '../components/avaliador/fila'
+import ModalRetificar from '../components/avaliador/ModalRetificar'
+import { Aviso, Carregando, ErroNaTela, Vazio } from '../components/ui/Estados'
+import { ANEL_FOCO, CARTAO, TRANSICAO_COR } from '../estilos/classes'
+import { diasAte, formatarData } from '../estilos/formatos'
+import useDados from '../hooks/useDados'
+import { MENU_AVALIADOR } from '../navegacao/menus'
+import { useSessao } from '../sessao/contexto'
 
-/**
- * 07 · Avaliador — rubrica e parecer · rota /avaliacao
- *
- * Tela inicial do avaliador: a fila já filtrada pela elegibilidade à esquerda
- * e a ficha da candidatura à direita, com a rubrica publicada e o parecer.
- *
- * Dados simulados nesta etapa, conforme o Bloco 4: nenhuma chamada à API.
- * A nota final é calculada aqui pelos pesos, nunca digitada à mão.
- */
+/** 75 · Avaliador — fila de avaliação (rodadas, rascunho e retificação) · rota /avaliador */
 
-// Transições do design system: cor em 140ms, elevação e layout em 200ms.
-
-
-const PRAZO = { data: '30/11/2026', diasRestantes: 28 }
-const TOTAL_NA_FILA = 17
-
-interface Candidatura {
-    id: number
-    nome: string
-    situacao: string
-    compatibilidade: number
+function Prazo({ data }: { data: string | null }) {
+    if (!data) return <span className="text-apoio text-secundario">sem prazo</span>
+    const dias = diasAte(data)
+    return (
+        <span className="text-apoio text-titulo">
+            {formatarData(data)}
+            <span className={`block text-legenda ${dias < 0 ? 'text-status-reprovada-texto' : 'text-secundario'}`}>
+                {dias < 0 ? `venceu há ${-dias} dia(s)` : dias === 0 ? 'vence hoje' : `faltam ${dias} dia(s)`}
+            </span>
+        </span>
+    )
 }
-
-interface Criterio {
-    id: string
-    titulo: string
-    /** Percentual; a soma dos pesos fecha em 100. */
-    peso: number
-    nota: number
-}
-
-const candidaturas: Candidatura[] = [
-    { id: 1, nome: 'Nordeste Dados ME', situacao: 'em avaliação por mim', compatibilidade: 81 },
-    { id: 2, nome: 'Colab Software', situacao: 'aguardando', compatibilidade: 74 },
-    { id: 3, nome: 'Rota Verde Tech', situacao: 'aguardando', compatibilidade: 69 },
-    { id: 4, nome: 'Mobi Recife', situacao: 'aguardando', compatibilidade: 66 },
-]
-
-const criteriosDaOportunidade: Criterio[] = [
-    { id: 'aderencia', titulo: 'Aderência ao tema do edital', peso: 40, nota: 9 },
-    { id: 'tecnica', titulo: 'Capacidade técnica do time', peso: 30, nota: 9.5 },
-    { id: 'historico', titulo: 'Histórico de entrega', peso: 20, nota: 9 },
-    { id: 'contrapartida', titulo: 'Contrapartida oferecida', peso: 10, nota: 8.5 },
-]
-
-const PARECER_INICIAL =
-    'Proposta aderente ao tema do edital, com equipe técnica comprovada e ' +
-    'histórico de entrega consistente. Contrapartida adequada ao porte da empresa.'
 
 function FilaAvaliacao() {
-    const [selecionada, setSelecionada] = useState(candidaturas[0].id)
-    const [notas, setNotas] = useState<Record<string, number>>(
-        Object.fromEntries(criteriosDaOportunidade.map((c) => [c.id, c.nota])),
-    )
-    const [parecer, setParecer] = useState(PARECER_INICIAL)
+    const { pessoa, perfilAtivo } = useSessao()
+    const { dados: fila, carregando, erro, recarregar } = useDados(() => carregarFila(), [])
+    const [retificando, setRetificando] = useState<ItemDaFila | null>(null)
+    const [aviso, setAviso] = useState<string | null>(null)
 
-    const notaFinal = useMemo(
-        () =>
-            criteriosDaOportunidade.reduce(
-                (total, criterio) => total + (notas[criterio.id] ?? 0) * (criterio.peso / 100),
-                0,
-            ),
-        [notas],
-    )
+    const contagem = { avaliar: 0, rascunho: 0, assinada: 0, parada: 0 }
+    for (const a of fila ?? []) contagem[situacaoNaFila(a)]++
 
-    const candidatura = candidaturas.find((c) => c.id === selecionada) ?? candidaturas[0]
-    const podeDecidir = parecer.trim().length > 0
+    const indicadores: Indicador[] = [
+        { id: 'avaliar', rotulo: 'A avaliar', valor: String(contagem.avaliar) },
+        { id: 'rascunho', rotulo: 'Em rascunho', valor: String(contagem.rascunho), cor: 'text-ocre' },
+        { id: 'assinadas', rotulo: 'Assinadas', valor: String(contagem.assinada), cor: 'text-status-aprovada-texto' },
+        {
+            id: 'fora',
+            rotulo: 'Fora de análise',
+            valor: String(contagem.parada),
+            cor: 'text-secundario',
+            apoio: 'a candidatura saiu da análise antes da sua assinatura',
+        },
+    ]
 
     return (
-        <div>
-            <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-6">
-                <div>
-                    <h1 className="font-display text-tela text-titulo">
-                        Ficha da candidatura · {candidatura.nome}
-                    </h1>
-                    <p className="mt-2 text-apoio text-secundario">
-                        Inova PE 2026 · candidatura 1 de 17 · passo 4 do fluxo do avaliador
-                    </p>
+        <CascaDoApp itens={MENU_AVALIADOR}>
+            <h1 className="font-display text-tela text-titulo">Fila de avaliação</h1>
+            <p className="mt-2 text-apoio text-secundario">
+                {pessoa?.nome} · {perfilAtivo?.vinculo.organizacaoNome} · aparecem só as candidaturas
+                atribuídas a você
+            </p>
+
+            {aviso && (
+                <div className="mt-6">
+                    <Aviso tipo="sucesso">{aviso}</Aviso>
                 </div>
-                <SeloStatus status="avaliacao" />
+            )}
+
+            <div className="mt-6">
+                {carregando && !fila ? (
+                    <Carregando />
+                ) : erro ? (
+                    <ErroNaTela mensagem={erro} tentarDeNovo={() => void recarregar()} />
+                ) : !fila || fila.length === 0 ? (
+                    <Vazio titulo="Nenhuma candidatura na sua fila">
+                        Quando o provedor atribuir uma candidatura a você, ela aparece aqui com o prazo e a
+                        rodada.
+                    </Vazio>
+                ) : (
+                    <>
+                        <Indicadores itens={indicadores} rotulo="Resumo da fila" />
+
+                        <section aria-label="Candidaturas atribuídas a você" className={`mt-6 relative overflow-x-auto ${CARTAO}`}>
+                            <table className="w-full border-collapse text-left">
+                                <thead>
+                                    <tr className="border-b border-sutil bg-page">
+                                        {['Candidatura', 'Oportunidade', 'Rodada', 'Prazo', 'Situação', 'Ação'].map((c) => (
+                                            <th key={c} scope="col" className="px-card py-3 text-selo text-secundario uppercase">
+                                                {c}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {fila.map((a) => {
+                                        const situacao = situacaoNaFila(a)
+                                        const { rotulo, status } = SITUACAO_NA_FILA[situacao]
+                                        return (
+                                            <tr
+                                                key={a.id}
+                                                className={`border-b border-sutil last:border-b-0 hover:bg-page ${TRANSICAO_COR}`}
+                                            >
+                                                <td className="px-card py-4">
+                                                    <p className="text-item text-titulo">{a.organizacaoNome}</p>
+                                                    {a.tituloProposta && (
+                                                        <p className="mt-1 text-apoio text-secundario">{a.tituloProposta}</p>
+                                                    )}
+                                                </td>
+                                                <td className="px-card py-4 text-apoio text-secundario">
+                                                    {a.oportunidadeTitulo}
+                                                </td>
+                                                <td className="px-card py-4">
+                                                    {a.rodada > 1 ? (
+                                                        <SeloStatus
+                                                            status="pendente"
+                                                            rotulo={`Rodada ${a.rodada} · reenviada`}
+                                                            comPonto
+                                                        />
+                                                    ) : (
+                                                        <span className="text-apoio text-secundario">Rodada 1</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-card py-4">
+                                                    {a.assinadaEm ? (
+                                                        <span className="text-apoio text-secundario">
+                                                            assinada em {formatarData(a.assinadaEm)}
+                                                        </span>
+                                                    ) : (
+                                                        <Prazo data={a.prazoAvaliacao} />
+                                                    )}
+                                                </td>
+                                                <td className="px-card py-4">
+                                                    <SeloStatus status={status} rotulo={rotulo} comPonto />
+                                                    {a.parecerRetificado && (
+                                                        <span className="mt-1 block text-legenda text-secundario">
+                                                            parecer retificado
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="px-card py-4">
+                                                    {situacao === 'avaliar' && (
+                                                        <CustomButton variant="aprovar" size="auto" to={`/avaliador/avaliacoes/${a.id}`}>
+                                                            Avaliar
+                                                        </CustomButton>
+                                                    )}
+                                                    {situacao === 'rascunho' && (
+                                                        <CustomButton variant="neutro" size="auto" to={`/avaliador/avaliacoes/${a.id}`}>
+                                                            Continuar
+                                                        </CustomButton>
+                                                    )}
+                                                    {situacao === 'assinada' && (
+                                                        <div className="flex flex-col items-start gap-1">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setAviso(null)
+                                                                    setRetificando(a)
+                                                                }}
+                                                                className={`rounded-card text-apoio font-semibold text-acento hover:text-titulo ${TRANSICAO_COR} ${ANEL_FOCO}`}
+                                                            >
+                                                                Retificar parecer
+                                                            </button>
+                                                            <Link
+                                                                to={`/avaliador/avaliacoes/${a.id}`}
+                                                                className={`rounded-card text-apoio text-secundario underline hover:text-titulo ${ANEL_FOCO}`}
+                                                            >
+                                                                Ver ficha
+                                                            </Link>
+                                                        </div>
+                                                    )}
+                                                    {situacao === 'parada' && (
+                                                        <Link
+                                                            to={`/avaliador/avaliacoes/${a.id}`}
+                                                            className={`rounded-card text-apoio text-secundario underline hover:text-titulo ${ANEL_FOCO}`}
+                                                        >
+                                                            Ver ficha
+                                                        </Link>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
+                        </section>
+                    </>
+                )}
             </div>
 
-            <div className="mt-8 flex flex-col gap-6 xl:flex-row">
-                {/* Coluna da fila */}
-                <section
-                    aria-labelledby="titulo-fila"
-                    className="w-full shrink-0 xl:w-[300px]"
-                >
-                    <h2
-                        id="titulo-fila"
-                        className="text-selo text-titulo uppercase"
-                    >
-                        Minha fila · {TOTAL_NA_FILA} candidaturas
-                    </h2>
-                    <p className="mt-2 text-apoio text-secundario">
-                        Só candidaturas elegíveis entram aqui. Ordenada por
-                        compatibilidade: a ordem é sugestão, não decisão.
-                    </p>
-                    <p className="mt-3 text-apoio text-acento">
-                        Prazo para avaliar: {PRAZO.data} · faltam {PRAZO.diasRestantes} dias
-                    </p>
+            <p className="mt-6 rounded-card bg-page p-5 text-apoio text-secundario">
+                A avaliação tem nota por critério (de 0 a 10 quando o critério não tem escala), decisão e
+                parecer. A nota final é a média ponderada, de 0 a 100. Pedir ajuste exige pelo menos um item;
+                na rodada 3 não existe mais pedido de ajuste. Depois de assinar, só dá para retificar o parecer,
+                com justificativa.
+            </p>
 
-                    <ul className="mt-4 flex flex-col gap-3">
-                        {candidaturas.map((item) => {
-                            const ativa = item.id === selecionada
-                            return (
-                                <li key={item.id}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelecionada(item.id)}
-                                        aria-current={ativa ? 'true' : undefined}
-                                        className={[
-                                            'w-full rounded-bloco border bg-card p-card text-left shadow-card',
-                                            'hover:-translate-y-px hover:shadow-card-hover',
-                                            TRANSICAO_ELEVACAO,
-                                            ANEL_FOCO,
-                                            ativa
-                                                ? 'border-acento shadow-acento'
-                                                : 'border-sutil hover:border-acento',
-                                        ].join(' ')}
-                                    >
-                                        <span className="block text-item text-titulo">
-                                            {item.nome}
-                                        </span>
-                                        <span className="mt-1 block text-apoio text-secundario">
-                                            {item.situacao}
-                                        </span>
-                                        <span className="mt-1 block text-apoio text-acento">
-                                            compatibilidade {item.compatibilidade}
-                                        </span>
-                                    </button>
-                                </li>
-                            )
-                        })}
-                    </ul>
-                </section>
-
-                {/* Coluna da ficha */}
-                <div className="flex min-w-0 flex-1 flex-col gap-6">
-                    <section
-                        aria-labelledby="titulo-rubrica"
-                        className="rounded-bloco border border-sutil bg-card shadow-card"
-                    >
-                        <header className="border-b border-sutil p-card">
-                            <h2
-                                id="titulo-rubrica"
-                                className="font-display text-bloco text-titulo"
-                            >
-                                Pontuar pela rubrica
-                            </h2>
-                            <p className="mt-1 text-apoio text-secundario">
-                                US-20 · critérios e pesos vêm da oportunidade, nunca do
-                                código. A nota final é calculada pelo sistema.
-                            </p>
-                        </header>
-
-                        {criteriosDaOportunidade.map((criterio) => (
-                            <div
-                                key={criterio.id}
-                                className={`flex items-center gap-4 border-b border-sutil px-card py-4 hover:bg-page ${TRANSICAO_COR}`}
-                            >
-                                <label
-                                    htmlFor={`nota-${criterio.id}`}
-                                    className="min-w-0 flex-1 text-corpo text-titulo"
-                                >
-                                    {criterio.titulo}
-                                </label>
-                                <span className="text-apoio text-secundario">
-                                    peso {criterio.peso}%
-                                </span>
-                                <span className="flex items-center gap-1">
-                                    <input
-                                        id={`nota-${criterio.id}`}
-                                        type="number"
-                                        min={0}
-                                        max={10}
-                                        step={0.5}
-                                        value={notas[criterio.id]}
-                                        onChange={(evento) =>
-                                            setNotas((atual) => ({
-                                                ...atual,
-                                                [criterio.id]: Number(evento.target.value),
-                                            }))
-                                        }
-                                        className={`w-16 rounded-card border border-sutil px-2 py-1 text-right text-corpo text-titulo ${TRANSICAO_ELEVACAO} ${ANEL_FOCO} hover:border-acento`}
-                                    />
-                                    <span className="text-corpo text-secundario">/ 10</span>
-                                </span>
-                            </div>
-                        ))}
-
-                        <div className="flex items-center justify-between bg-acento-suave px-card py-4">
-                            <span className="text-corpo text-acento">
-                                Nota final ponderada
-                            </span>
-                            <output
-                                aria-live="polite"
-                                className="font-display text-bloco text-acento"
-                            >
-                                {notaFinal.toLocaleString('pt-BR', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                })}
-                            </output>
-                        </div>
-                    </section>
-
-                    <section
-                        aria-labelledby="titulo-parecer"
-                        className="rounded-bloco border border-sutil bg-card p-card shadow-card"
-                    >
-                        <div className="flex items-center gap-3">
-                            <h2
-                                id="titulo-parecer"
-                                className="font-display text-bloco text-titulo"
-                            >
-                                Parecer (obrigatório)
-                            </h2>
-                            <span className="rounded-badge bg-acento-suave px-2 py-1 text-selo text-acento">
-                                Diferencial 02
-                            </span>
-                        </div>
-
-                        <p className="mt-1 text-apoio text-secundario" id="ajuda-parecer">
-                            É exatamente este texto que o candidato lê no extrato. Decisão
-                            sem parecer é recusada pelo sistema (US-21).
-                        </p>
-
-                        <label htmlFor="parecer" className="sr-only">
-                            Parecer da avaliação
-                        </label>
-                        <textarea
-                            id="parecer"
-                            rows={4}
-                            value={parecer}
-                            aria-describedby="ajuda-parecer"
-                            onChange={(evento) => setParecer(evento.target.value)}
-                            className={`mt-4 w-full rounded-card border border-sutil p-4 text-corpo text-titulo ${TRANSICAO_ELEVACAO} ${ANEL_FOCO} hover:border-acento`}
-                        />
-                    </section>
-
-                    <div className="flex flex-wrap items-center gap-3">
-                        <CustomButton variant="aprovar" size="auto" disabled={!podeDecidir}>
-                            Aprovar
-                        </CustomButton>
-                        <CustomButton variant="reprovar" size="auto" disabled={!podeDecidir}>
-                            Reprovar
-                        </CustomButton>
-                        <CustomButton variant="neutro" size="auto">
-                            Pedir ajuste
-                        </CustomButton>
-
-                        {!podeDecidir && (
-                            <p role="alert" className="text-corpo text-status-reprovada-texto">
-                                Escreva o parecer para liberar a decisão.
-                            </p>
-                        )}
-
-                        <button
-                            type="button"
-                            className={`ml-auto rounded-card px-1 text-corpo text-acento underline hover:text-titulo ${TRANSICAO_COR} ${ANEL_FOCO}`}
-                        >
-                            Salvar pontuação sem decidir
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+            <ModalRetificar
+                key={retificando?.id ?? 'fechado'}
+                avaliacao={retificando}
+                aoFechar={() => setRetificando(null)}
+                aoRetificar={() => {
+                    setRetificando(null)
+                    setAviso('Parecer retificado. O candidato passa a ler o texto novo; o original fica no histórico.')
+                    void recarregar()
+                }}
+            />
+        </CascaDoApp>
     )
 }
 

@@ -1,48 +1,38 @@
 
 import { useState, type FormEvent } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
 import { CustomButton } from "./CustomButton";
-import { useAuth } from "../contexts/AuthContext";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ErroApi } from "../api/cliente";
 import { mensagemDeErro } from "../api/erros";
-import { initialRoute } from "../utils/InitialRoute";
+import { useSessao } from "../sessao/contexto";
+
 
 export default function LoginCard() {
-    const location = useLocation();
-    const aviso = (location.state as { aviso?: string } | null)?.aviso;
-
     const navigate = useNavigate();
-    const { login } = useAuth();
-
+    // Quem vem da confirmação de e-mail chega com o e-mail preenchido e um aviso
+    const recebido = useLocation().state as { email?: string; aviso?: string; de?: string } | null;
+    const { entrar } = useSessao();
     const [erro, setErro] = useState<string | null>(null);
     const [enviando, setEnviando] = useState(false);
 
-    const [email, setEmail] = useState("");
+    const [email, setEmail] = useState(recebido?.email ?? "");
     const [senha, setSenha] = useState("");
+
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-
         setErro(null);
         setEnviando(true);
-
         try {
-            // Realiza login e atualiza o AuthContext
-            const resposta = await login(email, senha);
-
-            // 0 vínculos: cria a organização; 1: área do papel; mais de 1: escolhe o vínculo
-            navigate(initialRoute(resposta), { replace: true });
-
+            const rota = await entrar(email, senha);
+            // quem tentou abrir uma tela logada volta para ela (se tiver um perfil só)
+            navigate(recebido?.de && rota !== '/entrar/vinculo' && rota !== '/conta/nova-organizacao' ? recebido.de : rota);
         } catch (e) {
             if (e instanceof ErroApi && e.status === 403) {
-                navigate("/confirmar-email", {
-                    state: { email }
-                });
+                navigate('/confirmar-email', { state: { email } });
                 return;
             }
-
             setErro(mensagemDeErro(e));
-
         } finally {
             setEnviando(false);
         }
@@ -92,43 +82,41 @@ export default function LoginCard() {
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
                     />
                 </div>
-
-                {erro ? (
+                {recebido?.aviso && !erro && (
+                    <p role="status" className="text-sm text-acento">
+                        {recebido.aviso}
+                    </p>
+                )}
+                {erro && (
                     <p role="alert" className="text-sm text-red-600">
                         {erro}
                     </p>
-                ) : aviso && (
-                    <p role="status" className="text-sm text-green-700">
-                        {aviso}
-                    </p>
                 )}
-
                 <CustomButton
                     type="submit"
                     variant="aprovar"
                     size="grande"
-                    className="mt-2 w-full"
+                    className="w-full mt-2"
                     disabled={enviando}
                 >
-                    {enviando ? "Entrando..." : "Entrar"}
+                    {enviando ? 'Entrando...' : 'Entrar'}
                 </CustomButton>
-
+                {/* Espaço para links de recuperação de senha e criação de conta*/}
                 <div className="mt-4 flex items-center gap-2 text-sm">
-                    <a
-                        href="/recuperar-senha"
+                    <Link
+                        to="/recuperar-senha"
                         className="text-acento hover:text-indigo-600 transition-colors"
                     >
                         Esqueceu sua senha?
-                    </a>
+                    </Link>
+                    <span className="text-acento" aria-hidden="true">⋅</span>
 
-                    <span className="text-acento">⋅</span>
-
-                    <a
-                        href="/cadastro"
+                    <Link
+                        to="/cadastro"
                         className="font-medium text-acento hover:text-indigo-700 transition-colors"
                     >
                         Criar conta
-                    </a>
+                    </Link>
                 </div>
             </form>
         </div>

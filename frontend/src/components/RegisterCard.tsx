@@ -26,7 +26,7 @@ export default function RegisterCard({
 
   return (
     <section className="rounded-card border border-sutil bg-card p-card">
-      <h2 className="mb-4 font-semibold text-titulo">
+      <h2 className="mb-4 text-bloco text-titulo">
         Seus dados
       </h2>
 
@@ -42,6 +42,8 @@ export default function RegisterCard({
             onChange={handleChange}
             placeholder="Digite seu nome"
             className={inputClasses}
+            maxLength={160}
+            autoComplete="name"
             required
           />
         </div>
@@ -58,10 +60,12 @@ export default function RegisterCard({
             onChange={handleChange}
             placeholder="seu@email.com"
             className={inputClasses}
+            maxLength={254}
+            autoComplete="email"
             required
           />
           <p className="text-rotulo text-secundario">
-            Depois de criar a conta, confirme o e-mail em Minha conta.
+            Ao continuar, enviamos um código para o seu e-mail. Confirme para entrar.
           </p>
         </div>
 
@@ -78,10 +82,12 @@ export default function RegisterCard({
             placeholder="Digite sua senha"
             className={inputClasses}
             minLength={8}
+            maxLength={72}
+            autoComplete="new-password"
             required
           />
           <p className="text-rotulo text-secundario">
-            Mínimo de 8 caracteres, com letra e número.
+            De 8 a 72 caracteres.
           </p>
         </div>
 
@@ -100,6 +106,7 @@ export default function RegisterCard({
             onChange={handleChange}
             placeholder="Confirme sua senha"
             className={inputClasses}
+            autoComplete="new-password"
             required
           />
         </div>

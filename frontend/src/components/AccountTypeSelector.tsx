@@ -1,110 +1,74 @@
-type AccountTypeGroup = "candidate" | "provider";
+import type { ReactNode } from 'react'
 
-export interface AccountTypeOption {
-  value: string;
-  label: string;
-  description: string;
-  group: "candidate" | "provider";
-  requiresApproval?: boolean;
-}
+import type { TipoOrganizacao } from '../api/organizacoes'
+import { ANEL_FOCO, CARTAO_COM_RESPIRO, TRANSICAO_COR } from '../estilos/classes'
+import { GRUPOS_DE_TIPO } from './acesso/tiposDeOrganizacao'
 
+/**
+ * Escolha do tipo da organização, nos dois grupos: quem se candidata e quem
+ * oferece oportunidades. Usado no cadastro (tela 14) e na nova organização (tela 68).
+ */
 interface AccountTypeSelectorProps {
-  options: AccountTypeOption[];
-  value: string;
-  onChange: (value: string) => void;
+    value: TipoOrganizacao | null
+    onChange: (tipo: TipoOrganizacao) => void
+    titulo?: string
+    descricao?: string
+    /** Conteúdo abaixo dos grupos (o aviso do provedor, por exemplo). */
+    children?: ReactNode
 }
-
-const groupLabels: Record<AccountTypeGroup, string> = {
-  candidate: "Para se candidatar · papel Candidato",
-  provider:
-    "Para oferecer oportunidades · papel Provedor · a permissão de publicar depende da aprovação da gestão",
-};
 
 export default function AccountTypeSelector({
-  options,
-  value,
-  onChange,
+    value,
+    onChange,
+    titulo = 'Qual é o seu perfil?',
+    descricao,
+    children,
 }: AccountTypeSelectorProps) {
-  const groups: AccountTypeGroup[] = ["candidate", "provider"];
+    return (
+        <section className={CARTAO_COM_RESPIRO}>
+            <h2 className="text-bloco text-titulo">{titulo}</h2>
+            {descricao && <p className="mt-1 text-apoio text-secundario">{descricao}</p>}
 
-  return (
-    <section className="w-full rounded-card border border-sutil bg-card p-4">
-      <h2 className="mb-1 font-semibold text-titulo">
-        Qual é o seu perfil?
-      </h2>
+            {GRUPOS_DE_TIPO.map((grupo) => (
+                <fieldset key={grupo.papel} className="mt-4">
+                    <legend className="mb-2 text-item text-secundario">{grupo.titulo}</legend>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        {grupo.opcoes.map((opcao) => {
+                            const marcado = value === opcao.tipo
+                            return (
+                                <label
+                                    key={opcao.tipo}
+                                    className={`flex cursor-pointer flex-col gap-1 rounded-card border p-3 ${TRANSICAO_COR} has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-acento ${
+                                        marcado
+                                            ? 'border-acento bg-acento-suave ring-1 ring-acento'
+                                            : 'border-sutil bg-card hover:border-acento'
+                                    }`}
+                                >
+                                    <span className="flex items-center gap-2">
+                                        <input
+                                            type="radio"
+                                            name="tipoDaOrganizacao"
+                                            value={opcao.tipo}
+                                            checked={marcado}
+                                            onChange={() => onChange(opcao.tipo)}
+                                            className={`size-4 accent-acento ${ANEL_FOCO}`}
+                                        />
+                                        <span className={`text-item ${marcado ? 'text-acento' : 'text-titulo'}`}>
+                                            {opcao.rotulo}
+                                        </span>
+                                        {grupo.papel === 'PROVEDOR' && (
+                                            <span className="sr-only">(precisa da aprovação da gestão para publicar)</span>
+                                        )}
+                                    </span>
+                                    <span className="pl-6 text-legenda text-secundario">{opcao.descricao}</span>
+                                </label>
+                            )
+                        })}
+                    </div>
+                </fieldset>
+            ))}
 
-      <p className="mb-4 text-rotulo text-secundario">
-        O tipo da organização define o papel: quem se candidata ou quem oferece
-        oportunidades. Na etapa seguinte, pedimos os dados da organização.
-      </p>
-
-      <div className="space-y-3">
-        {groups.map((group) => {
-          const groupOptions = options.filter(
-            (option) => option.group === group,
-          );
-
-          if (groupOptions.length === 0) return null;
-
-          return (
-            <div key={group}>
-              <h3 className="mb-2 text-xs font-medium text-secundario">
-                {groupLabels[group]}
-              </h3>
-
-              <div
-                className={`grid grid-cols-1 gap-2 sm:grid-cols-2 ${group === "candidate" ? "lg:grid-cols-3" : "lg:grid-cols-4"
-                  }`}
-              >
-                {groupOptions.map((option) => {
-                  const selected = value === option.value;
-
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => onChange(option.value)}
-                      aria-pressed={selected}
-                      className={`min-h-19 rounded-card border p-3 text-left transition-colors ${selected
-                          ? "border-acento bg-acento-suave ring-1 ring-acento"
-                          : "border-sutil bg-card hover:border-acento"
-                        }`}
-                    >
-                      <span className="mb-2 flex items-center gap-2">
-                        <span
-                          aria-hidden="true"
-                          className={`flex size-3.5 shrink-0 items-center justify-center rounded-full border ${selected
-                              ? "border-acento bg-acento"
-                              : "border-secundario bg-card"
-                            }`}
-                        >
-                          {selected && (
-                            <span className="size-1.5 rounded-full bg-white" />
-                          )}
-                        </span>
-
-                        <span className="text-rotulo font-semibold text-titulo">
-                          {option.label}
-                        </span>
-                      </span>
-
-                      <span className="block pl-5.5 text-xs leading-relaxed text-secundario">
-                        {option.description}
-                      </span>
-
-                      {option.requiresApproval && (
-                        <span className="mt-2 ml-5.5 inline-block rounded-badge bg-orange-100 px-2 py-0.5 text-[10px] text-orange-800">
-                          aprovação da gestão
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
+            {children}
+        </section>
+    )
 }
