@@ -1,7 +1,6 @@
 import { useState } from 'react'
 
 import { CustomButton } from '../components/CustomButton'
-import CascaDoApp from '../components/CascaDoApp'
 import SeloStatus, { type Status } from '../components/SeloStatus'
 import { MENU_SQUAD } from '../navegacao/menus'
 import SeloDeTrilha, { type Trilha } from '../components/SeloDeTrilha'
@@ -75,14 +74,7 @@ function CandidaturasSquad() {
     ]
 
     return (
-        <CascaDoApp
-            organizacao="Squad 3 · FICR"
-            papel="Candidato · squad"
-            iniciais="SC"
-            nome="Sua Chen Letícia"
-            itens={MENU_SQUAD}
-            voltarPara="/squad"
-        >
+        <div>
             <h1 className="font-display text-tela text-titulo">Minhas candidaturas</h1>
             <p className="mt-2 text-apoio text-secundario">
                 Escolha uma candidatura para ver a linha do tempo e o resultado. Elas
@@ -149,7 +141,7 @@ function CandidaturasSquad() {
                     ))}
                 </ul>
             )}
-        </CascaDoApp>
+        </div>
     )
 }
 

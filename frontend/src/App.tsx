@@ -83,13 +83,12 @@ function App() {
 
                     <Route path="/entrar-vinculo" element={<LinkPage />} />
 
-                    {/* TELAS DA CONTA: valem para quem ainda não tem vínculo. */}
                     <Route element={<AppLayout />}>
+                        {/* TELAS DA CONTA: valem para quem ainda não tem vínculo. */}
                         <Route path="/organizacoes/nova" element={<NewOrganizationPage />} />
                         <Route path="/conta" element={<ContaPage />} />
-                    </Route>
 
-                    <Route element={<HomeLayout />}>
+                        {/*TELA PRECIA SER IMPLEMENTADA */}
                         <Route path="/inicio" element={<CandidateHome />} />
                     </Route>
 

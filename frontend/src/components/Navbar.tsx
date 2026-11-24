@@ -36,7 +36,7 @@ interface NavbarProps {
 
 export function Navbar({ variante = 'site' }: NavbarProps) {
     return (
-        <header className="flex items-center gap-6 border-b border-sutil bg-card px-10 py-4 shadow-card">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-6 border-b border-sutil bg-card px-10 shadow-card">
             <Link to="/" aria-label="UpHub, página inicial" className={`rounded-card ${ANEL_FOCO}`}>
                 <Logo variante="pervinca" altura={28} />
             </Link>

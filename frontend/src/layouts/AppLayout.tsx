@@ -42,7 +42,7 @@ export default function AppLayout({ papel }: AppLayoutProps) {
 
     return (
         <div className="min-h-screen bg-page">
-            <header className="flex items-center gap-4 border-b border-sutil bg-card px-10 py-4 shadow-card">
+            <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-sutil bg-card px-10 shadow-card">
                 <Logo variante="pervinca" altura={28} />
 
                 {vinculo && rotuloDoPapel && (

@@ -1,5 +1,3 @@
-import CascaDoApp from '../components/CascaDoApp'
-import { MENU_SQUAD } from '../navegacao/menus'
 import CartaoDeAviso from '../components/CartaoDeAviso'
 
 /**
@@ -65,14 +63,7 @@ const COMPLETUDE = 100
 
 function PerfilDaSquad() {
     return (
-        <CascaDoApp
-            organizacao="Squad 3 · FICR"
-            papel="Candidato · squad"
-            iniciais="SC"
-            nome="Sua Chen Letícia"
-            itens={MENU_SQUAD}
-            voltarPara="/squad"
-        >
+        <div>
             <h1 className="font-display text-tela text-titulo">Perfil da squad</h1>
             <p className="mt-2 text-apoio text-secundario">
                 Dados da Squad 3 · FICR. Os campos com ponto são os que o motor de
@@ -195,7 +186,7 @@ function PerfilDaSquad() {
                     </CartaoDeAviso>
                 </aside>
             </div>
-        </CascaDoApp>
+        </div>
     )
 }
 

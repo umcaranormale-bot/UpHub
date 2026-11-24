@@ -1,18 +1,9 @@
-import CascaDoApp from '../components/CascaDoApp'
 import PaginaDeConta, { BlocoDoPapel } from '../components/PaginaDeConta'
-import { MENU_AVALIADOR } from '../navegacao/menus'
 
 /** 60 · Avaliador — conta (Cláudia Rangel) · rota /conta/avaliador */
 function ContaAvaliador() {
     return (
-        <CascaDoApp
-            organizacao="Órgão de Fomento PE"
-            papel="Avaliador"
-            iniciais="CR"
-            nome="Cláudia Rangel"
-            itens={MENU_AVALIADOR}
-            voltarPara="/avaliacao"
-        >
+        <div>
             <PaginaDeConta
                 pessoa={{
                     iniciais: 'CR',
@@ -51,7 +42,7 @@ function ContaAvaliador() {
                     acao="Abrir fila"
                 />
             </PaginaDeConta>
-        </CascaDoApp>
+        </div>
     )
 }
 

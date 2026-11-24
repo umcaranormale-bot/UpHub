@@ -1,18 +1,9 @@
-import CascaDoApp from '../components/CascaDoApp'
 import PaginaDeConta, { BlocoDoPapel } from '../components/PaginaDeConta'
-import { MENU_GESTAO } from '../navegacao/menus'
 
 /** 61 · Gestão do PD — conta (Marcos Vilela) · rota /conta/gestao */
 function ContaGestao() {
     return (
-        <CascaDoApp
-            organizacao="Porto Digital"
-            papel="Gestão do PD"
-            iniciais="MV"
-            nome="Marcos Vilela"
-            itens={MENU_GESTAO}
-            voltarPara="/painel"
-        >
+        <div>
             <PaginaDeConta
                 pessoa={{
                     iniciais: 'MV',
@@ -51,7 +42,7 @@ function ContaGestao() {
                     acao="Abrir painel"
                 />
             </PaginaDeConta>
-        </CascaDoApp>
+        </div>
     )
 }
 

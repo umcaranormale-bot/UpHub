@@ -1,9 +1,7 @@
 import { useMemo, useState } from 'react'
 
 import { CustomButton } from '../components/CustomButton'
-import CascaDoApp from '../components/CascaDoApp'
 import SeloStatus from '../components/SeloStatus'
-import { MENU_AVALIADOR } from '../navegacao/menus'
 import { ANEL_FOCO, TRANSICAO_COR, TRANSICAO_ELEVACAO } from '../estilos/classes'
 
 /**
@@ -75,211 +73,205 @@ function FilaAvaliacao() {
     const podeDecidir = parecer.trim().length > 0
 
     return (
-        <CascaDoApp
-            organizacao="Órgão de Fomento PE"
-            papel="Avaliador"
-            iniciais="CR"
-            nome="Cláudia Rangel"
-            itens={MENU_AVALIADOR}
-        >
-                    <div className="flex items-start justify-between gap-6">
-                        <div>
-                            <h1 className="font-display text-tela text-titulo">
-                                Ficha da candidatura · {candidatura.nome}
-                            </h1>
-                            <p className="mt-2 text-apoio text-secundario">
-                                Inova PE 2026 · candidatura 1 de 17 · passo 4 do fluxo do avaliador
-                            </p>
-                        </div>
-                        <SeloStatus status="avaliacao" />
-                    </div>
+        <div>
+            <div className="flex items-start justify-between gap-6">
+                <div>
+                    <h1 className="font-display text-tela text-titulo">
+                        Ficha da candidatura · {candidatura.nome}
+                    </h1>
+                    <p className="mt-2 text-apoio text-secundario">
+                        Inova PE 2026 · candidatura 1 de 17 · passo 4 do fluxo do avaliador
+                    </p>
+                </div>
+                <SeloStatus status="avaliacao" />
+            </div>
 
-                    <div className="mt-8 flex gap-6">
-                        {/* Coluna da fila */}
-                        <section
-                            aria-labelledby="titulo-fila"
-                            className="w-[300px] shrink-0"
-                        >
+            <div className="mt-8 flex gap-6">
+                {/* Coluna da fila */}
+                <section
+                    aria-labelledby="titulo-fila"
+                    className="w-[300px] shrink-0"
+                >
+                    <h2
+                        id="titulo-fila"
+                        className="text-selo text-titulo uppercase"
+                    >
+                        Minha fila · {TOTAL_NA_FILA} candidaturas
+                    </h2>
+                    <p className="mt-2 text-apoio text-secundario">
+                        Só candidaturas elegíveis entram aqui. Ordenada por
+                        compatibilidade: a ordem é sugestão, não decisão.
+                    </p>
+                    <p className="mt-3 text-apoio text-acento">
+                        Prazo para avaliar: {PRAZO.data} · faltam {PRAZO.diasRestantes} dias
+                    </p>
+
+                    <ul className="mt-4 flex flex-col gap-3">
+                        {candidaturas.map((item) => {
+                            const ativa = item.id === selecionada
+                            return (
+                                <li key={item.id}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelecionada(item.id)}
+                                        aria-current={ativa ? 'true' : undefined}
+                                        className={[
+                                            'w-full rounded-bloco border bg-card p-card text-left shadow-card',
+                                            'hover:-translate-y-px hover:shadow-card-hover',
+                                            TRANSICAO_ELEVACAO,
+                                            ANEL_FOCO,
+                                            ativa
+                                                ? 'border-acento shadow-acento'
+                                                : 'border-sutil hover:border-acento',
+                                        ].join(' ')}
+                                    >
+                                        <span className="block text-item text-titulo">
+                                            {item.nome}
+                                        </span>
+                                        <span className="mt-1 block text-apoio text-secundario">
+                                            {item.situacao}
+                                        </span>
+                                        <span className="mt-1 block text-apoio text-acento">
+                                            compatibilidade {item.compatibilidade}
+                                        </span>
+                                    </button>
+                                </li>
+                            )
+                        })}
+                    </ul>
+                </section>
+
+                {/* Coluna da ficha */}
+                <div className="flex min-w-0 flex-1 flex-col gap-6">
+                    <section
+                        aria-labelledby="titulo-rubrica"
+                        className="rounded-bloco border border-sutil bg-card shadow-card"
+                    >
+                        <header className="border-b border-sutil p-card">
                             <h2
-                                id="titulo-fila"
-                                className="text-selo text-titulo uppercase"
+                                id="titulo-rubrica"
+                                className="font-display text-bloco text-titulo"
                             >
-                                Minha fila · {TOTAL_NA_FILA} candidaturas
+                                Pontuar pela rubrica
                             </h2>
-                            <p className="mt-2 text-apoio text-secundario">
-                                Só candidaturas elegíveis entram aqui. Ordenada por
-                                compatibilidade: a ordem é sugestão, não decisão.
+                            <p className="mt-1 text-apoio text-secundario">
+                                US-20 · critérios e pesos vêm da oportunidade, nunca do
+                                código. A nota final é calculada pelo sistema.
                             </p>
-                            <p className="mt-3 text-apoio text-acento">
-                                Prazo para avaliar: {PRAZO.data} · faltam {PRAZO.diasRestantes} dias
-                            </p>
+                        </header>
 
-                            <ul className="mt-4 flex flex-col gap-3">
-                                {candidaturas.map((item) => {
-                                    const ativa = item.id === selecionada
-                                    return (
-                                        <li key={item.id}>
-                                            <button
-                                                type="button"
-                                                onClick={() => setSelecionada(item.id)}
-                                                aria-current={ativa ? 'true' : undefined}
-                                                className={[
-                                                    'w-full rounded-bloco border bg-card p-card text-left shadow-card',
-                                                    'hover:-translate-y-px hover:shadow-card-hover',
-                                                    TRANSICAO_ELEVACAO,
-                                                    ANEL_FOCO,
-                                                    ativa
-                                                        ? 'border-acento shadow-acento'
-                                                        : 'border-sutil hover:border-acento',
-                                                ].join(' ')}
-                                            >
-                                                <span className="block text-item text-titulo">
-                                                    {item.nome}
-                                                </span>
-                                                <span className="mt-1 block text-apoio text-secundario">
-                                                    {item.situacao}
-                                                </span>
-                                                <span className="mt-1 block text-apoio text-acento">
-                                                    compatibilidade {item.compatibilidade}
-                                                </span>
-                                            </button>
-                                        </li>
-                                    )
-                                })}
-                            </ul>
-                        </section>
-
-                        {/* Coluna da ficha */}
-                        <div className="flex min-w-0 flex-1 flex-col gap-6">
-                            <section
-                                aria-labelledby="titulo-rubrica"
-                                className="rounded-bloco border border-sutil bg-card shadow-card"
+                        {criteriosDaOportunidade.map((criterio) => (
+                            <div
+                                key={criterio.id}
+                                className={`flex items-center gap-4 border-b border-sutil px-card py-4 hover:bg-page ${TRANSICAO_COR}`}
                             >
-                                <header className="border-b border-sutil p-card">
-                                    <h2
-                                        id="titulo-rubrica"
-                                        className="font-display text-bloco text-titulo"
-                                    >
-                                        Pontuar pela rubrica
-                                    </h2>
-                                    <p className="mt-1 text-apoio text-secundario">
-                                        US-20 · critérios e pesos vêm da oportunidade, nunca do
-                                        código. A nota final é calculada pelo sistema.
-                                    </p>
-                                </header>
-
-                                {criteriosDaOportunidade.map((criterio) => (
-                                    <div
-                                        key={criterio.id}
-                                        className={`flex items-center gap-4 border-b border-sutil px-card py-4 hover:bg-page ${TRANSICAO_COR}`}
-                                    >
-                                        <label
-                                            htmlFor={`nota-${criterio.id}`}
-                                            className="flex-1 text-corpo text-titulo"
-                                        >
-                                            {criterio.titulo}
-                                        </label>
-                                        <span className="text-apoio text-secundario">
-                                            peso {criterio.peso}%
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            <input
-                                                id={`nota-${criterio.id}`}
-                                                type="number"
-                                                min={0}
-                                                max={10}
-                                                step={0.5}
-                                                value={notas[criterio.id]}
-                                                onChange={(evento) =>
-                                                    setNotas((atual) => ({
-                                                        ...atual,
-                                                        [criterio.id]: Number(evento.target.value),
-                                                    }))
-                                                }
-                                                className={`w-16 rounded-card border border-sutil px-2 py-1 text-right text-corpo text-titulo ${TRANSICAO_ELEVACAO} ${ANEL_FOCO} hover:border-acento`}
-                                            />
-                                            <span className="text-corpo text-secundario">/ 10</span>
-                                        </span>
-                                    </div>
-                                ))}
-
-                                <div className="flex items-center justify-between bg-acento-suave px-card py-4">
-                                    <span className="text-corpo text-acento">
-                                        Nota final ponderada
-                                    </span>
-                                    <output
-                                        aria-live="polite"
-                                        className="font-display text-bloco text-acento"
-                                    >
-                                        {notaFinal.toLocaleString('pt-BR', {
-                                            minimumFractionDigits: 2,
-                                            maximumFractionDigits: 2,
-                                        })}
-                                    </output>
-                                </div>
-                            </section>
-
-                            <section
-                                aria-labelledby="titulo-parecer"
-                                className="rounded-bloco border border-sutil bg-card p-card shadow-card"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <h2
-                                        id="titulo-parecer"
-                                        className="font-display text-bloco text-titulo"
-                                    >
-                                        Parecer (obrigatório)
-                                    </h2>
-                                    <span className="rounded-badge bg-acento-suave px-2 py-1 text-selo text-acento">
-                                        Diferencial 02
-                                    </span>
-                                </div>
-
-                                <p className="mt-1 text-apoio text-secundario" id="ajuda-parecer">
-                                    É exatamente este texto que o candidato lê no extrato. Decisão
-                                    sem parecer é recusada pelo sistema (US-21).
-                                </p>
-
-                                <label htmlFor="parecer" className="sr-only">
-                                    Parecer da avaliação
-                                </label>
-                                <textarea
-                                    id="parecer"
-                                    rows={4}
-                                    value={parecer}
-                                    aria-describedby="ajuda-parecer"
-                                    onChange={(evento) => setParecer(evento.target.value)}
-                                    className={`mt-4 w-full rounded-card border border-sutil p-4 text-corpo text-titulo ${TRANSICAO_ELEVACAO} ${ANEL_FOCO} hover:border-acento`}
-                                />
-                            </section>
-
-                            <div className="flex flex-wrap items-center gap-3">
-                                <CustomButton variant="aprovar" size="auto" disabled={!podeDecidir}>
-                                    Aprovar
-                                </CustomButton>
-                                <CustomButton variant="reprovar" size="auto" disabled={!podeDecidir}>
-                                    Reprovar
-                                </CustomButton>
-                                <CustomButton variant="neutro" size="auto">
-                                    Pedir ajuste
-                                </CustomButton>
-
-                                {!podeDecidir && (
-                                    <p role="alert" className="text-corpo text-status-reprovada-texto">
-                                        Escreva o parecer para liberar a decisão.
-                                    </p>
-                                )}
-
-                                <button
-                                    type="button"
-                                    className={`ml-auto rounded-card px-1 text-corpo text-acento underline hover:text-titulo ${TRANSICAO_COR} ${ANEL_FOCO}`}
+                                <label
+                                    htmlFor={`nota-${criterio.id}`}
+                                    className="flex-1 text-corpo text-titulo"
                                 >
-                                    Salvar pontuação sem decidir
-                                </button>
+                                    {criterio.titulo}
+                                </label>
+                                <span className="text-apoio text-secundario">
+                                    peso {criterio.peso}%
+                                </span>
+                                <span className="flex items-center gap-1">
+                                    <input
+                                        id={`nota-${criterio.id}`}
+                                        type="number"
+                                        min={0}
+                                        max={10}
+                                        step={0.5}
+                                        value={notas[criterio.id]}
+                                        onChange={(evento) =>
+                                            setNotas((atual) => ({
+                                                ...atual,
+                                                [criterio.id]: Number(evento.target.value),
+                                            }))
+                                        }
+                                        className={`w-16 rounded-card border border-sutil px-2 py-1 text-right text-corpo text-titulo ${TRANSICAO_ELEVACAO} ${ANEL_FOCO} hover:border-acento`}
+                                    />
+                                    <span className="text-corpo text-secundario">/ 10</span>
+                                </span>
                             </div>
+                        ))}
+
+                        <div className="flex items-center justify-between bg-acento-suave px-card py-4">
+                            <span className="text-corpo text-acento">
+                                Nota final ponderada
+                            </span>
+                            <output
+                                aria-live="polite"
+                                className="font-display text-bloco text-acento"
+                            >
+                                {notaFinal.toLocaleString('pt-BR', {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                })}
+                            </output>
                         </div>
+                    </section>
+
+                    <section
+                        aria-labelledby="titulo-parecer"
+                        className="rounded-bloco border border-sutil bg-card p-card shadow-card"
+                    >
+                        <div className="flex items-center gap-3">
+                            <h2
+                                id="titulo-parecer"
+                                className="font-display text-bloco text-titulo"
+                            >
+                                Parecer (obrigatório)
+                            </h2>
+                            <span className="rounded-badge bg-acento-suave px-2 py-1 text-selo text-acento">
+                                Diferencial 02
+                            </span>
+                        </div>
+
+                        <p className="mt-1 text-apoio text-secundario" id="ajuda-parecer">
+                            É exatamente este texto que o candidato lê no extrato. Decisão
+                            sem parecer é recusada pelo sistema (US-21).
+                        </p>
+
+                        <label htmlFor="parecer" className="sr-only">
+                            Parecer da avaliação
+                        </label>
+                        <textarea
+                            id="parecer"
+                            rows={4}
+                            value={parecer}
+                            aria-describedby="ajuda-parecer"
+                            onChange={(evento) => setParecer(evento.target.value)}
+                            className={`mt-4 w-full rounded-card border border-sutil p-4 text-corpo text-titulo ${TRANSICAO_ELEVACAO} ${ANEL_FOCO} hover:border-acento`}
+                        />
+                    </section>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <CustomButton variant="aprovar" size="auto" disabled={!podeDecidir}>
+                            Aprovar
+                        </CustomButton>
+                        <CustomButton variant="reprovar" size="auto" disabled={!podeDecidir}>
+                            Reprovar
+                        </CustomButton>
+                        <CustomButton variant="neutro" size="auto">
+                            Pedir ajuste
+                        </CustomButton>
+
+                        {!podeDecidir && (
+                            <p role="alert" className="text-corpo text-status-reprovada-texto">
+                                Escreva o parecer para liberar a decisão.
+                            </p>
+                        )}
+
+                        <button
+                            type="button"
+                            className={`ml-auto rounded-card px-1 text-corpo text-acento underline hover:text-titulo ${TRANSICAO_COR} ${ANEL_FOCO}`}
+                        >
+                            Salvar pontuação sem decidir
+                        </button>
                     </div>
-        </CascaDoApp>
+                </div>
+            </div>
+        </div>
     )
 }
 

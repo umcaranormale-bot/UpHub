@@ -1,8 +1,6 @@
 import { useState } from 'react'
 
 import { CustomButton } from '../components/CustomButton'
-import CascaDoApp from '../components/CascaDoApp'
-import { MENU_MENTOR } from '../navegacao/menus'
 import { ANEL_FOCO, TRANSICAO_COR } from '../estilos/classes'
 
 /**
@@ -27,16 +25,7 @@ function RegistrarSessao() {
     const podeAssinar = feedback.trim().length > 0
 
     return (
-        <CascaDoApp
-            organizacao="Movetech"
-            papel="Mentor"
-            iniciais="PT"
-            nome="Paulo Tavares"
-            itens={MENU_MENTOR}
-            voltarPara="/mentor"
-            tituloDoTopo="Registrar sessão"
-            semMenu
-        >
+        <div>
             <h1 className="font-display text-tela text-titulo">
                 Registrar feedback e horas
             </h1>
@@ -191,7 +180,7 @@ function RegistrarSessao() {
                     </section>
                 </aside>
             </div>
-        </CascaDoApp>
+        </div>
     )
 }
 

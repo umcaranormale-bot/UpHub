@@ -1,6 +1,4 @@
-import CascaDoApp from '../components/CascaDoApp'
 import SeloStatus from '../components/SeloStatus'
-import { MENU_MENTOR } from '../navegacao/menus'
 
 /**
  * 39 · Mentor — histórico do acompanhado · rota /acompanhados
@@ -52,14 +50,7 @@ const corDaLinha: Record<EstadoDaSprint, string> = {
 
 function AcompanhadoMentor() {
     return (
-        <CascaDoApp
-            organizacao="Movetech"
-            papel="Mentor"
-            iniciais="PT"
-            nome="Paulo Tavares"
-            itens={MENU_MENTOR}
-            voltarPara="/mentor"
-        >
+        <div>
             <div className="flex items-start gap-5">
                 <div className="min-w-0 flex-1">
                     <h1 className="font-display text-tela text-titulo">Squad 3 · FICR</h1>
@@ -139,7 +130,7 @@ function AcompanhadoMentor() {
                     </p>
                 </section>
             </div>
-        </CascaDoApp>
+        </div>
     )
 }
 

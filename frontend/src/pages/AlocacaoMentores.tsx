@@ -1,9 +1,7 @@
 import { useState } from 'react'
 
 import { CustomButton } from '../components/CustomButton'
-import CascaDoApp from '../components/CascaDoApp'
 import SeloStatus, { type Status } from '../components/SeloStatus'
-import { MENU_GESTAO } from '../navegacao/menus'
 import Indicadores, { type Indicador } from '../components/Indicadores'
 import TabelaSelecionavel, { type ColunaDaTabela } from '../components/TabelaSelecionavel'
 import CartoesDeDetalhe from '../components/CartoesDeDetalhe'
@@ -157,14 +155,7 @@ function AlocacaoMentores() {
     const linha = linhas.find((l) => l.id === selecionada) ?? linhas[0]
 
     return (
-        <CascaDoApp
-            organizacao="Porto Digital"
-            papel="Gestão do PD"
-            iniciais="MV"
-            nome="Marcos Vilela"
-            itens={MENU_GESTAO}
-            voltarPara="/painel"
-        >
+        <div>
             <h1 className="font-display text-tela text-titulo">Alocação de mentores</h1>
             <p className="mt-2 text-apoio text-secundario">
                 Squads aprovadas em desafios de Formação que precisam de um mentor. O mentor
@@ -236,7 +227,7 @@ function AlocacaoMentores() {
                     </p>
                 </div>
             </section>
-        </CascaDoApp>
+        </div>
     )
 }
 
