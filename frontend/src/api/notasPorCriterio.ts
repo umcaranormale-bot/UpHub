@@ -1,5 +1,4 @@
 import { requisicao, type DataHora } from './cliente';
-
 export interface NotaCriterio {
     avaliacaoId: number;
     criterioId: number;
@@ -16,7 +15,6 @@ export interface NotaCriterio {
 export function listarNotas(avaliacaoId: number) {
     return requisicao<NotaCriterio[]>(`/api/avaliacoes/${avaliacaoId}/notas`);
 }
-
 export function darNota(avaliacaoId: number, criterioId: number, nota: number) {
     return requisicao<NotaCriterio>(`/api/avaliacoes/${avaliacaoId}/notas/${criterioId}`, { metodo: 'PUT', corpo: { nota } });
 }

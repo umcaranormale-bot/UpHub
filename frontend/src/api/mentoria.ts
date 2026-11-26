@@ -48,16 +48,14 @@ export function listarMentores(organizacaoId: number, area?: string) {
 
 export function convidarMentor(candidaturaId: number, dados: ConviteMentor) {
     return requisicao<Alocacao>(`/api/candidaturas/${candidaturaId}/mentores`, { metodo: 'POST', corpo: dados });
-}
 
+}
 export function listarMentoresDaCandidatura(candidaturaId: number) {
     return requisicao<Alocacao[]>(`/api/candidaturas/${candidaturaId}/mentores`);
 }
-
 export function minhasAlocacoes() {
     return requisicao<Alocacao[]>('/api/alocacoes');
 }
-
 export function aceitarAlocacao(id: number) {
     return requisicao<Alocacao>(`/api/alocacoes/${id}/aceitar`, { metodo: 'POST' });
 }
