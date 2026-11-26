@@ -1,172 +1,256 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
-import CascaDoApp from '../components/CascaDoApp'
-import SeloDeTrilha from '../components/SeloDeTrilha'
-import AbasDeFiltro, { type Aba } from '../components/AbasDeFiltro'
 import { CustomButton } from '../components/CustomButton'
-import { Carregando, ErroNaTela, Vazio } from '../components/ui/Estados'
-import { useSquadAtiva } from '../components/squad/dados'
-import { recomendadas, type Match } from '../api/matching'
-import { useDados } from '../hooks/useDados'
-import { MENU_SQUAD } from '../navegacao/menus'
-import { CARTAO_INTERATIVO, TRANSICAO_COR } from '../estilos/classes'
-import { diasAte, formatarData, trilhaDoSelo } from '../estilos/formatos'
+import SeloDeTrilha, { type Trilha } from '../components/SeloDeTrilha'
+import AbasDeFiltro, { type Aba } from '../components/AbasDeFiltro'
+import { ANEL_FOCO, TRANSICAO_COR } from '../estilos/classes'
 
 /**
- * 53 · Candidato squad — oportunidades · rota /squad/oportunidades
+ * 53 · Candidato squad — oportunidades · rota /oportunidades
  *
- * Os desafios da trilha Formação abertos para a squad, em ordem de
- * compatibilidade (matching). Desafio em que a squad é inelegível não aparece.
+ * A vitrine do ecossistema do ponto de vista da squad: o que está aberto,
+ * o quanto combina com o perfil dela e se ela é elegível.
+ *
+ * Dados simulados nesta etapa, conforme o Bloco 4: nenhuma chamada à API.
  */
 
-type AbaId = 'todas' | 'recomendadas' | 'candidatadas'
+type Elegibilidade = 'elegivel' | 'acompanhando' | 'nao-elegivel'
 
-/** A partir daqui o desafio conta como recomendado. */
-const CORTE_RECOMENDADA = 70
-
-function prazo(m: Match): string {
-    if (!m.prazoEnvio) return 'Sem prazo de envio'
-    const dias = diasAte(m.prazoEnvio)
-    return `Inscrições até ${formatarData(m.prazoEnvio)}${dias <= 7 ? ` · ${dias === 0 ? 'encerra hoje' : `faltam ${dias} dias`}` : ''}`
+interface Oportunidade {
+    id: number
+    trilha: Trilha
+    titulo: string
+    ofertante: string
+    resumo: string
+    elegibilidade: Elegibilidade
+    prazo: string
+    match: number
+    acao: string
+    recomendada: boolean
 }
 
+const oportunidades: Oportunidade[] = [
+    {
+        id: 1,
+        trilha: 'formacao',
+        titulo: 'Desafio Rotas Verdes',
+        ofertante: 'Movetech',
+        resumo: 'Roteirização sustentável para entregas de última milha no Recife.',
+        elegibilidade: 'elegivel',
+        prazo: 'Inscrições até 30 nov 2026',
+        match: 88,
+        acao: 'Ver detalhes',
+        recomendada: true,
+    },
+    {
+        id: 2,
+        trilha: 'formacao',
+        titulo: 'Residência Saúde Digital 2026',
+        ofertante: 'Porto Digital + CESAR',
+        resumo: 'Squads de residência criam soluções para a rede pública de saúde.',
+        elegibilidade: 'elegivel',
+        prazo: 'Inscrições até 12 dez 2026',
+        match: 72,
+        acao: 'Ver detalhes',
+        recomendada: true,
+    },
+    {
+        id: 3,
+        trilha: 'formacao',
+        titulo: 'Desafio Logística Urbana',
+        ofertante: 'Movetech',
+        resumo: 'Desafio real de roteirização para squads de residência.',
+        elegibilidade: 'acompanhando',
+        prazo: 'Aprovada em 28/08',
+        match: 74,
+        acao: 'Acompanhar',
+        recomendada: true,
+    },
+    {
+        id: 4,
+        trilha: 'formacao',
+        titulo: 'Desafio Cidades Inteligentes',
+        ofertante: 'Sebrae PE',
+        resumo: 'Pede de 6 a 8 integrantes; a Squad 3 · FICR tem 4.',
+        elegibilidade: 'nao-elegivel',
+        prazo: 'Inscrições até 18 dez 2026',
+        match: 51,
+        acao: 'Ver detalhes',
+        recomendada: false,
+    },
+]
+
+
+
+const rotuloDaElegibilidade: Record<Elegibilidade, string> = {
+    elegivel: 'Elegível',
+    acompanhando: 'Em acompanhamento',
+    'nao-elegivel': 'Não elegível',
+}
+
+const corDaElegibilidade: Record<Elegibilidade, string> = {
+    elegivel: 'text-status-aprovada-texto',
+    acompanhando: 'text-status-aprovada-texto',
+    'nao-elegivel': 'text-status-reprovada-texto',
+}
+
+type AbaId = 'todas' | 'recomendadas' | 'favoritas'
+
+const TOTAL_ABERTAS = 12
+
+const FILTROS = [
+    { rotulo: 'Trilha', valor: 'Todas as trilhas', ativo: false },
+    { rotulo: 'Área', valor: 'Software', ativo: true },
+    { rotulo: 'Prazo', valor: 'Aberto até 30 dias', ativo: true },
+    { rotulo: 'Elegibilidade', valor: 'Qualquer', ativo: false },
+]
+
 function OportunidadesSquad() {
-    const { squadId, nome } = useSquadAtiva()
     const [aba, setAba] = useState<AbaId>('todas')
-    const [busca, setBusca] = useState('')
-    const { dados, carregando, erro, recarregar } = useDados(
-        async () => (await recomendadas(squadId!, 100)).filter((m) => m.trilhaCodigo === 'FORMACAO'),
-        [squadId],
-        !!squadId,
+
+    const recomendadas = useMemo(
+        () => oportunidades.filter((o) => o.recomendada),
+        [],
     )
 
-    const todas = dados ?? []
-    const recomendadasLista = todas.filter((m) => m.compatibilidade >= CORTE_RECOMENDADA)
-    const candidatadas = todas.filter((m) => m.jaSeCandidatou)
-    const daAba = aba === 'recomendadas' ? recomendadasLista : aba === 'candidatadas' ? candidatadas : todas
-    const termo = busca.trim().toLowerCase()
-    const lista = termo
-        ? daAba.filter((m) => `${m.oportunidadeTitulo} ${m.area ?? ''}`.toLowerCase().includes(termo))
-        : daAba
+    const lista = aba === 'recomendadas' ? recomendadas : aba === 'favoritas' ? [] : oportunidades
 
     const abas: Aba<AbaId>[] = [
-        { id: 'todas', rotulo: 'Todas', quantidade: todas.length },
-        { id: 'recomendadas', rotulo: 'Recomendadas', quantidade: recomendadasLista.length },
-        { id: 'candidatadas', rotulo: 'Já me candidatei', quantidade: candidatadas.length },
+        { id: 'todas', rotulo: 'Todas', quantidade: TOTAL_ABERTAS },
+        { id: 'recomendadas', rotulo: 'Recomendadas', quantidade: recomendadas.length },
+        { id: 'favoritas', rotulo: 'Favoritas', quantidade: 0 },
     ]
 
     return (
-        <CascaDoApp itens={MENU_SQUAD} voltarPara="/squad">
-            <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-6">
+        <div>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
                 <div className="min-w-0 flex-1">
                     <h1 className="font-display text-tela text-titulo">Oportunidades</h1>
                     <p className="mt-2 text-apoio text-secundario">
-                        {dados
-                            ? `${todas.length} ${todas.length === 1 ? 'desafio de Formação aberto' : 'desafios de Formação abertos'} para a squad`
-                            : 'Desafios de Formação abertos para a squad'}
+                        {TOTAL_ABERTAS} abertas agora no ecossistema do Porto Digital
                     </p>
                 </div>
 
-                <label className="w-full shrink-0 md:w-[320px]">
+                <label className="w-full shrink-0 sm:w-[320px]">
                     <span className="sr-only">Buscar oportunidade</span>
                     <input
                         type="search"
-                        value={busca}
-                        onChange={(e) => setBusca(e.target.value)}
-                        placeholder="Buscar por título ou área"
+                        placeholder="Buscar por título ou organização"
                         className={`w-full rounded-card border border-sutil bg-card px-4 py-3 text-apoio text-titulo outline-none ${TRANSICAO_COR} placeholder:text-secundario focus:border-acento focus-visible:shadow-foco`}
                     />
                 </label>
             </div>
 
-            {carregando && !dados && <Carregando />}
-            {erro && (
-                <div className="mt-6">
-                    <ErroNaTela mensagem={erro} tentarDeNovo={recarregar} />
+            <section
+                aria-label="Recomendação para a squad"
+                className="mt-6 flex flex-col items-start gap-4 rounded-card bg-acento-suave p-5 sm:flex-row sm:items-center sm:gap-5"
+            >
+                <div className="min-w-0 flex-1">
+                    <p className="font-display text-bloco text-acento">
+                        {recomendadas.length} oportunidades combinam com o perfil da Squad 3 ·
+                        FICR
+                    </p>
+                    <p className="mt-1 text-apoio text-secundario">
+                        A recomendação usa trilha, área, número de integrantes e o código da
+                        coordenação da squad
+                    </p>
                 </div>
-            )}
+                <CustomButton
+                    variant="neutro"
+                    size="auto"
+                    onClick={() => setAba('recomendadas')}
+                >
+                    Ver recomendadas
+                </CustomButton>
+            </section>
 
-            {dados && (
-                <>
-                    {recomendadasLista.length > 0 && (
-                        <section
-                            aria-label="Recomendação para a squad"
-                            className="mt-6 flex items-center gap-5 rounded-card bg-acento-suave p-5"
-                        >
-                            <div className="min-w-0 flex-1">
-                                <p className="font-display text-bloco text-acento">
-                                    {recomendadasLista.length}{' '}
-                                    {recomendadasLista.length === 1 ? 'desafio combina' : 'desafios combinam'} com o perfil da{' '}
-                                    {nome}
-                                </p>
+            <div className="mt-6">
+
+                <AbasDeFiltro
+                    abas={abas}
+                    ativa={aba}
+                    aoEscolher={setAba}
+                    rotulo="Filtrar oportunidades"
+                    variante="sublinhado"
+                />
+
+            </div>
+
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+                {FILTROS.map((filtro) => (
+                    <span
+                        key={filtro.rotulo}
+                        className={`rounded-card border px-4 py-2 text-apoio ${filtro.ativo
+                                ? 'border-acento bg-acento-suave text-titulo'
+                                : 'border-sutil bg-card text-secundario'
+                            }`}
+                    >
+                        {filtro.rotulo}: <span className="text-titulo">{filtro.valor}</span> ▾
+                    </span>
+                ))}
+                <button
+                    type="button"
+                    className={`rounded-card px-2 py-2 text-apoio text-acento ${TRANSICAO_COR} hover:text-titulo ${ANEL_FOCO}`}
+                >
+                    Limpar filtros
+                </button>
+                <span className="ml-auto text-apoio text-secundario">
+                    Ordenar por compatibilidade ▾
+                </span>
+            </div>
+
+            {lista.length === 0 ? (
+                <p className="mt-8 rounded-bloco border border-sutil bg-card p-card text-apoio text-secundario shadow-card">
+                    Nenhuma oportunidade favoritada ainda. Marque uma na lista para
+                    encontrá-la aqui depois.
+                </p>
+            ) : (
+                <ul className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
+                    {lista.map((oportunidade) => (
+                        <li key={oportunidade.id}>
+                            <article className="flex h-full flex-col rounded-bloco border border-sutil bg-card p-card shadow-card transition-[box-shadow,border-color,transform] duration-[var(--dur-padrao)] ease-padrao hover:-translate-y-px hover:shadow-card-hover">
+                                <div className="flex items-center gap-3">
+                                    <SeloDeTrilha trilha={oportunidade.trilha} />
+                                    <span className="ml-auto text-apoio text-acento">
+                                        {oportunidade.match}% de match
+                                    </span>
+                                </div>
+
+                                <h2 className="mt-3 font-display text-bloco text-titulo">
+                                    {oportunidade.titulo}
+                                </h2>
                                 <p className="mt-1 text-apoio text-secundario">
-                                    Na Formação, a compatibilidade pesa as competências dos integrantes, a elegibilidade e a área
+                                    {oportunidade.ofertante}
                                 </p>
-                            </div>
-                            <CustomButton variant="neutro" size="auto" onClick={() => setAba('recomendadas')}>
-                                Ver recomendadas
-                            </CustomButton>
-                        </section>
-                    )}
+                                <p className="mt-3 text-apoio text-titulo">
+                                    {oportunidade.resumo}
+                                </p>
 
-                    <div className="mt-6">
-                        <AbasDeFiltro
-                            abas={abas}
-                            ativa={aba}
-                            aoEscolher={setAba}
-                            rotulo="Filtrar oportunidades"
-                            variante="sublinhado"
-                        />
-                    </div>
-
-                    {lista.length === 0 ? (
-                        <div className="mt-6">
-                            <Vazio titulo={termo ? 'Nenhum desafio com esse termo' : 'Nenhum desafio nesta aba'}>
-                                {termo
-                                    ? 'Tente outra palavra do título ou da área.'
-                                    : 'Os desafios aparecem aqui quando estão publicados, no prazo e a squad é elegível.'}
-                            </Vazio>
-                        </div>
-                    ) : (
-                        <ul className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
-                            {lista.map((m) => (
-                                <li key={m.oportunidadeId}>
-                                    <article className={`flex h-full flex-col ${CARTAO_INTERATIVO}`}>
-                                        <div className="flex items-center gap-3">
-                                            <SeloDeTrilha trilha={trilhaDoSelo(m.trilhaCodigo)} />
-                                            <span className="ml-auto text-apoio text-acento">{m.compatibilidade}% de match</span>
-                                        </div>
-                                        <h2 className="mt-3 font-display text-bloco text-titulo">{m.oportunidadeTitulo}</h2>
-                                        {m.area && <p className="mt-1 text-apoio text-secundario">Área: {m.area}</p>}
-
-                                        <div className="mt-auto flex items-center gap-3 pt-5">
-                                            <span
-                                                className={`inline-flex items-center gap-2 text-apoio ${
-                                                    m.elegibilidade === 'ELEGIVEL' ? 'text-status-aprovada-texto' : 'text-ocre'
-                                                }`}
-                                            >
-                                                <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
-                                                {m.jaSeCandidatou
-                                                    ? 'Já se candidatou'
-                                                    : m.elegibilidade === 'ELEGIVEL'
-                                                      ? 'Elegível'
-                                                      : 'Elegibilidade pendente'}
-                                            </span>
-                                            <span className="text-apoio text-secundario">{prazo(m)}</span>
-                                            <span className="ml-auto">
-                                                <CustomButton variant="aprovar" size="auto" to={`/squad/oportunidades/${m.oportunidadeId}`}>
-                                                    Ver detalhes
-                                                </CustomButton>
-                                            </span>
-                                        </div>
-                                    </article>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </>
+                                <div className="mt-5 flex flex-wrap items-center gap-3 pt-1">
+                                    <span
+                                        className={`inline-flex items-center gap-2 text-apoio ${corDaElegibilidade[oportunidade.elegibilidade]}`}
+                                    >
+                                        <span
+                                            aria-hidden="true"
+                                            className="size-1.5 rounded-full bg-current"
+                                        />
+                                        {rotuloDaElegibilidade[oportunidade.elegibilidade]}
+                                    </span>
+                                    <span className="text-apoio text-secundario">
+                                        {oportunidade.prazo}
+                                    </span>
+                                    <span className="ml-auto">
+                                        <CustomButton variant="aprovar" size="auto">
+                                            {oportunidade.acao}
+                                        </CustomButton>
+                                    </span>
+                                </div>
+                            </article>
+                        </li>
+                    ))}
+                </ul>
             )}
-        </CascaDoApp>
+        </div>
     )
 }
 

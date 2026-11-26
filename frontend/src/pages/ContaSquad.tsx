@@ -1,73 +1,48 @@
-import CascaDoApp from '../components/CascaDoApp'
 import PaginaDeConta, { BlocoDoPapel } from '../components/PaginaDeConta'
-import { Carregando, ErroNaTela, Vazio } from '../components/ui/Estados'
-import { LinkDeTexto } from '../components/squad/AvisoComLink'
-import { candidaturasComDesafio, linhaDoTempo, rotaDaCandidatura, useSquadAtiva } from '../components/squad/dados'
-import { listarMinhasProvas } from '../api/provas'
-import { useDados } from '../hooks/useDados'
-import { MENU_SQUAD } from '../navegacao/menus'
-import { formatarData, rotuloDoEstado, statusDoEstado } from '../estilos/formatos'
 
-/** 57 · Candidato squad — conta · rota /squad/conta */
-
-async function carregar(squadId: number) {
-    const [candidaturas, provas] = await Promise.all([candidaturasComDesafio(squadId), listarMinhasProvas().catch(() => [])])
-    return {
-        ultima: candidaturas[0] ?? null,
-        prova: [...provas].sort((a, b) => b.dataProva.localeCompare(a.dataProva))[0] ?? null,
-    }
-}
-
+/** 57 · Candidato squad — conta (Sua Chen Letícia) · rota /conta/squad */
 function ContaSquad() {
-    const { squadId } = useSquadAtiva()
-    const { dados, carregando, erro, recarregar } = useDados(() => carregar(squadId!), [squadId], !!squadId)
-
     return (
-        <CascaDoApp itens={MENU_SQUAD} voltarPara="/squad">
+        <div>
             <PaginaDeConta
+                pessoa={{
+                    iniciais: 'SC',
+                    nome: 'Sua Chen Letícia',
+                    email: 'leticia.chen@ficr.edu.br',
+                    telefone: '(81) 9 8888-1203',
+                    funcao: 'Representante da squad',
+                    criadaEm: '03/03/2026',
+                    id: 'USR-0212',
+                }}
                 destaqueTitulo="Minha nota do match"
                 destaque={
-                    dados?.prova ? (
-                        <>
-                            <div className="mt-3 rounded-card bg-status-aprovada-fundo px-4 py-3">
-                                <p className="text-bloco text-status-aprovada-texto">
-                                    {dados.prova.nota}
-                                    {dados.prova.area ? ` em ${dados.prova.area}` : ''}
-                                </p>
-                                <p className="mt-1 text-apoio text-status-aprovada-texto">
-                                    prova de {formatarData(dados.prova.dataProva)}
-                                </p>
-                            </div>
-                            <p className="mt-3 text-apoio text-secundario">
-                                A nota é sua, não da organização, e acompanha você em qualquer vínculo.
+                    <>
+                        <div className="mt-3 rounded-card bg-status-aprovada-fundo px-4 py-3">
+                            <p className="text-bloco text-status-aprovada-texto">
+                                82 em lógica e dados
                             </p>
-                        </>
-                    ) : (
-                        <p className="mt-3 text-apoio text-secundario">Você ainda não tem nota de prova registrada.</p>
-                    )
+                            <p className="mt-1 text-apoio text-status-aprovada-texto">
+                                válida até 30/12/2026
+                            </p>
+                        </div>
+                        <p className="mt-3 text-apoio text-secundario">
+                            A nota é sua, não da organização, e acompanha você em qualquer
+                            vínculo.
+                        </p>
+                    </>
                 }
+                vinculos={[{ organizacao: 'Squad 3 · FICR', papel: 'Candidato · squad' }]}
             >
-                {carregando && !dados && <Carregando />}
-                {erro && <ErroNaTela mensagem={erro} tentarDeNovo={recarregar} />}
-                {dados &&
-                    (dados.ultima ? (
-                        <BlocoDoPapel
-                            titulo="Última candidatura"
-                            status={statusDoEstado(dados.ultima.candidatura.estado)}
-                            rotuloDoStatus={rotuloDoEstado(dados.ultima.candidatura.estado)}
-                            chamada={dados.ultima.desafio?.titulo ?? `Candidatura #${dados.ultima.candidatura.id}`}
-                            contexto={linhaDoTempo(dados.ultima.candidatura, formatarData)}
-                            explicacao="As sprints, as entregas e o feedback do mentor ficam em Minhas candidaturas."
-                            acao="Abrir candidatura"
-                            para={rotaDaCandidatura(dados.ultima.candidatura)}
-                        />
-                    ) : (
-                        <Vazio titulo="A squad ainda não tem candidaturas">
-                            <LinkDeTexto para="/squad/oportunidades">Ver os desafios abertos ›</LinkDeTexto>
-                        </Vazio>
-                    ))}
+                <BlocoDoPapel
+                    titulo="Resultado da última candidatura"
+                    status="aprovada"
+                    chamada="Desafio Logística Urbana"
+                    contexto="Movetech · aprovada em 28/08/2026 · em acompanhamento desde 02/09"
+                    explicacao="Mentor: Paulo Tavares. As sprints e as entregas ficam em Minhas candidaturas."
+                    acao="Ver acompanhamento"
+                />
             </PaginaDeConta>
-        </CascaDoApp>
+        </div>
     )
 }
 

@@ -3,11 +3,7 @@ import { ANEL_FOCO, TRANSICAO_COR } from '../estilos/classes'
 
 /**
  * MenuLateral — o menu lateral do sistema, um só para o projeto inteiro.
- *
- * Antes existiam dois: o SideMenu, com a lista fixa, usado pelo HomeLayout, e
- * o menu de dentro da CascaDoApp, montado por papel. Este substitui os dois:
- * os itens entram por propriedade, então serve tanto a lista fixa de antes
- * quanto os menus por papel.
+
  */
 
 export interface ItemDeMenu {
@@ -29,19 +25,21 @@ interface MenuLateralProps {
      * As telas que trazem a própria casca não precisam disso.
      */
     grudento?: boolean
-    /** Dentro da gaveta do celular: ocupa a largura da gaveta, sem borda. */
-    naGaveta?: boolean
+    /** Chamado ao clicar num item. No celular, fecha o menu aberto por cima da tela. */
+    aoNavegar?: () => void
+    /** Classes extras do aside (o menu do celular ocupa a altura toda). */
+    className?: string
 }
 
 const ITEM_BASE = `block rounded-card px-4 py-3 text-apoio ${TRANSICAO_COR}`
 
 
-export function MenuLateral({ itens, rotulo, grudento = false, naGaveta = false }: MenuLateralProps) {
+export function MenuLateral({ itens, rotulo, grudento = false, aoNavegar, className = '' }: MenuLateralProps) {
     return (
         <aside
-            className={`shrink-0 bg-card px-4 py-6 ${naGaveta ? 'w-full' : 'h-full w-[260px] border-r border-sutil'} ${
+            className={`w-[260px] max-w-[85vw] shrink-0 overflow-y-auto border-r border-sutil bg-card px-4 py-6 ${
                 grudento ? 'sticky top-16 h-[calc(100vh-4rem)]' : ''
-            }`}
+            } ${className}`}
         >
             <nav aria-label={rotulo}>
                 <ul className="flex flex-col gap-1">
@@ -51,6 +49,7 @@ export function MenuLateral({ itens, rotulo, grudento = false, naGaveta = false 
                                 <NavLink
                                     to={item.para}
                                     end
+                                    onClick={aoNavegar}
                                     className={({ isActive }) =>
                                         [
                                             ITEM_BASE,

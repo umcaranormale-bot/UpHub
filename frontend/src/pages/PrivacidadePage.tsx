@@ -1,9 +1,3 @@
-import { Link } from 'react-router-dom';
-
-import { ANEL_FOCO } from '../estilos/classes';
-
-/** Política de privacidade · rota /privacidade (link no rodapé da landing e no cadastro) */
-
 const ATUALIZADA_EM = '15 de novembro de 2026';
 
 interface Secao {
@@ -56,11 +50,8 @@ export default function PrivacidadePage() {
     return (
         <section className="bg-page px-6 py-16">
             <div className="mx-auto max-w-3xl">
-                <Link to="/" className={`rounded-card text-apoio font-medium text-acento hover:underline ${ANEL_FOCO}`}>
-                    ‹ Voltar ao início
-                </Link>
-                <span className="mt-6 block text-sm font-semibold text-acento">Up Hub</span>
-                <h1 className="mt-2 text-4xl font-bold tracking-tight text-titulo">
+                <span className="text-sm font-semibold text-acento">Up Hub</span>
+                <h1 className="mt-2 text-3xl font-bold tracking-tight text-titulo sm:text-4xl">
                     Política de privacidade
                 </h1>
                 <p className="mt-2 text-sm text-secundario">Atualizada em {ATUALIZADA_EM}</p>
@@ -78,15 +69,6 @@ export default function PrivacidadePage() {
                             </div>
                         </article>
                     ))}
-                </div>
-
-                <div className="mt-12 flex flex-wrap gap-4 border-t border-sutil pt-6 text-apoio">
-                    <Link to="/" className={`rounded-card font-medium text-acento hover:underline ${ANEL_FOCO}`}>
-                        Voltar ao início
-                    </Link>
-                    <Link to="/cadastro" className={`rounded-card font-medium text-acento hover:underline ${ANEL_FOCO}`}>
-                        Criar conta
-                    </Link>
                 </div>
             </div>
         </section>

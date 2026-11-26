@@ -35,7 +35,7 @@ export interface Organizacao {
     razaoSocial: string | null;
     cnpj: string | null;
     porte: string | null;
-    setor: string | null;
+    etor: string | null;
     estagio: string | null;
     anoFundacao: number | null;
     sedeCidade: string | null;

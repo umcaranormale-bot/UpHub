@@ -44,7 +44,7 @@ export interface ResultadoRequisito {
     requisitoId: number;
     campo: CampoRequisito;
     operador: Operador;
-    valorExigido: ValorRequisito;
+    alorExigido: ValorRequisito;
     valorInformado: string | number | null;
     obrigatoria: boolean;
     situacao: SituacaoRequisito;
@@ -97,6 +97,9 @@ export function removerRequisito(oportunidadeId: number, versaoId: number, requi
 
 export function conferirElegibilidade(oportunidadeId: number, versaoId: number, organizacaoId: number) {
     return requisicao<Elegibilidade>(`${base(oportunidadeId, versaoId)}/elegibilidade`, {
+
         parametros: { organizacaoId },
+
     });
+
 }
