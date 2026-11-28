@@ -4,10 +4,10 @@ interface AuthLayoutProps {
 
 export default function AuthLayout({ children }: AuthLayoutProps) {
     return (
-        <main className="min-h-screen flex flex-col md:flex-row">
+        <main className="flex min-h-screen flex-col lg:flex-row">
 
             {/* Lado esquerdo */}
-            <section className="flex min-w-0 flex-col justify-between bg-profundo px-6 py-5 text-page md:flex-3 md:p-16">
+            <section className="flex flex-col justify-between bg-profundo px-6 py-5 text-page lg:flex-3 lg:p-16">
 
                 {/* Logo no topo */}
                 <div className="flex items-center gap-3">
@@ -19,7 +19,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
                 </div>
 
                 {/* Conteúdo central */}
-                <div className="my-12 hidden max-w-lg md:block">
+                <div className="my-12 hidden max-w-lg lg:block">
                     <h1 className="mb-6 text-4xl font-bold">
                         A plataforma única do ecossistema
                     </h1>
@@ -54,12 +54,12 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
                 </div>
 
                 {/* Espaço inferior */}
-                <div className="hidden md:block" />
+                <div className="hidden lg:block" />
 
             </section>
 
             {/* Lado direito */}
-            <section className="flex min-w-0 flex-1 items-start justify-center bg-gray-50 px-4 py-8 sm:p-6 md:flex-7 md:items-center md:p-10">
+            <section className="flex flex-1 items-start justify-center bg-gray-50 px-4 py-8 md:p-10 lg:flex-7 lg:items-center">
                 {children}
             </section>
 

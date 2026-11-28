@@ -44,19 +44,22 @@ export function listarPedidos(organizacaoId: number) {
 export function buscarPedido(id: number) {
     return requisicao<Solicitacao>(`/api/solicitacoes-provedor/${id}`);
 }
+
 export function listarFila(situacao?: SituacaoSolicitacao) {
     return requisicao<Solicitacao[]>('/api/solicitacoes-provedor', { parametros: { situacao } });
-
 }
+
 export function aprovarPedido(id: number) {
     return requisicao<Solicitacao>(`/api/solicitacoes-provedor/${id}/aprovar`, { metodo: 'POST' });
 }
+
 export function recusarPedido(id: number, motivo: string, recusaPorDocumento = false) {
     return requisicao<Solicitacao>(`/api/solicitacoes-provedor/${id}/recusar`, {
         metodo: 'POST',
         corpo: { motivo, recusaPorDocumento },
     });
 }
+
 export function revogarPermissao(id: number, motivo: string) {
     return requisicao<Solicitacao>(`/api/solicitacoes-provedor/${id}/revogar`, {
         metodo: 'POST',
