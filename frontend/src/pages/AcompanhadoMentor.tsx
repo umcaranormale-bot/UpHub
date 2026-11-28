@@ -1,138 +1,151 @@
+import { useParams } from 'react-router-dom'
+
+import CascaDoApp from '../components/CascaDoApp'
 import SeloStatus from '../components/SeloStatus'
+import { CustomButton } from '../components/CustomButton'
+import { Carregando, ErroNaTela } from '../components/ui/Estados'
+import { LinhaDoTempoDeSprints } from '../components/squad/Sprints'
+import { carregarAcompanhado, formatarHoras, formatarMinutos, nomeDoAcompanhado, nomeDoMes } from '../components/mentor/dados'
+import { useDados } from '../hooks/useDados'
+import { MENU_MENTOR } from '../navegacao/menus'
+import { useSessao } from '../sessao/contexto'
+import { CARTAO, CARTAO_COM_RESPIRO } from '../estilos/classes'
+import { formatarData, rotuloDoEstado, statusDoEstado } from '../estilos/formatos'
 
 /**
- * 39 · Mentor — histórico do acompanhado · rota /acompanhados
+ * 39 · Mentor — histórico do acompanhado · rota /mentor/acompanhados/:id
  *
- * A linha do tempo das sprints da squad acompanhada, o resumo gerado por IA
- * (somente leitura) e as pendências que o mentor abriu.
- *
- * Dados simulados nesta etapa, conforme o Bloco 4: nenhuma chamada à API.
+ * A linha do tempo das sprints, a última entrega avaliada e as sessões que o
+ * mentor registrou. O :id é a alocação (o convite aceito).
  */
 
-type EstadoDaSprint = 'avaliada' | 'andamento' | 'planejada'
-
-interface Sprint {
-    id: string
-    rotulo: string
-    situacao: string
-    estado: EstadoDaSprint
-}
-
-const sprints: Sprint[] = [
-    { id: 's1', rotulo: 'Sprint 1', situacao: 'Avaliada · 12/09', estado: 'avaliada' },
-    { id: 's2', rotulo: 'Sprint 2', situacao: 'Avaliada · 26/09', estado: 'avaliada' },
-    {
-        id: 's3',
-        rotulo: 'Sprint 3',
-        situacao: 'Em andamento · entrega até 10/10',
-        estado: 'andamento',
-    },
-    { id: 's4', rotulo: 'Sprint 4', situacao: 'Planejada', estado: 'planejada' },
-    {
-        id: 'fim',
-        rotulo: 'Encerramento',
-        situacao: 'previsto para 20/11',
-        estado: 'planejada',
-    },
-]
-
-const corDoPonto: Record<EstadoDaSprint, string> = {
-    avaliada: 'bg-status-aprovada-texto',
-    andamento: 'bg-acento',
-    planejada: 'bg-sutil',
-}
-
-const corDaLinha: Record<EstadoDaSprint, string> = {
-    avaliada: 'bg-status-aprovada-texto',
-    andamento: 'bg-acento',
-    planejada: 'bg-sutil',
-}
-
 function AcompanhadoMentor() {
+    const { id } = useParams()
+    const alocacaoId = Number(id)
+    const { perfilAtivo } = useSessao()
+    const vinculoId = perfilAtivo?.vinculo.id
+    const { dados, carregando, erro, recarregar } = useDados(
+        () => carregarAcompanhado(alocacaoId, vinculoId),
+        [alocacaoId, vinculoId],
+        !!vinculoId && Number.isFinite(alocacaoId),
+    )
+
+    if (!dados) {
+        return (
+            <CascaDoApp itens={MENU_MENTOR} voltarPara="/mentor/acompanhados">
+                {carregando && <Carregando />}
+                {erro && <ErroNaTela mensagem={erro} tentarDeNovo={recarregar} />}
+            </CascaDoApp>
+        )
+    }
+
+    const { item, sprints, sessoes, horas } = dados
+    const { alocacao, candidatura, desafio, provedor } = item
+    const ultimaAvaliada = [...sprints].reverse().find((s) => s.estado === 'AVALIADA') ?? null
+    const rascunhos = sessoes.filter((s) => s.situacao === 'RASCUNHO')
+    const aceita = alocacao.situacao === 'ACEITA'
+
     return (
-        <div>
-            <div className="flex flex-col items-start gap-3 sm:flex-row sm:gap-5">
+        <CascaDoApp itens={MENU_MENTOR} voltarPara="/mentor/acompanhados">
+            <div className="flex flex-wrap items-start gap-5">
                 <div className="min-w-0 flex-1">
-                    <h1 className="font-display text-tela text-titulo">Squad 3 · FICR</h1>
+                    <h1 className="font-display text-tela text-titulo">{nomeDoAcompanhado(item)}</h1>
                     <p className="mt-2 text-apoio text-secundario">
-                        Movetech · Desafio Logística Urbana · alocação aceita em 02/09/2026
+                        {[provedor?.nome, desafio?.titulo, aceita ? `alocação aceita em ${formatarData(alocacao.respondidaEm)}` : null]
+                            .filter(Boolean)
+                            .join(' · ')}
                     </p>
                 </div>
-                <SeloStatus status="aprovada" rotulo="Em acompanhamento" comPonto />
+                {candidatura && (
+                    <SeloStatus status={statusDoEstado(candidatura.estado)} rotulo={rotuloDoEstado(candidatura.estado)} comPonto />
+                )}
             </div>
 
-            <section
-                aria-labelledby="titulo-sprints"
-                className="mt-6 rounded-bloco border border-sutil bg-card p-card shadow-card"
-            >
-                <h2 id="titulo-sprints" className="font-display text-bloco text-titulo">
-                    Sprints do desafio
-                </h2>
+            <div className="mt-6">
+                <LinhaDoTempoDeSprints sprints={sprints} titulo="Sprints do desafio" />
+            </div>
 
-                <div className="mt-6 overflow-x-auto">
-                <ol className="flex min-w-[520px] items-start">
-                    {sprints.map((sprint, indice) => (
-                        <li key={sprint.id} className="min-w-0 flex-1">
-                            <div className="flex items-center">
-                                <span
-                                    aria-hidden="true"
-                                    className={`size-3 shrink-0 rounded-full ${corDoPonto[sprint.estado]}`}
+            <div className="mt-5 grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
+                <section aria-labelledby="titulo-avaliada" className={CARTAO_COM_RESPIRO}>
+                    <p className="text-apoio text-secundario">Última entrega avaliada</p>
+                    {ultimaAvaliada ? (
+                        <>
+                            <h2 id="titulo-avaliada" className="mt-1 font-display text-bloco text-titulo">
+                                Sprint {ultimaAvaliada.numero} · nota {ultimaAvaliada.notaEntrega ?? '—'} ·{' '}
+                                {formatarData(ultimaAvaliada.avaliadaEm)}
+                            </h2>
+                            {ultimaAvaliada.entregaDescricao && (
+                                <p className="mt-2 whitespace-pre-line text-apoio text-secundario">
+                                    Entrega: {ultimaAvaliada.entregaDescricao}
+                                </p>
+                            )}
+                            <p className="mt-2 whitespace-pre-line text-apoio text-titulo">{ultimaAvaliada.feedbackEntrega}</p>
+                        </>
+                    ) : (
+                        <h2 id="titulo-avaliada" className="mt-1 font-display text-bloco text-titulo">
+                            Nenhuma entrega avaliada ainda
+                        </h2>
+                    )}
+                    <div className="mt-4">
+                        <CustomButton variant="neutro" size="auto" to={`/mentor/acompanhados/${alocacao.id}/sprints`}>
+                            Sprints e avaliação da entrega
+                        </CustomButton>
+                    </div>
+                </section>
+
+                <section aria-labelledby="titulo-horas" className={CARTAO_COM_RESPIRO}>
+                    <p className="text-apoio text-secundario">Horas do mês</p>
+                    <h2 id="titulo-horas" className="mt-1 font-display text-bloco text-titulo">
+                        {horas
+                            ? `${formatarMinutos(horas.minutosRealizados)} de ${formatarHoras(horas.horasPrevistasMes)} previstas em ${nomeDoMes(horas.mes)}`
+                            : `${formatarHoras(alocacao.horasPrevistasMes)} previstas por mês`}
+                    </h2>
+                    <p className="mt-2 text-apoio text-secundario">
+                        Contam só as sessões assinadas.
+                        {rascunhos.length > 0 &&
+                            ` ${rascunhos.length} ${rascunhos.length === 1 ? 'sessão está' : 'sessões estão'} em rascunho.`}
+                    </p>
+                    {aceita && candidatura?.estado === 'EM_ACOMPANHAMENTO' && (
+                        <div className="mt-4">
+                            <CustomButton variant="aprovar" size="auto" to={`/mentor/horas?alocacao=${alocacao.id}`}>
+                                Registrar sessão
+                            </CustomButton>
+                        </div>
+                    )}
+                </section>
+            </div>
+
+            <section aria-labelledby="titulo-sessoes" className={`mt-5 ${CARTAO}`}>
+                <header className="border-b border-sutil p-card">
+                    <h2 id="titulo-sessoes" className="font-display text-bloco text-titulo">
+                        Sessões registradas
+                    </h2>
+                </header>
+                {sessoes.length === 0 ? (
+                    <p className="p-card text-apoio text-secundario">Nenhuma sessão registrada ainda.</p>
+                ) : (
+                    <ul>
+                        {sessoes.map((s) => (
+                            <li key={s.id} className="flex items-start gap-4 border-b border-sutil px-card py-4 last:border-b-0">
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-item text-titulo">
+                                        {formatarData(s.dataSessao)} · {formatarMinutos(s.duracaoMinutos)}
+                                        {s.sprintNumero ? ` · sprint ${s.sprintNumero}` : ''}
+                                    </p>
+                                    <p className="mt-1 whitespace-pre-line text-apoio text-secundario">
+                                        {s.feedback ?? 'Sem feedback ainda'}
+                                    </p>
+                                </div>
+                                <SeloStatus
+                                    status={s.situacao === 'ASSINADO' ? 'aprovada' : 'rascunho'}
+                                    rotulo={s.situacao === 'ASSINADO' ? 'Assinada' : 'Rascunho'}
                                 />
-                                {indice < sprints.length - 1 && (
-                                    <span
-                                        aria-hidden="true"
-                                        className={`h-0.5 min-w-0 flex-1 ${corDaLinha[sprints[indice + 1].estado]}`}
-                                    />
-                                )}
-                            </div>
-                            <p className="mt-3 pr-5 font-display text-bloco text-titulo">
-                                {sprint.rotulo}
-                            </p>
-                            <p className="mt-1 pr-5 text-apoio text-secundario">
-                                {sprint.situacao}
-                            </p>
-                        </li>
-                    ))}
-                </ol>
-                </div>
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </section>
-
-            <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
-                <section
-                    aria-labelledby="titulo-resumo"
-                    className="rounded-bloco border border-sutil bg-card p-card shadow-card"
-                >
-                    <p id="titulo-resumo" className="text-apoio text-secundario">
-                        Resumo do histórico
-                    </p>
-                    <h2 className="mt-1 font-display text-bloco text-titulo">
-                        Gerado por IA em 16/10/2026 · somente leitura
-                    </h2>
-                    <p className="mt-3 text-apoio text-secundario">
-                        A squad entregou as sprints 1 e 2 no prazo. O ponto aberto desde a
-                        sprint 2 é a cobertura de testes. Resumo montado só a partir dos
-                        registros existentes (IA-7): nenhum registro foi alterado.
-                    </p>
-                </section>
-
-                <section
-                    aria-labelledby="titulo-pendencias"
-                    className="rounded-bloco border border-sutil bg-card p-card shadow-card"
-                >
-                    <p id="titulo-pendencias" className="text-apoio text-secundario">
-                        Pendências abertas
-                    </p>
-                    <h2 className="mt-1 font-display text-bloco text-titulo">
-                        Cobertura de testes · sprint 2
-                    </h2>
-                    <p className="mt-3 text-apoio text-secundario">
-                        Registrada por você em 26/09 e a squad respondeu que entra na sprint
-                        3. Com o serviço de IA fora do ar, o histórico completo continua aqui
-                        e só o resumo fica indisponível (E6).
-                    </p>
-                </section>
-            </div>
-        </div>
+        </CascaDoApp>
     )
 }
 

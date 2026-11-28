@@ -36,6 +36,11 @@ export function criarOportunidade(dados: OportunidadeCadastro) {
     return requisicao<Oportunidade>('/api/oportunidades', { metodo: 'POST', corpo: dados });
 }
 
+/** Todas as oportunidades publicadas do ecossistema (a busca do candidato), da mais nova para a mais antiga. */
+export function listarOportunidadesPublicadas(trilhaCodigo?: TrilhaCodigo) {
+    return requisicao<Oportunidade[]>('/api/oportunidades', { parametros: { trilhaCodigo } });
+}
+
 export function listarOportunidades(organizacaoId: number) {
     return requisicao<Oportunidade[]>('/api/oportunidades', { parametros: { organizacaoId } });
 }
@@ -43,6 +48,7 @@ export function listarOportunidades(organizacaoId: number) {
 export function buscarOportunidade(id: number) {
     return requisicao<Oportunidade>(`/api/oportunidades/${id}`);
 }
+
 export function editarOportunidade(id: number, dados: OportunidadeEdicao) {
     return requisicao<Oportunidade>(`/api/oportunidades/${id}`, { metodo: 'PUT', corpo: dados });
 }

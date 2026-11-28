@@ -1,190 +1,136 @@
 import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { CustomButton } from "./CustomButton";
 import { confirmarEmail, reenviarCodigo } from "../api/confirmacaoEmail";
 import { mensagemDeErro } from "../api/erros";
 
-type ConfirmEmailCardProps = {
-    email: string;
-};
+/**
+ * Confirmar e-mail (tela 51 do Figma). Chega aqui quem acabou de criar a conta
+ * ou tentou entrar sem confirmar: o e-mail vem no state da navegação ou em ?email=.
+ */
+export default function ConfirmEmailCard() {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const [parametros] = useSearchParams();
+    const emailRecebido =
+        (location.state as { email?: string } | null)?.email ?? parametros.get("email") ?? "";
 
-export default function ConfirmEmailCard({ email }: ConfirmEmailCardProps) {
+    const [email, setEmail] = useState(emailRecebido);
     const [codigo, setCodigo] = useState("");
-    const [submitted, setSubmitted] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [reenviando, setReenviando] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState<string | null>(null);
+    const [erro, setErro] = useState<string | null>(null);
+    const [aviso, setAviso] = useState<string | null>(null);
+    const [enviando, setEnviando] = useState(false);
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        setError(null);
-
+        setErro(null);
+        setAviso(null);
+        setEnviando(true);
         try {
-            setLoading(true);
-
-            await confirmarEmail(email, codigo);
-
-            setSubmitted(true);
+            await confirmarEmail(email.trim(), codigo.trim());
+            navigate("/entrar", {
+                state: { email: email.trim(), aviso: "E-mail confirmado. Entre com a sua senha." },
+            });
         } catch (e) {
-            setError(mensagemDeErro(e));
+            setErro(mensagemDeErro(e));
         } finally {
-            setLoading(false);
+            setEnviando(false);
         }
     }
 
-    async function handleResendCode() {
-        setError(null);
-        setSuccess(null);
-
+    async function handleReenviar() {
+        setErro(null);
+        setAviso(null);
+        if (!email.trim()) {
+            setErro("Informe o e-mail da conta para reenviar o código.");
+            return;
+        }
         try {
-            setReenviando(true);
-
-            await reenviarCodigo(email);
-
-            setSuccess("Um novo código foi enviado para seu e-mail.");
+            await reenviarCodigo(email.trim());
+            setAviso("Enviamos um código novo. O anterior deixou de valer.");
         } catch (e) {
-            setError(mensagemDeErro(e));
-        } finally {
-            setReenviando(false);
+            setErro(mensagemDeErro(e));
         }
     }
 
     return (
-        <section className="w-full max-w-md rounded-modal border border-sutil bg-card p-6 shadow-sm">
+        <section className="w-full max-w-md rounded-modal border border-sutil bg-card p-8 shadow-sm">
+            <h1 className="text-h3 font-bold text-titulo">Confirme seu e-mail</h1>
 
-            {!submitted ? (
-                <>
-                    {/* Cabeçalho */}
-                    <div className="mb-4">
-                        <h1 className="text-h3 font-bold text-titulo">
-                            Confirme seu e-mail
-                        </h1>
+            <p className="mt-3 text-corpo text-secundario">
+                {emailRecebido ? (
+                    <>Enviamos um código de 6 dígitos para <strong className="break-all">{emailRecebido}</strong>. </>
+                ) : (
+                    <>Informe o e-mail da conta e o código de 6 dígitos que enviamos. </>
+                )}
+                Sem confirmar o e-mail, não é possível entrar no Up Hub.
+            </p>
 
-                        <p className="mt-3 text-corpo text-secundario">
-                            Enviamos um código de 6 dígitos para{" "}
-                            <span className="font-medium text-titulo break-all">
-                                {email}
-                            </span>.
-                            Sem confirmar o e-mail, não é possível entrar no UpHub.
-                        </p>
+            <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+                {!emailRecebido && (
+                    <div>
+                        <label htmlFor="email" className="mb-1 block text-sm font-medium text-secundario">
+                            E-mail
+                        </label>
+                        <input
+                            id="email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="seu@email.com"
+                            required
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                        />
                     </div>
+                )}
 
-                    {/* Formulário */}
-                    <form onSubmit={handleSubmit} className="space-y-3">
-                        <div className="space-y-1">
-                            <label
-                                htmlFor="codigo"
-                                className="block text-sm font-medium text-secundario"
-                            >
-                                Código de confirmação
-                            </label>
+                <div>
+                    <label htmlFor="codigo" className="mb-1 block text-sm font-medium text-secundario">
+                        Código de confirmação
+                    </label>
+                    <input
+                        id="codigo"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        pattern="[0-9]{6}"
+                        maxLength={6}
+                        value={codigo}
+                        onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ""))}
+                        placeholder="000000"
+                        required
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 tracking-[0.3em] outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                    />
+                </div>
 
-                            <input
-                                id="codigo"
-                                type="text"
-                                inputMode="numeric"
-                                autoComplete="one-time-code"
-                                maxLength={6}
-                                value={codigo}
-                                onChange={(event) =>
-                                    setCodigo(event.target.value.replace(/\D/g, ""))
-                                }
-                                placeholder="Digite o código"
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                                required
-                            />
-                        </div>
-
-                        {error && (
-                            <p role="alert" className="text-sm text-red-600">
-                                {error}
-                            </p>
-                        )}
-
-                        {success && (
-                            <p role="status" className="text-sm text-green-600">
-                                {success}
-                            </p>
-                        )}
-
-                        <CustomButton
-                            type="submit"
-                            variant="aprovar"
-                            size="grande"
-                            className="w-full"
-                            disabled={loading || codigo.length !== 6}
-                        >
-                            {loading ? "Confirmando..." : "Confirmar e entrar"}
-                        </CustomButton>
-                    </form>
-
-                    {/* Informações do código */}
-                    <p className="mt-3 text-xs text-secundario">
-                        O código vale 24 horas e aceita até 5 tentativas.
+                {erro && (
+                    <p role="alert" className="text-sm text-red-600">
+                        {erro}
                     </p>
-
-                    {/* Reenvio do código */}
-                    <p className="mt-1 text-xs text-secundario">
-                        Ao reenviar, o código anterior deixa de valer.{" "}
-                        <button
-                            type="button"
-                            onClick={handleResendCode}
-                            disabled={reenviando || loading}
-                            className="font-medium text-acento hover:underline disabled:opacity-50"
-                        >
-                            {reenviando ? "Reenviando..." : "Reenviar código"}
-                        </button>
+                )}
+                {aviso && (
+                    <p role="status" className="text-sm text-acento">
+                        {aviso}
                     </p>
+                )}
 
-                    {/* Voltar para login */}
-                    <div className="mt-4">
-                        <Link
-                            to="/entrar"
-                            className="text-xs font-medium text-acento hover:underline"
-                        >
-                            Voltar para login
-                        </Link>
-                    </div>
-                </>
-            ) : (
-                <>
-                    {/* Confirmação */}
-                    <div className="mb-6 text-center">
-                        <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-acento-suave">
-                            <span className="text-2xl text-acento">
-                                ✓
-                            </span>
-                        </div>
+                <CustomButton type="submit" variant="aprovar" size="grande" className="w-full" disabled={enviando}>
+                    {enviando ? "Confirmando..." : "Confirmar e-mail"}
+                </CustomButton>
+            </form>
 
-                        <h1 className="text-h3 font-bold text-titulo">
-                            E-mail confirmado!
-                        </h1>
+            <p className="mt-3 text-sm text-secundario">
+                O código vale 24 horas e aceita até 5 tentativas. Ao reenviar, o código anterior deixa de valer.
+            </p>
 
-                        <p className="mt-3 text-corpo text-secundario">
-                            Seu e-mail foi confirmado com sucesso. Agora você já pode acessar sua conta.
-                        </p>
-
-                        <p className="mt-3 break-all font-semibold text-titulo">
-                            {email}
-                        </p>
-                    </div>
-
-                    {/* Acessar conta */}
-                    <div className="space-y-4">
-                        <Link to="/entrar" className="block">
-                            <CustomButton
-                                type="button"
-                                variant="aprovar"
-                                size="grande"
-                                className="w-full"
-                            >
-                                Ir para o login
-                            </CustomButton>
-                        </Link>
-                    </div>
-                </>
-            )}
+            <div className="mt-4 flex items-center gap-2 text-corpo">
+                <Link to="/entrar" className="font-medium text-acento hover:underline">
+                    Voltar para o login
+                </Link>
+                <span className="text-acento">·</span>
+                <button type="button" onClick={handleReenviar} className="font-medium text-acento hover:underline">
+                    Reenviar código
+                </button>
+            </div>
         </section>
     );
 }

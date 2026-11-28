@@ -1,272 +1,222 @@
+import { Link } from 'react-router-dom'
+
+import { buscarPainel, type TrilhaNoPainel } from '../api/painel'
+import { listarFila } from '../api/solicitacoesProvedor'
+import CascaDoApp from '../components/CascaDoApp'
 import { CustomButton } from '../components/CustomButton'
-import Indicadores, { type Indicador } from '../components/Indicadores'
+import BlocoGargalos from '../components/gestao/BlocoGargalos'
+import CartaoDeNumeros from '../components/gestao/CartaoDeNumeros'
+import { ROTULO_FUNIL } from '../components/gestao/rotulos'
+import { Carregando, ErroNaTela } from '../components/ui/Estados'
+import { ANEL_FOCO, CARTAO } from '../estilos/classes'
+import { formatarDataHora, rotuloDoEstado, ROTULO_TIPO_ORGANIZACAO, ROTULO_TRILHA } from '../estilos/formatos'
+import useDados from '../hooks/useDados'
+import { MENU_GESTAO } from '../navegacao/menus'
 
 /**
- * 09 · Gestão do PD — painel do ecossistema · rota /painel
+ * 09 e 79 · Gestão do PD — painel do ecossistema · rota /gestao
  *
- * Visão de quem coordena o programa: os quatro indicadores do mês, o funil
- * das três trilhas, os gargalos que já passaram do prazo e a taxa de
- * resposta por empresa.
- *
- * Nenhum número é digitado à mão no produto final: todos vêm do histórico
- * de estados. Nesta etapa os dados são simulados, conforme o Bloco 4.
+ * As três trilhas numa tela só e os blocos que o GET /api/painel devolve:
+ * candidaturas por estado, funil do Investimento, organizações por tipo,
+ * residências, avaliação, mentoria e os gargalos, com o limite de cada etapa.
  */
 
+function porcento(valor: number): string {
+    return `${valor.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
+}
 
+function numero(valor: number): string {
+    return valor.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
+}
 
-const indicadores: Indicador[] = [
-    { id: 'oportunidades', rotulo: 'Oportunidades ativas', valor: '12', apoio: '+3 no mês' },
-    { id: 'candidaturas', rotulo: 'Candidaturas no mês', valor: '148', apoio: '+22%' },
-    { id: 'conexao', rotulo: 'Taxa de conexão', valor: '14,9%', apoio: 'homologadas ÷ enviadas' },
-    { id: 'decisao', rotulo: 'Tempo até a decisão', valor: '11 dias', apoio: 'média das três trilhas' },
+function nomeDaTrilha(t: TrilhaNoPainel): string {
+    return t.trilhaCodigo === 'TODAS' ? 'Total' : ROTULO_TRILHA[t.trilhaCodigo]
+}
+
+const COLUNAS_TRILHA: { rotulo: string; valor: (t: TrilhaNoPainel) => string }[] = [
+    { rotulo: 'Oport. ativas', valor: (t) => numero(t.oportunidadesAtivas) },
+    { rotulo: 'Pausadas', valor: (t) => numero(t.oportunidadesPausadas) },
+    { rotulo: 'Enviadas', valor: (t) => numero(t.candidaturasEnviadas) },
+    { rotulo: 'Aprovadas', valor: (t) => numero(t.aprovadas) },
+    { rotulo: 'Taxa de conexão', valor: (t) => porcento(t.taxaDeConexao) },
+    { rotulo: 'Em acompanh.', valor: (t) => numero(t.emAcompanhamento) },
+    { rotulo: 'Concluídas', valor: (t) => numero(t.concluidas) },
 ]
-
-interface Etapa {
-    rotulo: string
-    quantidade: number
-}
-
-interface Trilha {
-    id: string
-    nome: string
-    etapas: Etapa[]
-}
-
-const trilhas: Trilha[] = [
-    {
-        id: 'fomento',
-        nome: 'Fomento',
-        etapas: [
-            { rotulo: 'Enviadas', quantidade: 82 },
-            { rotulo: 'Elegíveis', quantidade: 54 },
-            { rotulo: 'Em análise', quantidade: 31 },
-            { rotulo: 'Aprovadas', quantidade: 12 },
-            { rotulo: 'Homologadas', quantidade: 10 },
-        ],
-    },
-    {
-        id: 'investimento',
-        nome: 'Investimento',
-        etapas: [
-            { rotulo: 'Enviadas', quantidade: 38 },
-            { rotulo: 'Elegíveis', quantidade: 29 },
-            { rotulo: 'Em análise', quantidade: 14 },
-            { rotulo: 'Aprovadas', quantidade: 6 },
-            { rotulo: 'Homologadas', quantidade: 5 },
-        ],
-    },
-    {
-        id: 'formacao',
-        nome: 'Formação',
-        etapas: [
-            { rotulo: 'Enviadas', quantidade: 28 },
-            { rotulo: 'Elegíveis', quantidade: 25 },
-            { rotulo: 'Em análise', quantidade: 18 },
-            { rotulo: 'Aprovadas', quantidade: 9 },
-            { rotulo: 'Homologadas', quantidade: 7 },
-        ],
-    },
-]
-
-interface Gargalo {
-    id: string
-    titulo: string
-    motivo: string
-    historia: string
-}
-
-const gargalos: Gargalo[] = [
-    {
-        id: 'seed',
-        titulo: 'Aceleração Seed Recife',
-        motivo: 'sem avaliador designado há 9 dias',
-        historia: 'H12',
-    },
-    {
-        id: 'logistica',
-        titulo: 'Desafio Logística Urbana',
-        motivo: 'squad aprovada sem mentor alocado',
-        historia: 'H13',
-    },
-    {
-        id: 'inova',
-        titulo: 'Inova PE 2026',
-        motivo: '17 pareceres assinados aguardando homologação',
-        historia: 'H12',
-    },
-]
-
-interface Resposta {
-    id: string
-    empresa: string
-    taxa: number
-}
-
-const respostas: Resposta[] = [
-    { id: 'fomento-pe', empresa: 'Órgão de Fomento PE', taxa: 100 },
-    { id: 'investe', empresa: 'Investe Recife', taxa: 64 },
-    { id: 'sebrae', empresa: 'Sebrae PE', taxa: 92 },
-]
-
-/** Verde a partir de 90%, ocre abaixo disso: o texto repete o número, nunca só a cor. */
-function corDaTaxa(taxa: number) {
-    return taxa >= 90 ? 'text-status-aprovada-texto' : 'text-ocre'
-}
 
 function PainelEcossistema() {
-    return (
-        <div>
-            <h1 className="font-display text-tela text-titulo">Painel do ecossistema</h1>
-            <p className="mt-2 text-apoio text-secundario">
-                Marcos Vilela · setembro de 2026 · nada aqui é digitado à mão: todo
-                número vem do histórico de estados
-            </p>
+    const { dados: painel, carregando, erro, recarregar } = useDados(() => buscarPainel(), [])
+    const segundos = useDados(() => listarFila('AGUARDANDO'), [])
+    const reenviados = (segundos.dados ?? []).filter((s) => s.solicitacaoAnteriorId !== null)
 
-            <section
-                aria-label="Pedido de publicação reenviado"
-                className="mt-6 flex flex-col items-start gap-4 rounded-card bg-acento-suave p-5 sm:flex-row sm:items-center sm:gap-5"
-            >
-                <div className="min-w-0 flex-1">
-                    <p className="font-display text-bloco text-acento">
-                        Pedido de publicação reenviado
-                    </p>
-                    <p className="mt-1 text-apoio text-titulo">
-                        Instituto Recife Inova respondeu à recusa de 28/09 e mandou um
-                        documento novo. O 2º pedido aguarda análise.
+    const mes = painel
+        ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Recife', month: 'long' }).format(new Date(painel.geradoEm))
+        : ''
+    const maiorDoFunil = painel ? Math.max(1, ...Object.values(painel.funilInvestimento)) : 1
+
+    return (
+        <CascaDoApp itens={MENU_GESTAO}>
+            <div className="flex items-start justify-between gap-6">
+                <div>
+                    <h1 className="font-display text-tela text-titulo">Painel do ecossistema</h1>
+                    <p className="mt-2 text-apoio text-secundario">
+                        As três trilhas numa tela só
+                        {painel && ` · gerado em ${formatarDataHora(painel.geradoEm)}`} · nenhum número é digitado à mão
                     </p>
                 </div>
-                <CustomButton variant="neutro" size="auto">
-                    Analisar 2º pedido
+                <CustomButton variant="neutro" size="auto" type="button" disabled={carregando} onClick={() => void recarregar()}>
+                    {carregando && painel ? 'Atualizando…' : 'Atualizar'}
                 </CustomButton>
-            </section>
+            </div>
+
+            {reenviados.length > 0 && (
+                <section
+                    aria-label="Pedidos de provedor reenviados"
+                    className="mt-6 flex items-center gap-5 rounded-card bg-acento-suave p-5"
+                >
+                    <div className="min-w-0 flex-1">
+                        <p className="font-display text-bloco text-acento">
+                            {reenviados.length === 1 ? 'Pedido de publicação reenviado' : `${reenviados.length} pedidos de publicação reenviados`}
+                        </p>
+                        <p className="mt-1 text-apoio text-titulo">
+                            {reenviados.map((s) => s.organizacaoNome).join(', ')} respondeu à recusa anterior. O novo pedido
+                            aguarda análise.
+                        </p>
+                    </div>
+                    <Link
+                        to="/gestao/provedores"
+                        className={`rounded-lg border border-profundo bg-card px-4 py-3 font-semibold text-profundo hover:bg-profundo hover:text-white ${ANEL_FOCO}`}
+                    >
+                        Analisar pedidos
+                    </Link>
+                </section>
+            )}
 
             <div className="mt-6">
-                <Indicadores itens={indicadores} rotulo="Indicadores do mês" />
-            </div>
+                {carregando && !painel ? (
+                    <Carregando />
+                ) : erro && !painel ? (
+                    <ErroNaTela mensagem={erro} tentarDeNovo={() => void recarregar()} />
+                ) : (
+                    painel && (
+                        <div className="flex flex-col gap-6">
+                            <section aria-label="Resultados por trilha" className={`relative overflow-x-auto ${CARTAO}`}>
+                                <table className="w-full border-collapse text-left">
+                                    <thead>
+                                        <tr className="border-b border-sutil bg-page">
+                                            <th scope="col" className="px-card py-3 text-selo text-secundario uppercase">
+                                                Trilha
+                                            </th>
+                                            {COLUNAS_TRILHA.map((c) => (
+                                                <th key={c.rotulo} scope="col" className="px-card py-3 text-selo text-secundario uppercase">
+                                                    {c.rotulo}
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {[...painel.trilhas, painel.total].map((t) => {
+                                            const total = t === painel.total
+                                            return (
+                                                <tr key={t.trilhaCodigo + (total ? '-total' : '')} className={`border-b border-sutil last:border-b-0 ${total ? 'bg-page' : ''}`}>
+                                                    <th scope="row" className="px-card py-4 text-item text-titulo">
+                                                        {total ? 'Total' : nomeDaTrilha(t)}
+                                                    </th>
+                                                    {COLUNAS_TRILHA.map((c) => (
+                                                        <td key={c.rotulo} className={`px-card py-4 text-apoio ${total ? 'text-titulo' : 'text-secundario'}`}>
+                                                            {c.valor(t)}
+                                                        </td>
+                                                    ))}
+                                                </tr>
+                                            )
+                                        })}
+                                    </tbody>
+                                </table>
+                            </section>
+                            <p className="-mt-3 text-legenda text-secundario">
+                                Taxa de conexão: das candidaturas enviadas, quantas chegaram à aprovação. Oportunidades pausadas são
+                                as de provedores com a permissão revogada.
+                            </p>
 
-            <div className="mt-6 flex flex-col gap-6 xl:flex-row xl:items-start">
-                <section
-                    aria-labelledby="titulo-funil"
-                    className="min-w-0 flex-1 rounded-bloco border border-sutil bg-card p-card shadow-card"
-                >
-                    <h2 id="titulo-funil" className="font-display text-bloco text-titulo">
-                        Funil por trilha
-                    </h2>
-                    <p className="mt-1 text-apoio text-secundario">
-                        US-30 · clicar em uma etapa abre a lista correspondente
-                    </p>
+                            <BlocoGargalos gargalos={painel.gargalos} aoMudarLimite={() => void recarregar()} />
 
-                    {trilhas.map((trilha) => {
-                        const maior = trilha.etapas[0].quantidade
+                            <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
+                                <section aria-labelledby="titulo-funil" className={`${CARTAO} p-card`}>
+                                    <h2 id="titulo-funil" className="font-display text-bloco text-titulo">
+                                        Funil do investimento
+                                    </h2>
+                                    <ul className="mt-3 flex flex-col gap-2">
+                                        {(Object.keys(ROTULO_FUNIL) as (keyof typeof ROTULO_FUNIL)[]).map((estagio) => {
+                                            const quantidade = painel.funilInvestimento[estagio] ?? 0
+                                            return (
+                                                <li key={estagio} className="flex items-center gap-3">
+                                                    <span className="w-[96px] shrink-0 text-apoio text-secundario">{ROTULO_FUNIL[estagio]}</span>
+                                                    <span aria-hidden="true" className="h-2 min-w-0 flex-1 overflow-hidden rounded-badge bg-page">
+                                                        <span
+                                                            className="block h-full rounded-badge bg-acento transition-[width] duration-[var(--dur-lenta)] ease-padrao"
+                                                            style={{ width: `${(quantidade / maiorDoFunil) * 100}%` }}
+                                                        />
+                                                    </span>
+                                                    <span className="w-8 shrink-0 text-right text-item text-titulo">{quantidade}</span>
+                                                </li>
+                                            )
+                                        })}
+                                    </ul>
+                                </section>
 
-                        return (
-                            <div key={trilha.id} className="mt-6">
-                                <h3 className="text-item text-acento">{trilha.nome}</h3>
-                                <ul className="mt-3 flex flex-col gap-2">
-                                    {trilha.etapas.map((etapa) => (
-                                        <li
-                                            key={etapa.rotulo}
-                                            className="flex items-center gap-4"
-                                        >
-                                            <span className="w-[108px] shrink-0 text-apoio text-secundario">
-                                                {etapa.rotulo}
-                                            </span>
-                                            <span
-                                                aria-hidden="true"
-                                                className="h-2 min-w-0 flex-1 overflow-hidden rounded-badge bg-page"
-                                            >
-                                                <span
-                                                    className="block h-full rounded-badge bg-acento transition-[width] duration-[var(--dur-lenta)] ease-padrao"
-                                                    style={{
-                                                        width: `${(etapa.quantidade / maior) * 100}%`,
-                                                    }}
-                                                />
-                                            </span>
-                                            <span className="w-8 shrink-0 text-right text-apoio text-titulo">
-                                                {etapa.quantidade}
-                                            </span>
-                                        </li>
-                                    ))}
-                                </ul>
+                                <CartaoDeNumeros
+                                    titulo="Avaliação"
+                                    linhas={[
+                                        { rotulo: 'Aguardando assinatura', valor: painel.avaliacao.aguardandoAssinatura, cor: 'text-ocre' },
+                                        { rotulo: 'Assinadas', valor: painel.avaliacao.assinadas, cor: 'text-status-aprovada-texto' },
+                                        { rotulo: 'Pedidos de ajuste abertos', valor: painel.avaliacao.pedidosDeAjusteAbertos, cor: 'text-acento' },
+                                    ]}
+                                />
+
+                                <CartaoDeNumeros
+                                    titulo={`Mentoria · ${mes}`}
+                                    linhas={[
+                                        { rotulo: 'Alocações aceitas', valor: painel.mentoria.alocacoesAceitas },
+                                        { rotulo: 'Horas previstas no mês', valor: `${numero(painel.mentoria.horasPrevistasMes)} h` },
+                                        {
+                                            rotulo: 'Horas realizadas no mês',
+                                            valor: `${numero(painel.mentoria.horasRealizadasMes)} h`,
+                                            cor: 'text-status-aprovada-texto',
+                                        },
+                                        { rotulo: 'Sessões assinadas no mês', valor: painel.mentoria.sessoesAssinadasMes },
+                                    ]}
+                                />
+
+                                <CartaoDeNumeros
+                                    titulo="Residências"
+                                    linhas={[
+                                        { rotulo: 'Abertas', valor: painel.residencias.abertas, cor: 'text-status-aprovada-texto' },
+                                        { rotulo: 'Encerradas', valor: painel.residencias.encerradas },
+                                        { rotulo: 'Squads nas abertas', valor: painel.residencias.squadsNasAbertas },
+                                        { rotulo: 'Desafios nas abertas', valor: painel.residencias.desafiosNasAbertas },
+                                    ]}
+                                />
+
+                                <CartaoDeNumeros
+                                    titulo="Organizações por tipo"
+                                    linhas={Object.entries(painel.organizacoesPorTipo).map(([tipo, n]) => ({
+                                        rotulo: ROTULO_TIPO_ORGANIZACAO[tipo] ?? tipo,
+                                        valor: n,
+                                    }))}
+                                />
+
+                                <CartaoDeNumeros
+                                    titulo="Candidaturas por estado"
+                                    linhas={Object.entries(painel.candidaturasPorEstado).map(([estado, n]) => ({
+                                        rotulo: rotuloDoEstado(estado),
+                                        valor: n,
+                                    }))}
+                                />
                             </div>
-                        )
-                    })}
-                </section>
-
-                <aside className="flex w-full shrink-0 xl:w-[376px] flex-col gap-5">
-                    <section
-                        aria-labelledby="titulo-gargalos"
-                        className="rounded-bloco border border-sutil bg-card p-card shadow-card"
-                    >
-                        <div className="flex items-center gap-3">
-                            <h2
-                                id="titulo-gargalos"
-                                className="font-display text-bloco text-titulo"
-                            >
-                                Gargalos
-                            </h2>
-                            <span className="rounded-badge bg-aviso-fundo px-2 py-1 text-selo text-ocre">
-                                {gargalos.length}
-                            </span>
                         </div>
-
-                        <ul className="mt-4 flex flex-col gap-3">
-                            {gargalos.map((gargalo) => (
-                                <li
-                                    key={gargalo.id}
-                                    className="flex items-start gap-3 rounded-card border border-aviso-borda bg-aviso-fundo p-4"
-                                >
-                                    <div className="min-w-0 flex-1">
-                                        <p className="text-item text-titulo">{gargalo.titulo}</p>
-                                        <p className="mt-1 text-apoio text-secundario">
-                                            {gargalo.motivo}
-                                        </p>
-                                    </div>
-                                    <span className="shrink-0 rounded-badge bg-card px-2 py-1 text-selo text-secundario">
-                                        {gargalo.historia}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    </section>
-
-                    <section
-                        aria-labelledby="titulo-resposta"
-                        className="rounded-bloco border border-sutil bg-card p-card shadow-card"
-                    >
-                        <span className="inline-block rounded-badge bg-acento-suave px-2 py-1 text-selo text-acento">
-                            DIFERENCIAL 03
-                        </span>
-                        <h2
-                            id="titulo-resposta"
-                            className="mt-3 font-display text-bloco text-titulo"
-                        >
-                            Taxa de resposta por empresa
-                        </h2>
-
-                        <ul className="mt-3 flex flex-col gap-2">
-                            {respostas.map((resposta) => (
-                                <li key={resposta.id} className="flex items-center gap-3">
-                                    <span className="min-w-0 flex-1 text-apoio text-titulo">
-                                        {resposta.empresa}
-                                    </span>
-                                    <span
-                                        className={`text-item ${corDaTaxa(resposta.taxa)}`}
-                                    >
-                                        {resposta.taxa}%
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-
-                        <p className="mt-3 text-apoio text-secundario">
-                            Fica visível no perfil de cada empresa. Nenhuma candidatura pode
-                            ficar sem resposta.
-                        </p>
-                    </section>
-                </aside>
+                    )
+                )}
             </div>
-        </div>
+        </CascaDoApp>
     )
 }
 

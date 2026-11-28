@@ -1,9 +1,12 @@
 import type { ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+
+import { iniciais as iniciaisDe, ROTULO_DA_AREA } from '../navegacao/areas'
+import { useSessao } from '../sessao/contexto'
+import { formatarData } from '../estilos/formatos'
 
 import { CustomButton } from './CustomButton'
 import SeloStatus, { type Status } from './SeloStatus'
-import { useAuth } from '../contexts/AuthContext'
 import { ANEL_FOCO } from '../estilos/classes'
 
 interface BlocoDoPapelProps {
@@ -13,7 +16,11 @@ interface BlocoDoPapelProps {
     chamada: string
     contexto: string
     explicacao: string
-    acao: string
+    /** Texto do botão da direita. Sem ele, o bloco fica sem botão. */
+    acao?: string
+    /** Rota do botão (vira um link). */
+    para?: string
+    aoClicar?: () => void
 }
 
 /**
@@ -28,6 +35,8 @@ export function BlocoDoPapel({
     contexto,
     explicacao,
     acao,
+    para,
+    aoClicar,
 }: BlocoDoPapelProps) {
     return (
         <section
@@ -43,15 +52,25 @@ export function BlocoDoPapel({
                 </span>
             </div>
 
-            <div className="mt-4 flex flex-col items-start gap-4 rounded-card bg-page p-5 sm:flex-row sm:items-center sm:gap-5">
+            <div className="mt-4 flex items-center gap-5 rounded-card bg-page p-5">
                 <div className="min-w-0 flex-1">
                     <p className="font-display text-bloco text-titulo">{chamada}</p>
                     <p className="mt-1 text-apoio text-secundario">{contexto}</p>
                     <p className="mt-2 text-apoio text-secundario">{explicacao}</p>
                 </div>
-                <CustomButton variant="neutro" size="auto">
-                    {acao}
-                </CustomButton>
+                {acao && para && (
+                    <Link
+                        to={para}
+                        className={`rounded-lg border border-sutil bg-card px-4 py-2 text-apoio font-semibold text-titulo hover:bg-page ${ANEL_FOCO}`}
+                    >
+                        {acao}
+                    </Link>
+                )}
+                {acao && !para && (
+                    <CustomButton variant="neutro" size="auto" onClick={aoClicar}>
+                        {acao}
+                    </CustomButton>
+                )}
             </div>
         </section>
     )
@@ -81,42 +100,49 @@ export interface Vinculo {
 }
 
 interface PaginaDeContaProps {
-    pessoa: Pessoa
+    /** Sem ela, a pessoa vem da sessão (quem está logado). */
+    pessoa?: Pessoa
     /** Cartão da direita, acima dos vínculos: título e conteúdo livre. */
     destaqueTitulo: string
     destaque: ReactNode
-    vinculos: Vinculo[]
+    /** Sem eles, os vínculos ativos vêm da sessão. */
+    vinculos?: Vinculo[]
     /** Bloco do meio da coluna da esquerda, próprio de cada papel. */
     children: ReactNode
 }
 
 export function PaginaDeConta({
-    pessoa,
+    pessoa: pessoaRecebida,
     destaqueTitulo,
     destaque,
-    vinculos,
+    vinculos: vinculosRecebidos,
     children,
 }: PaginaDeContaProps) {
-    const { logout } = useAuth()
+    const { sair, pessoa: logada, perfis, perfilAtivo } = useSessao()
     const navigate = useNavigate()
-
-    function sairDaConta() {
-        // Navega primeiro: se a sessão sumisse antes, o PrivateRoute
-        // mandaria para /entrar em vez da tela inicial pública.
-        navigate('/', { replace: true })
-        logout()
+    const pessoa: Pessoa = pessoaRecebida ?? {
+        iniciais: iniciaisDe(logada?.nome ?? ''),
+        nome: logada?.nome ?? '',
+        email: logada?.email ?? '',
+        telefone: logada?.telefone ?? '—',
+        funcao: perfilAtivo?.vinculo.funcao ?? (perfilAtivo ? ROTULO_DA_AREA[perfilAtivo.area] : '—'),
+        criadaEm: formatarData(logada?.criadaEm),
+        id: logada ? `USR-${String(logada.id).padStart(4, '0')}` : '—',
     }
+    const vinculos: Vinculo[] =
+        vinculosRecebidos ??
+        perfis.map((p) => ({ organizacao: p.vinculo.organizacaoNome, papel: ROTULO_DA_AREA[p.area] }))
     return (
         <>
             <h1 className="font-display text-tela text-titulo">Minha conta</h1>
 
-            <div className="mt-6 flex flex-col gap-6 xl:flex-row xl:items-start">
+            <div className="mt-6 flex flex-col gap-6 lg:flex-row lg:items-start">
                 <div className="flex min-w-0 flex-1 flex-col gap-5">
                     <section
                         aria-label="Identificação"
                         className="rounded-bloco border border-sutil bg-card p-card shadow-card"
                     >
-                        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-5">
+                        <div className="flex items-center gap-5">
                             <span
                                 aria-hidden="true"
                                 className="grid size-16 shrink-0 place-items-center rounded-full border border-acento bg-acento-suave font-display text-h3 text-acento"
@@ -134,12 +160,10 @@ export function PaginaDeConta({
                                 </p>
                             </div>
 
-                            <CustomButton variant="neutro" size="auto">
-                                Editar perfil
-                            </CustomButton>
+                            {/* A API ainda não tem a edição dos dados da pessoa (pessoas.ts só cadastra e busca). */}
                         </div>
 
-                        <dl className="mt-5 grid grid-cols-2 gap-5 border-t sm:grid-cols-4 border-sutil pt-5">
+                        <dl className="mt-5 grid grid-cols-2 gap-5 lg:grid-cols-4 border-t border-sutil pt-5">
                             <div>
                                 <dt className="text-apoio text-secundario">Nome completo</dt>
                                 <dd className="mt-1 text-item text-titulo">{pessoa.nome}</dd>
@@ -164,7 +188,7 @@ export function PaginaDeConta({
                     {children}
                 </div>
 
-                <aside className="flex w-full shrink-0 xl:w-[344px] flex-col gap-5">
+                <aside className="flex w-full shrink-0 lg:w-[344px] flex-col gap-5">
                     <section
                         aria-labelledby="titulo-destaque"
                         className="rounded-bloco border border-sutil bg-card p-card shadow-card"
@@ -194,7 +218,7 @@ export function PaginaDeConta({
                         <ul>
                             {vinculos.map((vinculo) => (
                                 <li
-                                    key={vinculo.organizacao}
+                                    key={`${vinculo.organizacao}-${vinculo.papel}`}
                                     className="flex items-center gap-3 border-b border-sutil px-card py-4 last:border-b-0"
                                 >
                                     <div className="min-w-0 flex-1">
@@ -228,7 +252,10 @@ export function PaginaDeConta({
                         </p>
                         <button
                             type="button"
-                            onClick={sairDaConta}
+                            onClick={() => {
+                                sair()
+                                navigate('/')
+                            }}
                             className={`mt-4 h-[45px] w-full rounded-lg bg-status-reprovada-texto font-semibold text-white transition-opacity duration-[var(--dur-rapida)] ease-padrao hover:opacity-90 ${ANEL_FOCO}`}
                         >
                             Sair da conta

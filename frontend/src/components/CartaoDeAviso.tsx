@@ -32,7 +32,7 @@ export function CartaoDeAviso({ contexto, children, acao, rotulo }: CartaoDeAvis
     return (
         <section
             aria-label={rotulo ?? contexto}
-            className={`flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-5 ${moldura}`}
+            className={`flex items-center gap-5 ${moldura}`}
         >
             <div className="min-w-0 flex-1">
                 {contexto && <p className="text-apoio text-ocre">{contexto}</p>}
